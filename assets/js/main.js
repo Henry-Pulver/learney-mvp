@@ -5,14 +5,16 @@ import { showIntroTippy, toggleIntro } from "./intro.js";
 var toJson = function(obj){ return obj.json(); };
 var toText = function(obj){ return obj.text(); };
 
-var graphP = fetch('assets/positions_knowledge_graph.json').then(toJson);
-var styleP = fetch('assets/knowledge_graph.cycss').then(toText);
+const staticFileLocation = document.getElementById("static-root").getAttribute("data-name");
+
+var graphP = fetch(`${staticFileLocation}positions_knowledge_graph.json`).then(toJson);
+var styleP = fetch(`${staticFileLocation}knowledge_graph.cycss`).then(toText);
 
 document.getElementById("shiprightButton").addEventListener("mouseover", makeMouseoverTippy("#shiprightButton", "Want a new feature? Or bugfix? We want to hear about it - click here to suggest it!"));
 document.getElementById("slackButton").addEventListener("mouseover", makeMouseoverTippy("#slackButton", "Want to give direct feedback? Is there content we've missed, or are the connections wrong? Join our Slack and tell us!"));
 document.getElementById("feedbackButton").addEventListener("mouseover", makeMouseoverTippy("#feedbackButton", "Not a fan of Slack? Email us your feedback!"));
 
-Promise.all([fetch('assets/introSlides.json').then(toJson)]).then(
+Promise.all([fetch(`${staticFileLocation}introSlides.json`).then(toJson)]).then(
     function (slides) {
         let introSlides = slides[0];
         showIntroTippy(introSlides);

@@ -27,8 +27,7 @@ with open("dev_env.yaml", "r") as env_file:
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = dev_secrets_dict["SECRET_KEY"]
 
-# DEBUG = os.environ.get("PYTHON_ENV", "") in ["production", "staging"]
-DEBUG = True
+DEBUG = os.environ.get("PYTHON_ENV", "") in ["production", "staging"]
 
 ALLOWED_HOSTS = [
     # prod url
@@ -38,6 +37,7 @@ ALLOWED_HOSTS = [
     "172.31.8.139",
     # staging aws
     "staging-learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
+    "172.31.39.124"
     # localhost
     "127.0.0.1",
     "0.0.0.0",
@@ -58,6 +58,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -146,11 +147,12 @@ if os.environ.get("PYTHON_ENV", "") == "production":
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
-STATIC_URL = "/assets/"
-STATICFILES_DIRS = [
-    os.path.join(Path(__file__).resolve().parent.parent.parent, "assets")
-]
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [str(BASE_DIR.parent / "assets")]
+STATIC_ROOT = str(BASE_DIR / "static")
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
