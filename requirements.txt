@@ -1,0 +1,7 @@
+blessed==1.18.0
+botocore==1.20.72
+Django==3.2.2
+djangorestframework==3.12.4
+psycopg2>=2.7.7
+PyYAML
+requests>=2.25.1

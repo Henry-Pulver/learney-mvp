@@ -1,0 +1,74 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Learney</title>
+    <link rel="icon" href="../../../../assets/images/favicon-32x32.png">
+    <link rel="stylesheet" href="../../../../assets/css/main.css">
+    <link rel="stylesheet" href="../../../../assets/css/buttons.css">
+    <link rel="stylesheet" href="../../../../assets/css/tooltip.css">
+    <link rel="stylesheet" href="../../../../assets/css/intro.css">
+    <meta xmlns="http://www.w3.org/1999/xhtml">
+    <meta name="title" property="og:title" content="Learney" />
+    <meta name="image" property="og:image" content="http://app.learney.me/assets/images/2021/05/19/learney_background.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="http://app.learney.me" />
+    <meta name="description" property="og:description" content="The online learning platform designed to help you efficiently take your own path." />
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PDX7JSVWKR"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-PDX7JSVWKR');
+    </script>
+
+    <!-- Hotjar Tracking Code -->
+    <script>
+        (function(h,o,t,j,a,r){
+            h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+            h._hjSettings={hjid:2402210,hjsv:6};
+            a=o.getElementsByTagName('head')[0];
+            r=o.createElement('script');r.async=1;
+            r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+            a.appendChild(r);
+        })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+    </script>
+</head>
+
+<body>
+{% csrf_token %}
+    <div id="cy"></div>
+    <div id="loading">
+      <span class="fa fa-refresh fa-spin"></span>
+    </div>
+    <div class="intro-button-container">
+        <button class="large-button" id="introButton" >Intro</button>
+    </div>
+    <div class="feedback-buttons">
+        <button class="circle" id="shiprightButton" onclick="window.open('https://shipright.community/learney', '_blank')">
+            <img src="assets/images/feedback_icon.png" id="feedbackIcon" alt="Feedback icon">
+        </button>
+        <button class="circle" id="slackButton" onclick="window.open('https://join.slack.com/t/learneyalphatesters/shared_invite/zt-q1rnj8tt-4895F06RAImSEDtMNE6sUg','_blank')">
+            <img src="../../../../assets/images/slack_logo.png" id="slackLogo" alt="Slack logo">
+        </button>
+        <button class="circle feedback" id="feedbackButton" onclick="window.open('mailto:henrypulver13@gmail.com?subject=Feedback about Learney&cc=matthewphillips5320@googlemail.com','_blank')">?</button>
+    </div>
+
+    <div class="top-button-toolbar">
+<!--        <button id="captureLayout" >Capture Layout</button>-->
+        <button id="resetPan" >Centre View</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.18.2/cytoscape.min.js" integrity="sha512-CBGCXtszkG5rYlQSTNUzk54/731Kz28WPk2uT1GCPCqgfVRJ2v514vzzf16HuGX9WVtE7JLqRuAERNAzFZ9Hpw==" crossorigin="anonymous"></script>
+<!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js" integrity="sha512-psLUZfcgPmi012lcpVHkWoOqyztollwCGu4w/mXijFMK/YcdUdP06voJNVOJ7f/dUIlO2tGlDLuypRyXX2lcvQ==" crossorigin="anonymous"></script>-->
+    <!--    <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.3.2/cytoscape-dagre.min.js"></script>-->
+    <script src="https://unpkg.com/tippy.js@2.0.9/dist/tippy.all.js"></script>
+    <script src="https://unpkg.com/popper.js@1.14.4/dist/umd/popper.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/cytoscape-popper@1.0.2/cytoscape-popper.js"></script>
+    <script type="module" src="../../../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,20 +1,11 @@
-*.idea
 *.tsv
 assets/NodePositions.json
 assets/knowledge_graph.json
-**/dev_env.yaml
-**/link_preview_api_key.yaml
-pgadmin4/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Elastic Beanstalk Files
-.elasticbeanstalk/*
-!.elasticbeanstalk/*.cfg.yml
-!.elasticbeanstalk/*.global.yml
 
 # C extensions
 *.so

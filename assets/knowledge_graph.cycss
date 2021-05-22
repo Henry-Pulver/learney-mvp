@@ -1,0 +1,96 @@
+core {
+  active-bg-color: #000;
+  active-bg-opacity: 0.333;
+}
+
+node {
+  color: white;
+  content: data(name);
+  text-wrap: wrap;
+}
+
+node.concept {
+  background-color: #9F9F9E;
+  opacity: 0.6;
+  width: 48px;
+  height: 48px;
+  min-zoomed-font-size: 1.25em;
+  z-index: 10;
+  text-max-width: 180;
+}
+
+node.concept:selected {
+  min-zoomed-font-size: 0;
+  background-color: white;
+  font-size: 0px;
+  z-index: 9999;
+}
+
+node.concept.goal {
+  background-color: #ff9e00;
+  color: #ff9e00;
+}
+
+node.concept.path {
+  background-color: #2196F3;
+  color: #2196F3;
+}
+
+node.concept.learned {
+  background-color: #299427;
+  color: #299427;
+}
+
+node:parent {
+  background-color: data(colour);
+  opacity: 0.8;
+  text-valign: center;
+  text-halign: center;
+  font-size: 8em;
+  z-index: 1;
+  text-wrap: wrap;
+  text-max-width: 240;
+}
+
+edge {
+  min-zoomed-font-size: 12;
+  font-size: 8;
+  color: #fff;
+  line-color: grey;
+  width: 10;
+  curve-style: haystack;
+  mid-target-arrow-shape: triangle;
+  mid-target-arrow-color: lightgrey;
+  haystack-radius: 0;
+}
+
+edge.path {
+  line-color: #2196F3;
+  mid-target-arrow-color: #2196F3;
+  opacity: 1;
+}
+
+edge.learned {
+  line-color: green;
+  mid-target-arrow-color: lightgreen;
+  opacity: 1;
+}
+
+
+edge:selected {
+  opacity: 1;
+}
+
+edge[line_name] {
+  content: data(line_name);
+}
+
+edge.not-path {
+  opacity: 0.1;
+  z-index: 0;
+}
+
+edge.path {
+  opacity: 0.666;
+  z-index: 0;
+}
