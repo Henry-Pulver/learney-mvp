@@ -4,12 +4,13 @@ var introSlideNumber = 0;
 var shownIntroTippy;
 var introTippyShown = true;
 
+const staticFileLocation = document.getElementById("static-root").getAttribute("data-name");
 
 function createIntroHTML(introSlides) {
     let slideInfo = introSlides[introSlideNumber]
 
     let title = createTipElement("h2", {"class": "intro-text"}, slideInfo.title);
-    let gif = createTipElement("img", {"class": "intro-gif", "src": slideInfo.gif}, []);
+    let gif = createTipElement("img", {"class": "intro-gif", "src": staticFileLocation + slideInfo.gif}, []);
     let gifDiv = createTipElement("div", {"class": "intro-gif-div"}, [gif]);
     let textDiv = createTipElement("div", {"class": "intro-text-div"}, []);
 
@@ -92,7 +93,6 @@ function changeSlideFunction(next, introSlides) {
         } else {
             introSlideNumber -= 1;
         }
-        console.log(introSlideNumber);
         showIntroTippy(introSlides);
     }
 }

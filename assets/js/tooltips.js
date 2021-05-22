@@ -9,9 +9,8 @@ const votesKeyName = "votes";
 var sessionVotes = initialiseFromStorage(votesKeyName);
 // Up/down votes
 var savedVotes = Object.assign({}, sessionVotes);
-console.log(sessionVotes);
-console.log(savedVotes);
 var selectedNode;
+
 var cachedLinkPreviews = {};
 
 function makeTippy(node){
