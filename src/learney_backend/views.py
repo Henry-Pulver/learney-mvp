@@ -54,14 +54,13 @@ class ContentLinkPreviewView(APIView):
                 return Response(db_dict, status=status.HTTP_200_OK)
             else:
                 print("Not found in linkpreview.net!")
-                return Response(preview_data.content, status=status.HTTP_204_NO_CONTENT)
+                return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     def post(self, request: Request, format=None) -> Response:
         return self._serialize_and_respond(request)
 
     def _serialize_and_respond(self, request: Union[Request, Dict[str, str]]):
         data = request if isinstance(request, dict) else request.data
-        # data = request
         print(f"Data: {data}")
         serializer = LinkPreviewSerializer(data=data)
         if serializer.is_valid():

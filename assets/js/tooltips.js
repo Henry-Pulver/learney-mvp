@@ -4,6 +4,8 @@ import {getValidURLs, createTipElement, initialiseFromStorage, saveToStorage} fr
 
 var shownTippy;
 
+const staticFileLocation = document.getElementById("static-root").getAttribute("data-name");
+
 const votesKeyName = "votes";
 // Up/down votes made this session. true means upvote, false means downvote.
 var sessionVotes = initialiseFromStorage(votesKeyName);
@@ -167,12 +169,22 @@ function createLinkPreviewArray (nodeName, urls) {
                 data: {concept: nodeName, url: urls[i]},
                 success: function (data) {
                     console.log(data);
-                    console.log(typeof data);
-                    // If successful, show the data in the link preview
+                    // If successful, show data in link preview, filling gaps with default values
+                    if (data === undefined) {
+                        data = {title: "", description: "", image_url: ""};
+                    }
+                    if (data.title === "") {data.title = nodeName;}
                     linkTitle.innerHTML = data.title;
+
                     linkDescription.innerHTML = data.description;
+
+                    if (data.image_url === ""){
+                        data.image_url = `${staticFileLocation}images/android-chrome-512x512.png`;
+                    }
                     linkImage.setAttribute("src", data.image_url);
+
                     cachedLinkPreviews[urls[i]] = data;
+
                 },
                 error: function () {
                     console.error("Failed to retrieve!")
