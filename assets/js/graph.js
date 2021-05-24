@@ -31,6 +31,7 @@ function initCy(then) {
         motionBlurOpacity: 0.1,
         maxZoom: 1.5,
         minZoom: 0.2,
+        wheelSensitivity: 0.25,
     });
     // DO DAGRE FOR EACH SUBJECT
     // subjects.forEach(function(subject, index) {
