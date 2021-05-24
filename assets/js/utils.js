@@ -47,29 +47,21 @@ function LightenDarkenColor(col, amt) {
     return (usePound?"#":"") + String("000000" + (g | (b << 8) | (r << 16)).toString(16)).slice(-6);
 }
 
-function validURL(str) {
-    /** Checks that a url is valid*/
-  var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
-    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
-    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
-    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
-    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-    '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
-  return !!pattern.test(str);
+function isValidURL(str) {
+    let a  = document.createElement('a');
+    a.href = str;
+    return (a.host && a.host !== window.location.host);
 }
 
 function getValidURLs(urls){
     var url_array = [];
 
     function validateURL(url){
-        if (url[0] === " "){
-          url.replace(" ", "");
-        }
+        url.replace(" ", "");
         if (url.length > 0) {
-            if (validURL(url)) {
-                url_array.push(url);
-            } else {
-                url_array.push("https://" + url);
+            url_array.push(url);
+            if (!isValidURL(url)) {
+                console.error(`The following URL is broken: ${url}`);
             }
         }
     }
