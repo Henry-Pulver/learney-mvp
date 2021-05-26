@@ -105,7 +105,7 @@ a.link-preview {
     padding-right: 60px;
 }
 
-a:hover {
+a.link-preview:hover {
     text-decoration: none;
     background-color: #c9c9c9;
 }

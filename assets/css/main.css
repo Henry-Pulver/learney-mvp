@@ -17,6 +17,57 @@ html, body {
   background: #000;
 }
 
+.top-toolbar {
+  position: absolute;
+  right: 0;
+}
+
+.overall-profile-div {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+#profile-image-button {
+  display: block;
+  width: 42px;
+  height: 42px;
+  border: none;
+  margin-left: auto;
+}
+
+.profile-image {
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  background-color: #f4f4f4;
+  margin: 5px;
+}
+
+.profile-image:hover {
+  margin: 0;
+  cursor: pointer;
+  border: 5px solid rgba(91, 91, 91, .80);
+}
+
+#profile-div{
+  border: 2px solid rgba(60, 60, 60, 1);
+  display: none;
+  border-radius: 5px;
+  padding: 15px;
+  margin: 5px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  max-width: 200px;
+  text-align: center;
+  background-color: white;
+}
+
+.profile-email {
+  color: #5b5b5b;
+  font-weight: normal;
+  overflow-wrap: anywhere;
+}
+
 #loading {
   position: absolute;
   left: 0;

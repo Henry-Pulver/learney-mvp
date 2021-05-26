@@ -1,14 +1,14 @@
 from django.urls import path, re_path
-from learney_backend.views import ContentLinkPreviewView, ContentVoteView
-
 from django.shortcuts import render
-import os
+
+from learney_web import settings
+from learney_backend.views import ContentLinkPreviewView, ContentVoteView
 
 
 def index(request):
     return render(
         request,
-        f"{os.path.dirname(os.getcwd())}/src/learney_backend/templates/learney_backend/index.html",
+        f"{settings.BASE_DIR}/learney_backend/templates/learney_backend/index.html",
     )
 
 
