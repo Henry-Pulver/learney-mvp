@@ -27,7 +27,7 @@ with open("dev_env.yaml", "r") as env_file:
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = dev_secrets_dict["SECRET_KEY"]
 
-PYTHON_ENV = os.environ.get("PYTHON_ENV", "development")
+PYTHON_ENV = os.environ.get("PYTHON_ENV", "dev")
 DEBUG = PYTHON_ENV in ["production", "staging"]
 
 ALLOWED_HOSTS = [
@@ -38,11 +38,47 @@ ALLOWED_HOSTS = [
     "172.31.8.139",
     # staging aws
     "staging-learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
-    "172.31.39.124"
+    "172.31.39.124",
+    "172.31.18.129",
+    "44.233.38.189",
     # localhost
     "127.0.0.1",
     "0.0.0.0",
 ]
+
+DEBUG_PROPAGATE_EXCEPTIONS = True
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt' : "%d/%b/%Y %H:%M:%S"
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'mysite.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers':['file'],
+            'propagate': True,
+            'level':'DEBUG',
+        },
+        'MYAPP': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+    }
+}
 
 # Application definition
 
