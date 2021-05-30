@@ -27,7 +27,8 @@ with open("dev_env.yaml", "r") as env_file:
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = dev_secrets_dict["SECRET_KEY"]
 
-DEBUG = os.environ.get("PYTHON_ENV", "") in ["production", "staging"]
+PYTHON_ENV = os.environ.get("PYTHON_ENV", "dev")
+DEBUG = PYTHON_ENV in ["production", "staging"]
 
 ALLOWED_HOSTS = [
     # prod url
@@ -37,11 +38,47 @@ ALLOWED_HOSTS = [
     "172.31.8.139",
     # staging aws
     "staging-learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
-    "172.31.39.124"
+    "172.31.39.124",
+    "172.31.18.129",
+    "44.233.38.189",
     # localhost
     "127.0.0.1",
     "0.0.0.0",
 ]
+
+DEBUG_PROPAGATE_EXCEPTIONS = True
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt' : "%d/%b/%Y %H:%M:%S"
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'mysite.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers':['file'],
+            'propagate': True,
+            'level':'DEBUG',
+        },
+        'MYAPP': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+    }
+}
 
 # Application definition
 
@@ -52,6 +89,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "social_django",
+    "auth0login",
     "learney_backend",
     "rest_framework",
 ]
@@ -139,7 +178,7 @@ USE_L10N = True
 USE_TZ = True
 
 # Set to use HTTPS if on production server
-if os.environ.get("PYTHON_ENV", "") == "production":
+if PYTHON_ENV == "production":
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = True
     CSRF_COOKIE_SECURE = True
@@ -152,9 +191,32 @@ STATICFILES_DIRS = [str(BASE_DIR.parent / "assets")]
 STATIC_ROOT = str(BASE_DIR / "static")
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-# STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# For auth0
+with open("auth0_conf.yaml", "r") as auth0_conf_file:
+    auth0_conf = yaml.load(auth0_conf_file, Loader=yaml.Loader)
+
+
+SOCIAL_AUTH_TRAILING_SLASH = False  # Remove trailing slash from routes
+SOCIAL_AUTH_AUTH0_DOMAIN = auth0_conf["SOCIAL_AUTH_AUTH0_DOMAIN"]
+SOCIAL_AUTH_AUTH0_KEY = auth0_conf[PYTHON_ENV]["SOCIAL_AUTH_AUTH0_KEY"]
+SOCIAL_AUTH_AUTH0_SECRET = auth0_conf[PYTHON_ENV]["SOCIAL_AUTH_AUTH0_SECRET"]
+
+SOCIAL_AUTH_AUTH0_SCOPE = [
+    'openid',
+    'profile',
+    'email'
+]
+
+AUTHENTICATION_BACKENDS = {
+    'auth0login.auth0backend.Auth0',
+    'django.contrib.auth.backends.ModelBackend'
+}
+
+LOGIN_URL = '/login/auth0'
+LOGIN_REDIRECT_URL = '/dashboard'

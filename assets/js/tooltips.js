@@ -16,7 +16,6 @@ var selectedNode;
 var cachedLinkPreviews = {};
 
 function makeTippy(node){
-    removeIntroTippy();
     removeTippy();
     selectedNode = node;
     let html = createTooltipHTML(node);
@@ -42,8 +41,12 @@ function makeTippy(node){
 }
 
 function removeTippy(){
+  // Hide profile div!
+  document.getElementById("profile-div").style.display = "none";
+  // Hide intro div!
+  removeIntroTippy();
+
   if(shownTippy){
-    removeIntroTippy();
     shownTippy.hide();
     for (const url in sessionVotes) {
         if (!(url in savedVotes) || sessionVotes[url] !== savedVotes[url]) {

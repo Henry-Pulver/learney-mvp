@@ -14,6 +14,15 @@ document.getElementById("shiprightButton").addEventListener("mouseover", makeMou
 document.getElementById("slackButton").addEventListener("mouseover", makeMouseoverTippy("#slackButton", "Want to give direct feedback? Is there content we've missed, or are the connections wrong? Join our Slack and tell us!"));
 document.getElementById("feedbackButton").addEventListener("mouseover", makeMouseoverTippy("#feedbackButton", "Not a fan of Slack? Email us your feedback!"));
 
+document.getElementsByClassName("profile-image")[0].onclick = function () {
+    let profileDiv = document.getElementById("profile-div");
+    if (profileDiv.style.display === "block") {
+        profileDiv.style.display = "none";
+    } else {
+        profileDiv.style.display = "block";
+    }
+};
+
 Promise.all([fetch(`${staticFileLocation}introSlides.json`).then(toJson)]).then(
     function (slides) {
         let introSlides = slides[0];

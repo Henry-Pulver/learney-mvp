@@ -5,4 +5,7 @@ djangorestframework==3.12.4
 psycopg2>=2.7.7
 PyYAML
 requests>=2.25.1
+social-auth-app-django>=4.0.0
+python-jose>=3.2.0
+python-dotenv>=0.17.1
 whitenoise>=5.2.0

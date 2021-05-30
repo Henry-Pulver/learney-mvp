@@ -30,7 +30,7 @@ button.close:hover {
 .top-button-toolbar {
     position: absolute;
     top: 0;
-    right: 0;
+    right: 60px;
 }
 
 .feedback-buttons {
@@ -41,7 +41,7 @@ button.close:hover {
     margin: 2px;
 }
 
-.circle {
+button.circle {
     font-size: 2em;
     width: 36px;
     height: 36px;
@@ -89,7 +89,7 @@ button.close:hover {
     margin: auto;
 }
 
-.large-button {
+button.large {
     padding: 0 20px;
     font-size: 1.5em;
 }

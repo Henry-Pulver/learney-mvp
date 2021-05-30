@@ -4,19 +4,20 @@
     {% load static %}
     <meta charset="UTF-8">
     <title>Learney</title>
-    <link rel="icon" href="{% static "images/favicon-32x32.png" %}">
-    <link rel="stylesheet" href="{% static "css/main.css" %}">
-    <link rel="stylesheet" href="{% static "css/buttons.css" %}">
-    <link rel="stylesheet" href="{% static "css/tooltip.css" %}">
-    <link rel="stylesheet" href="{% static "css/intro.css" %}">
+    <link rel="icon" href="{% static 'images/favicon-32x32.png' %}">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/buttons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tooltip.css' %}">
+    <link rel="stylesheet" href="{% static 'css/intro.css' %}">
+    <link rel="stylesheet" href="https://cdn.auth0.com/js/auth0-samples-theme/1.0/css/auth0-theme.min.css"/>
     <meta xmlns="http://www.w3.org/1999/xhtml">
     <meta name="title" property="og:title" content="Learney" />
-    <meta name="image" property="og:image" content="{% static "images/2021/05/19/learney_background.png" %}" />
+    <meta name="image" property="og:image" content="{% static 'images/2021/05/19/learney_background.png' %}" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="http://app.learney.me" />
     <meta name="description" property="og:description" content="The online learning platform designed to help you efficiently take your own path." />
 
-    <meta id="static-root" data-name="{% static "/" %}">
+    <meta id="static-root" data-name="{% static '/' %}">
 
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-PDX7JSVWKR"></script>
@@ -42,20 +43,52 @@
 </head>
 
 <body>
-{% csrf_token %}
+    {% csrf_token %}
     <div id="cy"></div>
+
+    <!--Profile stuff-->
+    <div class="overall-profile-div">
+
+        <div class="profile-image-container">
+            <div id="profile-image-button">
+                {% if auth0User != "" %}
+                <img class="profile-image" src="{{ auth0User.extra_data.picture }}" style="background-color:transparent;" alt="Profile Picture"/>
+                {% else %}
+                <img class="profile-image" src="{% static '/images/user.svg' %}" alt="Profile Picture"/>
+                {% endif %}
+            </div>
+        </div>
+        <div id="profile-div">
+            {% if auth0User != "" %}
+            <h2>Welcome, {{ userdata.name }}!</h2>
+            <h5 class="profile-email" >{{ auth0User.extra_data.email }}</h5>
+            <button onclick="location.href='/logout'">Logout</button>
+            {% else %}
+            <h2>Welcome!</h2>
+            <button class="large" onclick="location.href='/login/auth0'">Log In</button>
+            {% endif %}
+
+<!--                                <pre>{{ userdata }}</pre>-->
+<!--                        <pre>{{ userdata.name }}</pre>-->
+            <!--            <a class="btn btn-primary btn-lg btn-login btn-block" href="/login/auth0">Log In</a>-->
+            <!--            <a class="btn btn-primary btn-lg btn-logout btn-block" href="/logout">Logout</a>-->
+        </div>
+    </div>
+
+
     <div id="loading">
       <span class="fa fa-refresh fa-spin"></span>
     </div>
+
     <div class="intro-button-container">
-        <button class="large-button" id="introButton" >Intro</button>
+        <button class="large" id="introButton" >Intro</button>
     </div>
     <div class="feedback-buttons">
         <button class="circle" id="shiprightButton" onclick="window.open('https://shipright.community/learney', '_blank')">
-            <img src="{% static "images/feedback_icon.png" %}" id="feedbackIcon" alt="Feedback icon">
+            <img src="{% static 'images/feedback_icon.png' %}" id="feedbackIcon" alt="Feedback icon">
         </button>
         <button class="circle" id="slackButton" onclick="window.open('https://join.slack.com/t/learneyalphatesters/shared_invite/zt-q1rnj8tt-4895F06RAImSEDtMNE6sUg','_blank')">
-            <img src="{% static "images/slack_logo.png" %}" id="slackLogo" alt="Slack logo">
+            <img src="{% static 'images/slack_logo.png' %}" id="slackLogo" alt="Slack logo">
         </button>
         <button class="circle feedback" id="feedbackButton" onclick="window.open('mailto:henrypulver13@gmail.com?subject=Feedback about Learney&cc=matthewphillips5320@googlemail.com','_blank')">?</button>
     </div>
@@ -72,6 +105,6 @@
     <script src="https://unpkg.com/popper.js@1.14.4/dist/umd/popper.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/cytoscape-popper@1.0.2/cytoscape-popper.js"></script>
-    <script type="module" src="{% static "js/main.js" %}"></script>
+    <script type="module" src="{% static 'js/main.js' %}"></script>
 </body>
 </html>

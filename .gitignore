@@ -1,10 +1,11 @@
 *.idea
+pgadmin4/
 *.tsv
 assets/NodePositions.json
 assets/knowledge_graph.json
+**/auth0_conf.yaml
 **/dev_env.yaml
 **/link_preview_api_key.yaml
-pgadmin4/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
