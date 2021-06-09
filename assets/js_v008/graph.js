@@ -30,7 +30,7 @@ function initCy(then) {
         motionBlur: true,
         motionBlurOpacity: 0.1,
         maxZoom: 1.5,
-        minZoom: 0.2,
+        minZoom: 0.15,
         wheelSensitivity: 0.25,
     });
     // DO DAGRE FOR EACH SUBJECT
@@ -56,6 +56,7 @@ function initCy(then) {
 
     // Set initially learned or goal nodes
     initialiseGraphState();
+    document.getElementById("loading").style.display = "none";
 
     bindRouters();
 }

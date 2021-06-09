@@ -8,6 +8,12 @@ html, body {
   color: rgba(159, 159, 159, 0.62);
 }
 
+iframe{
+  border: none;
+  max-width: 100%;
+  max-height: 100%;
+}
+
 #cy {
   position: absolute;
   left: 0;
@@ -15,6 +21,7 @@ html, body {
   right: 0;
   bottom: 0;
   background: #000;
+  z-index: 0;
 }
 
 .top-toolbar {
@@ -70,17 +77,10 @@ html, body {
 
 #loading {
   position: absolute;
-  left: 0;
-  top: 50%;
-  width: 100%;
-  text-align: center;
-  margin-top: -0.5em;
-  font-size: 2em;
-  color: #fff;
-}
-
-#loading.loaded {
-  display: none;
+  left: 45%;
+  top: 43%;
+  width: 10%;
+  max-height: 14%;
 }
 
 body.has-start #clear {

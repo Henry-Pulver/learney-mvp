@@ -16,8 +16,8 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="http://app.learney.me" />
     <meta name="description" property="og:description" content="The online learning platform designed to help you efficiently take your own path." />
-
     <meta id="static-root" data-name="{% static '/' %}">
+    {{ userdata|json_script:"userdata" }}
 
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-PDX7JSVWKR"></script>
@@ -43,6 +43,9 @@
 </head>
 
 <body>
+    <div id="loading">
+        <iframe src="https://lottiefiles.com/iframe/8308-loading" scrolling="no"></iframe>
+    </div>
     {% csrf_token %}
     <div id="cy"></div>
 
@@ -54,7 +57,7 @@
                 {% if auth0User != "" %}
                 <img class="profile-image" src="{{ auth0User.extra_data.picture }}" style="background-color:transparent;" alt="Profile Picture"/>
                 {% else %}
-                <img class="profile-image" src="{% static '/images/user.svg' %}" alt="Profile Picture"/>
+                <img class="profile-image" src="{% static 'images/user.svg' %}" alt="Profile Picture"/>
                 {% endif %}
             </div>
         </div>
@@ -67,18 +70,11 @@
             <h2>Welcome!</h2>
             <button class="large" onclick="location.href='/login/auth0'">Log In</button>
             {% endif %}
-
-<!--                                <pre>{{ userdata }}</pre>-->
-<!--                        <pre>{{ userdata.name }}</pre>-->
-            <!--            <a class="btn btn-primary btn-lg btn-login btn-block" href="/login/auth0">Log In</a>-->
-            <!--            <a class="btn btn-primary btn-lg btn-logout btn-block" href="/logout">Logout</a>-->
         </div>
     </div>
 
 
-    <div id="loading">
-      <span class="fa fa-refresh fa-spin"></span>
-    </div>
+
 
     <div class="intro-button-container">
         <button class="large" id="introButton" >Intro</button>
@@ -105,6 +101,6 @@
     <script src="https://unpkg.com/popper.js@1.14.4/dist/umd/popper.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/cytoscape-popper@1.0.2/cytoscape-popper.js"></script>
-    <script type="module" src="{% static 'js/main.js' %}"></script>
+    <script type="module" src="{% static 'js_v008/main.js' %}"></script>
 </body>
 </html>

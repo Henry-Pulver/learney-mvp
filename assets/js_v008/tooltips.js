@@ -1,6 +1,6 @@
 import {onLearnedSliderClick, learnedNodes, onSetGoalSliderClick, goalNodes} from "./learningAndPlanning.js";
 import {removeIntroTippy} from "./intro.js";
-import {getValidURLs, createTipElement, initialiseFromStorage, saveToStorage} from "./utils.js";
+import {getValidURLs, createTipElement, initialiseFromStorage, saveToStorage, logContentClick, userId} from "./utils.js";
 
 var shownTippy;
 
@@ -55,6 +55,7 @@ function removeTippy(){
                 url : "api/v0/votes",
                 type : "POST",
                 data : {
+                    user_id: userId,
                     concept: selectedNode.data().name,
                     url: url,
                     vote: sessionVotes[url],
@@ -110,7 +111,7 @@ function voteFunction(up, url, vote_arrow) {
             thisCheckbox.checked = true;
             // SEND INFO TO DATABASE
         }
-        saveToStorage(votesKeyName, sessionVotes);
+        saveToStorage(votesKeyName, sessionVotes, false);
     }
 }
 
@@ -154,6 +155,7 @@ function createLinkPreviewArray (nodeName, urls) {
             "class": "link-preview",
             "target": "_blank"
         }, [linkImageContainer, linkTextContainer]);
+        link.onclick = function(){logContentClick(urls[i])};
         let linkElement = createTipElement("li", {"class": "link-preview-list-element"}, [link, createContentVotingHTML(urls[i])]);
 
         linkArray.push(linkElement);
