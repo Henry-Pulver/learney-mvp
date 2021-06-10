@@ -28,7 +28,7 @@ with open("dev_env.yaml", "r") as env_file:
 SECRET_KEY = dev_secrets_dict["SECRET_KEY"]
 
 PYTHON_ENV = os.environ.get("PYTHON_ENV", "dev")
-DEBUG = PYTHON_ENV in ["production", "staging"]
+DEBUG = PYTHON_ENV not in ["production", "staging"]
 
 ALLOWED_HOSTS = [
     # prod url
@@ -187,6 +187,9 @@ if PYTHON_ENV == "production":
     SECURE_SSL_REDIRECT = True
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 518400
+    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
