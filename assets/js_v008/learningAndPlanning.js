@@ -41,7 +41,7 @@ function onLearnedSliderClick(node) {
                 checkEdgeLearned(edge);
             });
         }
-        saveToStorage(learnedNodesString, learnedNodes);
+        saveToStorage(learnedNodesString, learnedNodes, true);
     }
 }
 
@@ -94,23 +94,31 @@ function onSetGoalSliderClick(node) {
             // If unsetting a goal, remove path from its predecessors and recalculate path to remaining goals
             unsetGoal(node);
         }
-        saveToStorage(goalNodesString, goalNodes);
+        saveToStorage(goalNodesString, goalNodes, true);
     }
 }
 
 function initialiseGraphState() {
     for (const nodeId in learnedNodes) {
-        let node = cy.nodes("[id = '" + nodeId + "']");
-        if (learnedNodes[nodeId]) {
-            nodeLearned(node);
-            node.connectedEdges().forEach(function(edge) {
-                checkEdgeLearned(edge);
-            });
+        let node = cy.nodes(`[id = '${nodeId}']`);
+        if (node.data() !== undefined){
+            if (learnedNodes[nodeId] === true) {
+                nodeLearned(node);
+                node.connectedEdges().forEach(function(edge) {
+                    checkEdgeLearned(edge);
+                });
+            }
+        } else {
+            delete learnedNodes[nodeId];
         }
     }
     for (const nodeId in goalNodes) {
         let node = cy.nodes("[id = '" + nodeId + "']");
-        setGoal(node);
+        if (node.data() !== undefined) {
+            setGoal(node);
+        } else{
+            delete goalNodes[nodeId];
+        }
     }
 }
 

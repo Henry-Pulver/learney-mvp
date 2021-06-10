@@ -64,7 +64,7 @@ if __name__ == "__main__":
         "-o",
         "--output_path",
         type=str,
-        default="positions_knowledge_graph.json",
+        default="positions_knowledge_graph_v008.json",
         help=".json filename to save output to",
     )
     args = parser.parse_args()

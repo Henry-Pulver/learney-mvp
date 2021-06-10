@@ -15,6 +15,7 @@ class ContentLinkPreview(models.Model):
 class ContentVote(models.Model):
     concept = models.TextField()
     url = models.URLField()
+    user_id = models.TextField(default="")
 
     vote = models.BooleanField()
 

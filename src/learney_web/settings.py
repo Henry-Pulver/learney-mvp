@@ -92,6 +92,10 @@ INSTALLED_APPS = [
     "social_django",
     "auth0login",
     "learney_backend",
+    "goals",
+    "learned",
+    "link_clicks",
+    "page_visits",
     "rest_framework",
 ]
 
