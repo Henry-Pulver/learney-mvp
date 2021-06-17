@@ -25,7 +25,7 @@ iframe{
 }
 
 .top-toolbar {
-  position: absolute;
+  position: absolute; 
   right: 0;
 }
 
@@ -81,20 +81,4 @@ iframe{
   top: 43%;
   width: 10%;
   max-height: 14%;
-}
-
-body.has-start #clear {
-  visibility: visible;
-}
-
-body.has-start:not(.has-end) #end {
-  display: inline;
-}
-
-body.has-start:not(.has-end) #start {
-  display: none;
-}
-
-body.calc #loading {
-  display: block;
 }

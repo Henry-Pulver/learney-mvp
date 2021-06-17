@@ -1,12 +1,15 @@
 import { LightenDarkenColor } from "./utils.js"
 import { makeTippy, removeTippy } from "./tooltips.js"
 import { initialiseGraphState, goalNodes, pathNodes, learnedNodes } from "./learningAndPlanning.js";
+import { setupSearch } from "./search.js";
 
 const fieldOpacity = 0.7;
 const lowestConceptOpacity = 0.4;
 
 var initialPan;
 var initialZoom;
+
+var selectedNodeID = Infinity;
 
 function initCy(then) {
     /** Initialise Cytoscape graph.*/
@@ -59,6 +62,7 @@ function initCy(then) {
     document.getElementById("loading").style.display = "none";
 
     bindRouters();
+    setupSearch(elements);
 }
 
 // BUTTONS
@@ -98,11 +102,13 @@ function getConceptNodeOpacity(node, normalOpacity) {
 
 function resizeNodes(nodes, newBaseSize) {
     nodes.forEach( function(node) {
-        let nodeSize = node.data().relative_importance * newBaseSize;
-        node.style("width", nodeSize.toString() + "px");
-        node.style("height", nodeSize.toString() + "px");
-        let fontSize = 1.25 * node.data().relative_importance * 1.5;
-        node.style("font-size", fontSize.toString() + "em");
+        if (node.data().id !== selectedNodeID) {
+            let nodeSize = node.data().relative_importance * newBaseSize;
+            node.style("width", nodeSize.toString() + "px");
+            node.style("height", nodeSize.toString() + "px");
+            let fontSize = 1.25 * node.data().relative_importance * 1.5;
+            node.style("font-size", fontSize.toString() + "em");
+        }
     });
 }
 
@@ -114,7 +120,7 @@ function setGraphOpacity(nodes, multiplicativeFactor) {
 function setNodeOpacity(nodes, multiplicativeFactor) {
     nodes.forEach( function(node) {
         let nId = node.data().id;
-        if (nId in learnedNodes || nId in pathNodes || nId in goalNodes){
+        if (nId in learnedNodes || nId in pathNodes || nId in goalNodes || nId === selectedNodeID){
             node.style("opacity", 1);
         } else{
             node.style("opacity", Math.min(getConceptNodeOpacity(node, lowestConceptOpacity) * multiplicativeFactor, 1));
@@ -126,8 +132,8 @@ function setEdgeOpacity(edges, multiplicativeFactor) {
     edges.forEach( function (edge) {
         let sId = edge.source().data().id;
         let tId = edge.target().data().id;
-        let sourceMaxOpacity = sId in learnedNodes || sId in pathNodes || sId in goalNodes;
-        let targetMaxOpacity = tId in learnedNodes || tId in pathNodes || tId in goalNodes;
+        let sourceMaxOpacity = sId in learnedNodes || sId in pathNodes || sId in goalNodes || sId === selectedNodeID;
+        let targetMaxOpacity = tId in learnedNodes || tId in pathNodes || tId in goalNodes || tId === selectedNodeID;
         if (sourceMaxOpacity && targetMaxOpacity){
             edge.style("opacity", 1);
         } else{
@@ -155,6 +161,7 @@ function bindRouters() {
     // Removes tooltip when clicking elsewhere/panning/zooming
     cy.on('tap pan zoom', function (e) {
         if (e.target === cy) {
+            selectedNodeID = Infinity;
             removeTippy();
         }
     });
@@ -223,8 +230,11 @@ function bindRouters() {
     cy.on('tap', 'node[nodetype = "concept"]', function (e) {
         let concept = e.target;
         cy.animate({ fit: {eles: concept.neighborhood(), padding: 50}, duration: 400, complete: function () {
-                // closeIntro();
                 makeTippy(concept);
+                let previousSelectedNodeID = selectedNodeID;
+                selectedNodeID = concept.data().id;
+                unhighlightNodes(cy.nodes(`[id="${previousSelectedNodeID}"]`))
+                highlightNodes(concept, true);
         }});
     });
 
