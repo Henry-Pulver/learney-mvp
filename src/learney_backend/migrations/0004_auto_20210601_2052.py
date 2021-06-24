@@ -6,23 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('learney_backend', '0003_alter_contentvote_url'),
+        ("learney_backend", "0003_alter_contentvote_url"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contentlinkpreview',
-            name='description',
+            model_name="contentlinkpreview",
+            name="description",
             field=models.TextField(blank=True),
         ),
         migrations.AlterField(
-            model_name='contentlinkpreview',
-            name='image_url',
+            model_name="contentlinkpreview",
+            name="image_url",
             field=models.URLField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='contentlinkpreview',
-            name='title',
+            model_name="contentlinkpreview",
+            name="title",
             field=models.TextField(blank=True),
         ),
     ]

@@ -1,17 +1,14 @@
-from argparse import ArgumentParser
 import json
+from argparse import ArgumentParser
 from pathlib import Path
 from typing import Dict, List
 
 JSON_GRAPH_DICT = Dict[str, List[Dict[str, Dict[str, str]]]]
 
 
-def convert_tsv_to_json(
-    graph_json_path: Path, node_position_path: Path
-) -> JSON_GRAPH_DICT:
-    """
-    Add the positions from one .json to a knowledge graph .json that can be consumed by
-     cytoscape.js
+def convert_tsv_to_json(graph_json_path: Path, node_position_path: Path) -> JSON_GRAPH_DICT:
+    """Add the positions from one .json to a knowledge graph .json that can be consumed by
+    cytoscape.js.
 
     Args:
         graph_json_path: path to .json file to add positions to
@@ -43,9 +40,7 @@ def convert_tsv_to_json(
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(
-        "Convert a .tsv to a .json for visualisation by cytoscape.js"
-    )
+    parser = ArgumentParser("Convert a .tsv to a .json for visualisation by cytoscape.js")
     parser.add_argument(
         "-g",
         "--graph_json_path",
@@ -73,9 +68,7 @@ if __name__ == "__main__":
     json_save_path.parent.mkdir(exist_ok=True, parents=True)
     with json_save_path.open("w") as json_save_file:
         json.dump(
-            convert_tsv_to_json(
-                Path(args.graph_json_path), Path(args.node_position_path)
-            ),
+            convert_tsv_to_json(Path(args.graph_json_path), Path(args.node_position_path)),
             json_save_file,
         )
         print(f"Successfully saved to {json_save_path}")

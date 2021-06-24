@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('learney_backend', '0005_contentvote_user_id'),
+        ("learney_backend", "0005_contentvote_user_id"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contentvote',
-            name='concept',
+            model_name="contentvote",
+            name="concept",
             field=models.TextField(),
         ),
     ]

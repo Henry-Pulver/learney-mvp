@@ -2,7 +2,7 @@ import "./crsf.js"
 import { initCy } from "./graph.js"
 import { makeMouseoverTippy } from "./iconsAndButtons.js";
 import { showIntroTippy, toggleIntro } from "./intro.js";
-import { logPageView } from "./utils.js";
+import { logPageView, updateQuestionAnswerUsers } from "./utils.js";
 
 logPageView();
 
@@ -38,3 +38,5 @@ Promise.all([fetch(`${staticFileLocation}introSlides_v009.json`).then(toJson)]).
 $(document).ready(function(){
     Promise.all([styleP, graphP]).then(initCy);
 })
+
+updateQuestionAnswerUsers();

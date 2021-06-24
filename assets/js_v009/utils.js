@@ -176,9 +176,9 @@ function initialiseFromStorage(name) {
     }
 }
 
-function saveToStorage(name, object, saveToDB) {
+function saveToStorage(name, object, saveItToDB) {
     localStorage.setItem(name, JSON.stringify(object));
-    if (userId !== undefined && saveToDB === true) {
+    if (userId !== undefined && saveItToDB === true) {
         saveToDB(name, object);
     }
 }
@@ -235,4 +235,16 @@ function logContentClick(url) {
     });
 }
 
-export {LightenDarkenColor, getValidURLs, createTipElement, initialiseFromStorage, saveToStorage, logPageView, logContentClick, userId};
+function updateQuestionAnswerUsers() {
+    if (userId !== "default_user_id") {
+      $.ajax({
+        url : "/api/v0/add_user",
+        type : "PUT",
+        data : {email: userId, userOnLearney: true},
+        success : ajaxSuccess,
+        error : ajaxError
+      });
+    }
+}
+
+export {LightenDarkenColor, getValidURLs, createTipElement, initialiseFromStorage, saveToStorage, logPageView, logContentClick, updateQuestionAnswerUsers, userId};

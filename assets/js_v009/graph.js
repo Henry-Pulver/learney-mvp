@@ -66,10 +66,18 @@ function initCy(then) {
 }
 
 // BUTTONS
-document.getElementById("resetPan").onclick = resetPan
+document.getElementById("resetPan").onclick = resetPan;
+document.onkeypress = function(e) {
+    if (document.activeElement !== document.getElementsByClassName("select2-search__field")[0]){
+        if (e.code === "KeyC"){
+            resetPan();
+        }
+    }
+};
 function resetPan() {
-    cy.animate({zoom: initialZoom, pan: initialPan, duration: 400});
+    cy.animate({zoom: initialZoom, pan: initialPan, duration: 400, easing: "ease-in-out"});
 }
+
 
 // REMOVE FOR PROD
 // document.getElementById("captureLayout").onclick = captureLayout
@@ -229,7 +237,7 @@ function bindRouters() {
     // Show tooltip when clicked
     cy.on('tap', 'node[nodetype = "concept"]', function (e) {
         let concept = e.target;
-        cy.animate({ fit: {eles: concept.neighborhood(), padding: 50}, duration: 400, complete: function () {
+        cy.animate({ fit: {eles: concept.neighborhood(), padding: 50}, duration: 400, easing: "ease-in-out", complete: function () {
                 makeTippy(concept);
                 let previousSelectedNodeID = selectedNodeID;
                 selectedNodeID = concept.data().id;
@@ -240,12 +248,12 @@ function bindRouters() {
 
     cy.on("tap", "node[nodetype = \"field\"]", function(e) {
         let field = e.target;
-        cy.animate({fit: {eles: field, padding: 25}, duration: 400});
+        cy.animate({fit: {eles: field, padding: 25}, duration: 400, easing: "ease-in-out"});
     });
 
     cy.on("tap", "edge", function(e) {
         let edge = e.target;
-        cy.animate({fit: {eles: edge.connectedNodes(), padding: 50}, duration: 400});
+        cy.animate({fit: {eles: edge.connectedNodes(), padding: 50}, duration: 400, easing: "ease-in-out"});
     });
 }
 

@@ -1,4 +1,4 @@
-import { initialiseFromStorage, saveToStorage } from "./utils.js";
+import { initialiseFromStorage, saveToStorage, updateQuestionAnswerUsers } from "./utils.js";
 
 
 const learnedNodesString = "learnedNodes";
@@ -95,6 +95,7 @@ function onSetGoalSliderClick(node) {
             unsetGoal(node);
         }
         saveToStorage(goalNodesString, goalNodes, true);
+        updateQuestionAnswerUsers();
     }
 }
 
