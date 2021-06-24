@@ -171,13 +171,20 @@ class QuestionsView(APIView):
         print("QUESTIONS GET RECEIVED")
         # Work out who to send questions to at this time
         nearest_half_hour = get_nearest_half_hour(datetime.utcnow().time())
-        users_to_send_to = SlackBotUserModel.objects.filter(
+        users_to_maybe_send_to = SlackBotUserModel.objects.filter(
             utc_time_to_send=nearest_half_hour, active=True
         )
+
+        users_to_send_to = []
+        for user in users_to_maybe_send_to:
+            if has_just_run(SlackBotUserModel.objects.get(slack_user_id=user.slack_user_id)):
+                print(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+            else:
+                users_to_send_to.append(user)
         print(f"Sending to {len(users_to_send_to)} users")
         send_questions(users_to_send_to)
         return Response(
-            f"Questions sent to {users_to_send_to.count()} users", status=status.HTTP_200_OK
+            f"Questions sent to {len(users_to_send_to)} users", status=status.HTTP_200_OK
         )
 
 

@@ -34,7 +34,7 @@ def has_just_run(user_model: SlackBotUserModel) -> bool:
         return False
 
 
-def send_questions(users_to_send_to: QuerySet, force: bool = False) -> None:
+def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = False) -> None:
     """Sends questions all."""
     slack_client = SlackWebClient(settings.SLACK_TOKEN)
     notion_client = NotionClient(auth=settings.NOTION_KEY)
