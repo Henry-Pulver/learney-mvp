@@ -174,10 +174,11 @@ class QuestionsView(APIView):
         users_to_send_to = SlackBotUserModel.objects.filter(
             utc_time_to_send=nearest_half_hour, active=True
         )
-        print(users_to_send_to)
-        print(SlackBotUserModel.objects.filter(utc_time_to_send=nearest_half_hour))
+        print(f"Sending to {len(users_to_send_to)} users")
         send_questions(users_to_send_to)
-        return Response("Questions sent", status=status.HTTP_200_OK)
+        return Response(
+            f"Questions sent to {users_to_send_to.count()} users", status=status.HTTP_200_OK
+        )
 
 
 class FeedbackView(APIView):

@@ -35,15 +35,12 @@ def has_just_run(user_model: SlackBotUserModel) -> bool:
 
 
 def send_questions(users_to_send_to: QuerySet, force: bool = False) -> None:
+    """Sends questions all."""
     slack_client = SlackWebClient(settings.SLACK_TOKEN)
     notion_client = NotionClient(auth=settings.NOTION_KEY)
 
     for user_model in users_to_send_to:
         print(f"USER: {user_model.user_id}")
-        if not user_model.active:
-            print(f"{user_model.user_id} is inactive - returning")
-            return
-
         # Check whether previous questions were answered
         all_questions_asked = AnswerModel.objects.filter(user_id=user_model.user_id)
         first_time = all_questions_asked.count() == 0
@@ -66,12 +63,15 @@ def send_questions(users_to_send_to: QuerySet, force: bool = False) -> None:
                     text=Messages.no_goals(),
                 )
                 return
-            user_learned = LearnedModel.objects.filter(user_id=user_model.user_id).latest(
-                "last_updated"
+            user_learned_data = LearnedModel.objects.filter(user_id=user_model.user_id)
+            learned_concepts = (
+                user_learned_data.latest("last_updated").learned_concepts
+                if user_learned_data.count() > 0
+                else {}
             )
             map_status = MapStatus(
                 goal_dict=user_goals.goal_concepts,
-                learned_dict=user_learned.learned_concepts,
+                learned_dict=learned_concepts,
             )
 
             # Find the main concepts questions were asked about previously
@@ -125,7 +125,7 @@ def send_questions(users_to_send_to: QuerySet, force: bool = False) -> None:
             ]
 
             # Choose which concepts each question will come from
-            question_concepts_chosen = []
+            question_concepts_chosen: List[str] = []
             while (
                 len(question_concepts_chosen) < user_model.num_questions_per_day
                 and len(ordered_concept_ids) > 0
