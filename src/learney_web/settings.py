@@ -37,6 +37,7 @@ ALLOWED_HOSTS = [
     # prod aws
     "learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
     "172.31.8.139",
+    "172.31.13.26",
     # staging aws
     "staging-learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
     "172.31.39.124",
@@ -200,7 +201,7 @@ STATIC_ROOT = str(BASE_DIR / "static")
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Load content json in once
-with open(f"{STATICFILES_DIRS[0]}/positions_knowledge_graph_v009.json", "r") as content_json_file:
+with open(f"{STATICFILES_DIRS[0]}/positions_knowledge_graph_v010.json", "r") as content_json_file:
     CONTENT_JSON = json.load(content_json_file)
 
 PREDECESSOR_DICT = get_predecessor_dict(CONTENT_JSON)
