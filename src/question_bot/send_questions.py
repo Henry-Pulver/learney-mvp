@@ -255,7 +255,9 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
             # End message
             slack_client.chat_postMessage(
                 channel=user_model.slack_user_id,
-                text=Messages.question_end(user_model.num_questions_per_day),
+                text=Messages.question_end(
+                    user_model.relative_question_time, user_model.num_questions_per_day
+                ),
             )
         else:  # Previous day's questions not answered
             slack_client.chat_postMessage(

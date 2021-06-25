@@ -111,6 +111,13 @@ class QuestionUserView(APIView):
         )
         if serializer.is_valid():
             serializer.save()
+            user = SlackBotUserModel.objects.get(user_id=user_email)
+            if has_just_run(user):
+                print(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+                logging.debug(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+            else:
+                logging.debug(f"Sending to {user.user_id}")
+                send_questions([user])
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -135,6 +142,14 @@ class QuestionUserView(APIView):
                                 channel=user.slack_user_id,
                                 text=Messages.signup_complete(user.relative_question_time),
                             )
+                            if has_just_run(user):
+                                print(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+                                logging.debug(
+                                    f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING"
+                                )
+                            else:
+                                logging.debug(f"Sending to {user.user_id}")
+                                send_questions([user])
                         user.goal_set = True
                         user.active = user.on_slack
                         user.save()
@@ -248,6 +263,14 @@ class FeedbackView(APIView):
                         channel=user_model.slack_user_id,
                         text=Messages.signup_complete(user_model.relative_question_time),
                     )
+                    if has_just_run(user_model):
+                        print(f"{user_model.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+                        logging.debug(
+                            f"{user_model.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING"
+                        )
+                    else:
+                        logging.debug(f"Sending to {user_model.user_id}")
+                        send_questions([user_model])
             except ObjectDoesNotExist:
                 print(f'NO SLACK USER WITH EMAIL {event_data["user"]["profile"]["email"]} EXISTS')
             return Response("User joined Slack", status=status.HTTP_200_OK)

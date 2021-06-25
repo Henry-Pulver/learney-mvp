@@ -1,5 +1,4 @@
 from random import choice
-from typing import Optional
 
 from question_bot.utils import AnswerOutcome
 
@@ -41,7 +40,8 @@ class Messages:
             "Last thing! I promise! :pray:\n\n"
             "All you need to do is set a goal on Learney! :goal_net:\n\n"
             "Click a concept on the interactive Knowledge Map and click *Set Goal*\n\n"
-            ":point_right: https://app.learney.me/dashboard :point_left:"
+            ":point_right: https://app.learney.me/dashboard :point_left:\n\n"
+            "*Refresh the page when you're done if you don't get a 'Signup complete' message* :smile:"
         )
 
     @classmethod
@@ -80,9 +80,9 @@ class Messages:
         )
 
     @staticmethod
-    def question_end(num_questions: int = 5) -> str:
+    def question_end(relative_time_str: str, num_questions: int = 5) -> str:
         return (
-            "Answer them by this time tomorrow for your next set of questions! :smile:\n\n"
+            f"Answer them by the next time the clock strikes {relative_time_str} for your next set of questions! :smile:\n\n"
             "If these questions aren't right for you, send *Too Hard*, *Too Easy* or *Bored* in chat "
             f"to get a new set of {num_questions} questions better suited to you."
         )
