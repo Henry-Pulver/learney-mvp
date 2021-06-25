@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -177,11 +178,13 @@ class QuestionsView(APIView):
 
         users_to_send_to = []
         for user in users_to_maybe_send_to:
-            if has_just_run(SlackBotUserModel.objects.get(slack_user_id=user.slack_user_id)):
+            if has_just_run(user):
                 print(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+                logging.debug(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
             else:
+                logging.debug(f"{user.user_id} A USER TO SEND TO")
                 users_to_send_to.append(user)
-        print(f"Sending to {len(users_to_send_to)} users")
+        logging.debug(f"Sending to {len(users_to_send_to)} users")
         send_questions(users_to_send_to)
         return Response(
             f"Questions sent to {len(users_to_send_to)} users", status=status.HTTP_200_OK
