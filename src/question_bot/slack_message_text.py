@@ -30,7 +30,7 @@ class Messages:
     def not_on_learney(cls, relative_time_str: str) -> str:
         return (
             "Oh no! It seems you haven't made an account on the Learney platform yet!\n\n"
-            "*Create an account here using the same email you used to sign up to Slack:* "
+            "*Create an account* here using the *SAME EMAIL you used to sign up to Slack:* "
             ":point_right: https://app.learney.me/dashboard :point_left: and *set your learning goals* "
             f":goal_net: and *what you know* to receive your questions at {relative_time_str}.\n\n {cls._reach_out()}"
         )
