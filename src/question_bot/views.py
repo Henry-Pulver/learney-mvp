@@ -22,6 +22,7 @@ from question_bot.utils import (
     get_first_name,
     get_nearest_half_hour,
     get_utc_time_to_send,
+    is_on_learney,
 )
 
 
@@ -64,9 +65,9 @@ class QuestionUserView(APIView):
             )
 
         # Check if user is signed up to learney
-        on_learney = PageVisitModel.objects.filter(user_id=user_email).count() > 0
+        on_learney = is_on_learney(user_email)
         if on_learney:
-            print("On learney!")
+            print("On Learney!")
             goals_set = GoalModel.objects.filter(user_id=user_email).count() > 0
             if not goals_set:
                 slack_client.chat_postMessage(
