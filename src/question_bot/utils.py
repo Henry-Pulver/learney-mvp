@@ -97,7 +97,7 @@ def numeric_answer_to_float(answer: str):
 
 
 def get_nearest_half_hour(t: time):
-    rounded_hour = round(t.hour + t.minute / 60)
+    rounded_hour = round(t.hour + (t.minute - 15) / 60) % 24
     return time(rounded_hour, 30 * (round((t.minute + t.second / 60) / 30) % 2))
 
 

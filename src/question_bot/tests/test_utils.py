@@ -7,7 +7,14 @@ from question_bot.utils import MapStatus, get_nearest_half_hour, get_utc_time_to
 
 
 @pytest.mark.parametrize(
-    "t,expected_output", [(time(1, 46), time(2, 0)), (time(17, 23), time(17, 30))]
+    "t,expected_output",
+    [
+        (time(1, 46), time(2, 0)),
+        (time(17, 23), time(17, 30)),
+        (time(9, 30), time(9, 30)),
+        (time(23, 0), time(23, 0)),
+        (time(23, 46), time(0, 0)),
+    ],
 )
 def test_get_nearest_half_hour(t: time, expected_output: time):
     assert get_nearest_half_hour(t) == expected_output
@@ -29,8 +36,8 @@ def test_get_utc_time_to_send(time_str: str, time_difference: str, expected_outp
     "goals,learned,expected_output",
     [
         ({}, {}, set()),
-        ({"11": True}, {}, {"9", "10", "11"}),
-        ({"11": True}, {"9": True}, {"10", "11"}),
+        ({"11": True}, {}, {"9", "10", "11", "20", "17"}),
+        ({"11": True}, {"9": True}, {"10", "11", "20", "17"}),
     ],
 )
 def test_get_concepts_to_learn(
@@ -41,7 +48,7 @@ def test_get_concepts_to_learn(
 
 @pytest.mark.parametrize(
     "goals,learned,expected_output",
-    [({}, {}, set()), ({"11": True}, {}, {"9"}), ({"11": True}, {"9": True}, {"10"})],
+    [({}, {}, set()), ({"11": True}, {}, {"9", "17"}), ({"11": True}, {"9": True}, {"17"})],
 )
 def test_get_next_concepts(
     goals: Dict[str, bool], learned: Dict[str, bool], expected_output: Set[str]
