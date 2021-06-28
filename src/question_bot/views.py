@@ -13,7 +13,7 @@ from learney_web import settings
 from page_visits.models import PageVisitModel
 from question_bot.models import AnswerModel, SlackBotUserModel
 from question_bot.process_slack_messages import DifficultyChange, string_to_difficulty
-from question_bot.send_questions import has_just_run, send_questions
+from question_bot.send_questions import get_days_until_end, has_just_run, send_questions
 from question_bot.serializers import SlackBotUserSerializer
 from question_bot.slack_message_text import Messages
 from question_bot.utils import (
@@ -24,6 +24,16 @@ from question_bot.utils import (
     get_utc_time_to_send,
     is_on_learney,
 )
+
+
+def deactivate_user(user: SlackBotUserModel):
+    user.active = False
+    user.active_since = None
+    user.save()
+    WebClient(settings.SLACK_TOKEN).chat_postMessage(
+        channel=user.slack_user_id,
+        text=Messages.end_of_trial(),
+    )
 
 
 class QuestionUserView(APIView):
@@ -106,7 +116,7 @@ class QuestionUserView(APIView):
                 on_learney=on_learney,
                 goal_set=goals_set,
                 active=on_slack and on_learney and goals_set,
-                active_since=date.today() if on_slack and on_learney else None,
+                active_since=date.today() if on_slack and on_learney and goals_set else None,
                 paid=False,
             )
         )
@@ -153,6 +163,7 @@ class QuestionUserView(APIView):
                                 send_questions([user])
                         user.goal_set = True
                         user.active = user.on_slack
+                        user.active_since = date.today() if user.on_slack else None
                         user.save()
                 return Response(
                     f"Q&A user with email {user_email} already exists",
@@ -201,16 +212,12 @@ class QuestionsView(APIView):
             else:
                 logging.debug(f"{user.user_id} A USER TO SEND TO")
                 # Should this user still be active?
-                if not user.paid and AnswerModel.objects.filter(answered=True).count() >= 20:
-                    user.active = False
-                    user.save()
-                    WebClient(settings.SLACK_TOKEN).chat_postMessage(
-                        channel=user.slack_user_id,
-                        text=Messages.end_of_pilot(),
-                    )
+                if get_days_until_end(user) <= 0 and not user.paid:
+                    deactivate_user(user)
                 else:
                     users_to_send_to.append(user)
         logging.debug(f"Sending to {len(users_to_send_to)} users")
+
         send_questions(users_to_send_to)
         return Response(
             f"Questions sent to {len(users_to_send_to)} users", status=status.HTTP_200_OK
@@ -250,6 +257,9 @@ class FeedbackView(APIView):
                 user_model.slack_user_id = event_data["user"]["id"]
                 user_model.on_slack = True
                 user_model.active = user_model.on_learney and user_model.goal_set
+                user_model.active_since = (
+                    date.today() if user_model.on_learney and user_model.goal_set else None
+                )
                 user_model.save()
 
                 slack_client.chat_postMessage(

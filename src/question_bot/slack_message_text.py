@@ -12,8 +12,8 @@ class Messages:
             f"Hello {firstname}! :wave:\n\n"
             "*Congratulations* for signing up for the *Learney 0.1.0 Trial*! :tada:\n\n"
             "You smart. You wise. :brain:\n\n"
-            "*How it works:* every day I'll send you questions on this Slack channel *personalised, given your goals"
-            " and knowledge set in the Knowledge Map* :world_map:\n\n"
+            "*How it works:* every day for a week I'll send you questions on this Slack channel "
+            "*personalised, given your goals and knowledge set in the Knowledge Map* :world_map:\n\n"
             "Just checking you have everything set up... :thinking_face:"
         )
 
@@ -80,10 +80,20 @@ class Messages:
         )
 
     @staticmethod
-    def question_end(relative_time_str: str, num_questions: int = 5) -> str:
+    def question_end(
+        relative_time_str: str, days_until_end_of_trial: int, paid: bool, num_questions: int = 5
+    ) -> str:
+        message = (
+            f"Answer them before it's next {relative_time_str} for more questions! :muscle:\n\n"
+        )
+        message += (
+            f"You have {days_until_end_of_trial} until the end of the trial! :smile:\n\n"
+            if not paid
+            else ""
+        )
         return (
-            f"Answer them by the next time the clock strikes {relative_time_str} for your next set of questions! :smile:\n\n"
-            "If these questions aren't right for you, send *Too Hard*, *Too Easy* or *Bored* in chat "
+            message
+            + "If these questions aren't right for you, send *Too Hard*, *Too Easy* or *Bored* in chat "
             f"to get a new set of {num_questions} questions better suited to you."
         )
 
@@ -103,16 +113,24 @@ class Messages:
     ]
 
     @classmethod
-    def no_answers_received(cls, num_questions: int = 5) -> str:
-        return (
+    def no_answers_received(
+        cls, days_until_end_of_trial: int, paid: bool, num_questions: int = 5
+    ) -> str:
+        message = (
             "Uh-oh! We didn't receive your answers. :disappointed:\n\n"
             f"{choice(cls.POTENTIAL_NO_ANSWERS_ONE_LINER)}\n\n"
             "Was it because they were the wrong difficulty? :thinking_face:\n\n"
             f"If so, send *Too Hard*, *Too Easy* or *Bored* to get a new set of {num_questions} "
             f"questions. :question:\n\n"
             f"Otherwise, answer the previous questions we sent and we'll send you {num_questions} "
-            f"more this time tomorrow! :alarm_clock:"
+            f"more this time tomorrow! :alarm_clock:\n\n"
         )
+        message += (
+            f"You have {days_until_end_of_trial} until the end of the trial! :smile:"
+            if not paid
+            else ""
+        )
+        return message
 
     @staticmethod
     def correct_incorrect_message(correct: AnswerOutcome, correct_answer: str) -> str:
@@ -131,15 +149,30 @@ class Messages:
             )
 
     @staticmethod
-    def end_of_pilot() -> str:
+    def twenty_questions_answered() -> str:
         return (
-            "You've now answered 20 questions! Congrats! :tada:\n\n"
-            "We really hope you found it useful! :pray:\n\n"
-            f"We would *love to hear your thoughts* on the question-answer through Slack in a quick call - "
+            "You've answered 20 questions! Congrats! :tada:\n\n"
+            "We really hope you're finding this useful! :pray:\n\n"
+            "We would *love to hear your thoughts* on this Slackbot in a quick call - "
             "pick a slot that suits you on here:\nhttps://calendly.com/mgphillips/30min\n"
             "Or here:\nhttps://calendly.com/henrypulver/learney\n\n"
-            f"We can extend this, reach out to <@{FOUNDER_SLACK_IDS[0]}> or <@{FOUNDER_SLACK_IDS[1]}>! :smile:\n\n"
+            "We can also discuss extending this trial beyond the initial week :smile:"
         )
+
+    @staticmethod
+    def end_of_trial() -> str:
+        return (
+            f"That's it! The week of Learney v0.1.0 Early Access is up!\n\n"
+            f"We would *love to hear your thoughts* on it in a quick call - "
+            "pick a slot that suits you on here:\nhttps://calendly.com/mgphillips/30min\n"
+            "Or here:\nhttps://calendly.com/henrypulver/learney\n\n"
+            f"Also if you'd like the Slackbot to start up again, reach out to <@{FOUNDER_SLACK_IDS[0]}> or "
+            f"<@{FOUNDER_SLACK_IDS[1]}> and we can sort something out! :smile:"
+        )
+
+    @staticmethod
+    def twenty_questions_founders(email: str) -> str:
+        return f"{email} has answered 20 questions and it's now time to give them a call!"
 
     @staticmethod
     def too_easy() -> str:

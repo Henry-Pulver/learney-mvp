@@ -1,10 +1,9 @@
 import random
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import List
 
 import numpy as np
-from django.db.models.query import QuerySet
 from slack_sdk import WebClient as SlackWebClient
 
 from goals.models import GoalModel
@@ -17,8 +16,13 @@ from question_bot.slack_message_text import FOUNDER_SLACK_IDS, Messages
 from question_bot.utils import MapStatus, get_concepts_asked_about
 
 CONCEPTS_NOTION_DB_ID = "e35066c7-0117-4c82-bb21-4ce579db798a"
+INITIAL_TRIAL_LENGTH = 7  # days
 
 QUESTION_NUMBER_EMOJIS = [":one:", ":two:", ":three:", ":four:", ":five:"]
+
+
+def get_days_until_end(user: SlackBotUserModel) -> int:
+    return (user.active_since + timedelta(days=INITIAL_TRIAL_LENGTH) - date.today()).days
 
 
 def has_just_run(user_model: SlackBotUserModel) -> bool:
@@ -47,6 +51,7 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
         if not first_time:
             ordered_questions = all_questions_asked.order_by("-time_asked")
             last_set_of_questions = ordered_questions[: user_model.num_questions_per_day]
+        days_until_end = get_days_until_end(user_model)
 
         # If questions answered (or force, or first time) send a new batch
         if (
@@ -256,11 +261,27 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
             slack_client.chat_postMessage(
                 channel=user_model.slack_user_id,
                 text=Messages.question_end(
-                    user_model.relative_question_time, user_model.num_questions_per_day
+                    relative_time_str=user_model.relative_question_time,
+                    days_until_end_of_trial=days_until_end,
+                    paid=user_model.paid,
+                    num_questions=user_model.num_questions_per_day,
                 ),
             )
         else:  # Previous day's questions not answered
             slack_client.chat_postMessage(
                 channel=user_model.slack_user_id,
-                text=Messages.no_answers_received(user_model.num_questions_per_day),
+                text=Messages.no_answers_received(
+                    days_until_end_of_trial=days_until_end,
+                    paid=user_model.paid,
+                    num_questions=user_model.num_questions_per_day,
+                ),
             )
+        if 20 <= AnswerModel.objects.filter(answered=True, user_id=user_model.user_id).count() < 25:
+            slack_client.chat_postMessage(
+                channel=user_model.slack_user_id, text=Messages.twenty_questions_answered()
+            )
+            for founder_id in FOUNDER_SLACK_IDS:
+                slack_client.chat_postMessage(
+                    channel=founder_id,
+                    text=Messages.twenty_questions_founders(user_model.user_id),
+                )
