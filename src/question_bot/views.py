@@ -194,12 +194,22 @@ class QuestionsView(APIView):
 
         users_to_send_to = []
         for user in users_to_maybe_send_to:
+            # Check it hasn't just run (hack to block multiple requests causing problems)
             if has_just_run(user):
                 print(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
                 logging.debug(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
             else:
                 logging.debug(f"{user.user_id} A USER TO SEND TO")
-                users_to_send_to.append(user)
+                # Should this user still be active?
+                if not user.paid and AnswerModel.objects.filter(answered=True).count() >= 20:
+                    user.active = False
+                    user.save()
+                    WebClient(settings.SLACK_TOKEN).chat_postMessage(
+                        channel=user.slack_user_id,
+                        text=Messages.end_of_pilot(),
+                    )
+                else:
+                    users_to_send_to.append(user)
         logging.debug(f"Sending to {len(users_to_send_to)} users")
         send_questions(users_to_send_to)
         return Response(

@@ -133,11 +133,12 @@ class Messages:
     @staticmethod
     def end_of_pilot() -> str:
         return (
-            "That's it for this week of questions! We hope you found it useful! *Thank you so much* for taking part! :pray:\n\n"
-            f"If you'd like to extend this week further, reach out to <@{FOUNDER_SLACK_IDS[0]}> or <@{FOUNDER_SLACK_IDS[1]}>! :smile:\n\n"
+            "You've now answered 20 questions! Congrats! :tada:\n\n"
+            "We really hope you found it useful! :pray:\n\n"
             f"We would *love to hear your thoughts* on the question-answer through Slack in a quick call - "
             "pick a slot that suits you on here:\nhttps://calendly.com/mgphillips/30min\n"
-            "Or here:\nhttps://calendly.com/henrypulver/learney"
+            "Or here:\nhttps://calendly.com/henrypulver/learney\n\n"
+            f"We can extend this, reach out to <@{FOUNDER_SLACK_IDS[0]}> or <@{FOUNDER_SLACK_IDS[1]}>! :smile:\n\n"
         )
 
     @staticmethod
