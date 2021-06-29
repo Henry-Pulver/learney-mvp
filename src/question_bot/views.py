@@ -212,13 +212,24 @@ class QuestionsView(APIView):
             else:
                 logging.debug(f"{user.user_id} A USER TO SEND TO")
                 # Should this user still be active?
-                if get_days_until_end(user) <= 0 and not user.paid:
+                if get_days_until_end(user, 7) <= 0 and not user.paid:
                     deactivate_user(user)
                 else:
                     users_to_send_to.append(user)
         logging.debug(f"Sending to {len(users_to_send_to)} users")
 
         send_questions(users_to_send_to)
+
+        users_yet_to_activate = SlackBotUserModel.objects.filter(
+            utc_time_to_send=nearest_half_hour, active=False
+        )
+
+        for user in users_yet_to_activate:
+            if (date.today() - user.active_since).days >= 2 and not has_just_run(user):
+                WebClient(settings.SLACK_TOKEN).chat_postMessage(
+                    channel=user.user_id,
+                    text=Messages.dont_forget_to_activate((date.today() - user.active_since).days),
+                )
         return Response(
             f"Questions sent to {len(users_to_send_to)} users", status=status.HTTP_200_OK
         )

@@ -52,6 +52,26 @@ class Messages:
             f"next time the clock strikes {relative_time_str}!\n\n {cls._reach_out()}"
         )
 
+    POTENTIAL_FORGET_TO_ACTIVATE = [
+        "Want ML questions tailored to you? :question:",
+        "Research shows that regular testing is *by far* the most effective way to learn! :",
+        "Want to learn through exercises with immediate feedback? :jigsaw:",
+        "Learn ML interactively. Personalised to you.",
+    ]
+
+    @classmethod
+    def dont_forget_to_activate(cls, days_since_signup: int) -> str:
+        message = f"{choice(cls.POTENTIAL_FORGET_TO_ACTIVATE)}\n\n"
+        message += f"Time to activate your account! :white_check_mark:\n\n" f"It's been "
+        message += (
+            f"{days_since_signup} day" if days_since_signup == 1 else f"{days_since_signup} days"
+        )
+        return (
+            message + " since you signed up! :alarm_clock:\n\n"
+            f"If you're having trouble activating your account, "
+            f"reach out to <{choice(FOUNDER_SLACK_IDS)}> :smile:"
+        )
+
     @staticmethod
     def _reach_out() -> str:
         return (

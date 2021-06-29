@@ -21,8 +21,8 @@ INITIAL_TRIAL_LENGTH = 7  # days
 QUESTION_NUMBER_EMOJIS = [":one:", ":two:", ":three:", ":four:", ":five:"]
 
 
-def get_days_until_end(user: SlackBotUserModel) -> int:
-    return (user.active_since + timedelta(days=INITIAL_TRIAL_LENGTH) - date.today()).days
+def get_days_until_end(user: SlackBotUserModel, duration: int) -> int:
+    return (user.active_since + timedelta(days=duration) - date.today()).days
 
 
 def has_just_run(user_model: SlackBotUserModel) -> bool:
@@ -51,7 +51,7 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
         if not first_time:
             ordered_questions = all_questions_asked.order_by("-time_asked")
             last_set_of_questions = ordered_questions[: user_model.num_questions_per_day]
-        days_until_end = get_days_until_end(user_model)
+        days_until_end = get_days_until_end(user_model, INITIAL_TRIAL_LENGTH)
 
         # If questions answered (or force, or first time) send a new batch
         if (

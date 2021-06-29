@@ -8,8 +8,8 @@ from question_bot.send_questions import get_days_until_end
 TEST_ID = "awgeiubwgr"
 
 
-@pytest.mark.parametrize("dt", [1, 5, 7, 9, 11])
-def test_get_days_until_end(dt: int):
+@pytest.mark.parametrize("dt,duration", [(1, 3), (5, 7), (7, 1), (9, 6), (11, 17)])
+def test_get_days_until_end(dt: int, duration: int):
     assert (
         get_days_until_end(
             SlackBotUserModel(
@@ -20,7 +20,8 @@ def test_get_days_until_end(dt: int):
                 on_slack=False,
                 on_learney=False,
                 active_since=date.today() - timedelta(days=dt),
-            )
+            ),
+            duration,
         )
-        == 7 - dt
+        == duration - dt
     )
