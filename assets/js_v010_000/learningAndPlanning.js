@@ -7,6 +7,23 @@ var learnedNodes = initialiseFromStorage(learnedNodesString);
 var goalNodes = initialiseFromStorage(goalNodesString);
 var pathNodes = {};
 
+
+function clearMap() {
+    for (const goalId in goalNodes){
+        unsetGoal(cy.nodes(`[id="${goalId}"]`));
+    }
+    for (const learnedId in learnedNodes) {
+        if (learnedNodes[learnedId] === true) {
+            onLearnedSliderClick(cy.nodes(`[id="${learnedId}"]`))();
+        }
+    }
+    learnedNodes = {};
+    goalNodes = {};
+    pathNodes = {};
+    saveToStorage(learnedNodesString, learnedNodes, true);
+    saveToStorage(goalNodesString, goalNodes, true);
+}
+
 function nodeLearned(node) {
     learnedNodes[node.data().id] = true;
     node.addClass("learned");
@@ -123,4 +140,4 @@ function initialiseGraphState() {
     }
 }
 
-export {onLearnedSliderClick, learnedNodes, onSetGoalSliderClick, goalNodes, pathNodes, initialiseGraphState}
+export {onLearnedSliderClick, learnedNodes, onSetGoalSliderClick, goalNodes, pathNodes, initialiseGraphState, clearMap}

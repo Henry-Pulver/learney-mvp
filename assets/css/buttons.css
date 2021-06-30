@@ -7,7 +7,7 @@ button {
     border-radius: 0.25em;
     font-family: helvetica neue, helvetica, arial, sans-serif;
     outline: 0;
-    margin: 2px 2px 2px 0;
+    margin: 2px 5px 2px 0;
 }
 
 button:hover {
@@ -49,6 +49,11 @@ button.circle {
     -webkit-border-radius: 18px;
     -moz-border-radius: 18px;
     border-radius: 18px;
+}
+
+#clearMap {
+    background-color: #bf0000;
+    font-weight: 600;
 }
 
 #shiprightButton {

@@ -1,6 +1,6 @@
 import { LightenDarkenColor } from "./utils.js"
 import { makeTippy, removeTippy } from "./tooltips.js"
-import { initialiseGraphState, goalNodes, pathNodes, learnedNodes } from "./learningAndPlanning.js";
+import {initialiseGraphState, goalNodes, pathNodes, learnedNodes, clearMap} from "./learningAndPlanning.js";
 import { setupSearch } from "./search.js";
 
 const fieldOpacity = 0.7;
@@ -66,6 +66,12 @@ function initCy(then) {
 }
 
 // BUTTONS
+document.getElementById("clearMap").onclick = clearMapButton;
+function clearMapButton() {
+    clearMap();
+    unhighlightNodes(cy.nodes());
+}
+
 document.getElementById("resetPan").onclick = resetPan;
 document.onkeypress = function(e) {
     if (document.activeElement !== document.getElementsByClassName("select2-search__field")[0]){
