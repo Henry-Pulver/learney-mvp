@@ -107,7 +107,7 @@ class Messages:
             f"Answer them before it's next {relative_time_str} for more questions! :muscle:\n\n"
         )
         message += (
-            f"You have {days_until_end_of_trial} until the end of the trial! :smile:\n\n"
+            f"You have {days_until_end_of_trial} days until the end of the trial! :smile:\n\n"
             if not paid
             else ""
         )
@@ -146,7 +146,7 @@ class Messages:
             f"more this time tomorrow! :alarm_clock:\n\n"
         )
         message += (
-            f"You have {days_until_end_of_trial} until the end of the trial! :smile:"
+            f"You have {days_until_end_of_trial} days until the end of the trial! :smile:"
             if not paid
             else ""
         )
