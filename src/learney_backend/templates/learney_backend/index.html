@@ -13,8 +13,9 @@
     <meta xmlns="http://www.w3.org/1999/xhtml">
     <meta name="title" property="og:title" content="Learney" />
     <meta name="image" property="og:image" content="{% static 'images/2021/05/19/learney_background.png' %}" />
+    <meta property="og:image:url" content="{% static 'images/2021/05/19/learney_background.png' %}" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="http://app.learney.me" />
+    <meta property="og:url" content="https://app.learney.me" />
     <meta name="description" property="og:description" content="The online learning platform designed to help you efficiently take your own path." />
     <meta id="static-root" data-name="{% static '/' %}">
     {{ userdata|json_script:"userdata" }}
@@ -78,7 +79,7 @@
 
 
     <div class="top-button-toolbar">
-        <label style="width:300px;margin-right:10px;">
+        <label style="width:100%;margin-right:10px;max-width:16rem;margin-top:2px;">
             <select id="concept-search-bar" name="concept" style="width: 100%;"></select>
         </label>
                <!-- <button id="captureLayout" >Capture Layout</button> -->
@@ -108,6 +109,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/cytoscape-popper@1.0.2/cytoscape-popper.js"></script>
-    <script type="module" src="{% static 'js_v010_000/main.js' %}"></script>
+    <script type="module" src="{% static 'js_v010_001/main.js' %}"></script>
 </body>
 </html>

@@ -3,6 +3,8 @@ import { makeTippy, removeTippy } from "./tooltips.js"
 import {initialiseGraphState, goalNodes, pathNodes, learnedNodes, clearMap} from "./learningAndPlanning.js";
 import { setupSearch } from "./search.js";
 
+var resetProgressButtonClicked = false;
+
 const fieldOpacity = 0.7;
 const lowestConceptOpacity = 0.4;
 
@@ -68,8 +70,19 @@ function initCy(then) {
 // BUTTONS
 document.getElementById("clearMap").onclick = clearMapButton;
 function clearMapButton() {
-    clearMap();
-    unhighlightNodes(cy.nodes());
+    if (resetProgressButtonClicked){
+        clearMap();
+        unhighlightNodes(cy.nodes());
+        resetProgressButtonClicked = false;
+        document.getElementById("clearMap").innerHTML = "Reset Progress";
+    } else {
+        document.getElementById("clearMap").innerHTML = "Are you sure?";
+        resetProgressButtonClicked = true;
+        setTimeout(function(){
+            resetProgressButtonClicked = false;
+            document.getElementById("clearMap").innerHTML = "Reset Progress";
+        }, 3000);
+    }
 }
 
 document.getElementById("resetPan").onclick = resetPan;
