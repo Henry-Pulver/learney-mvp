@@ -16,7 +16,7 @@ class QuestionBotViewTests(TestCase):
     TEST_UTC_TIME = time(hour=12, minute=30)
 
     def test_send_questions(self):
-        SlackBotUserModel.objects.create(
+        user = SlackBotUserModel.objects.create(
             user_id=self.TEST_USER_ID,
             timezone=self.TEST_TIMEZONE,
             relative_question_time=self.RELATIVE_QUESTION_TIME,
@@ -28,7 +28,7 @@ class QuestionBotViewTests(TestCase):
         with patch("question_bot.views.send_questions") as mock_question_send:
             response = self.client.get("/api/v0/questions")
             assert response.content.decode("utf-8") == '"Questions sent to 1 users"'
-            mock_question_send.assert_called()
+            mock_question_send.assert_called_with([user])
 
     def test_remind_about_activation(self):
         SlackBotUserModel.objects.create(

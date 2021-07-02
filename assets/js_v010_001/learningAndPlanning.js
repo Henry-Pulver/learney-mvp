@@ -53,6 +53,7 @@ function onLearnedSliderClick(node) {
             });
         } else {  // Learned or set as unknown
             node.toggleClass("learned");
+            learnedNodes[nodeId] = !learnedNodes[nodeId]
             // Deal with edges
             node.connectedEdges().forEach(function(edge) {
                 checkEdgeLearned(edge);

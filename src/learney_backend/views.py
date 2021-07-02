@@ -47,8 +47,8 @@ class ContentLinkPreviewView(APIView):
                 link_prev_dict: Dict[str, str] = json.loads(preview_data.text)
                 db_dict = {
                     "description": link_prev_dict["description"],
-                    "concept": concept,
-                    "url": url,
+                    "concept": request.GET["concept"],
+                    "url": request.GET["url"],
                     "title": link_prev_dict["title"],
                     "image_url": link_prev_dict["image"],
                 }
