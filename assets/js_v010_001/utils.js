@@ -286,11 +286,13 @@ function saveToDB(name, object) {
 
 
 export function logPageView() {
-    fetch("/api/v0/page_visit", {
-        method : "POST",
-        body : {user_id: userId},
-        success : ajaxSuccess,
-        error : ajaxError
+    fetch("/api/v0/page_visit",
+        {
+            method : "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body : JSON.stringify({user_id: userId})
     });
     // $.ajax({
     //     url : "/api/v0/page_visit",
