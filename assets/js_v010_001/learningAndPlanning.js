@@ -3,12 +3,12 @@ import { initialiseFromStorage, saveToStorage, updateQuestionAnswerUsers } from 
 
 const learnedNodesString = "learnedNodes";
 const goalNodesString = "goalNodes";
-var learnedNodes = initialiseFromStorage(learnedNodesString);
-var goalNodes = initialiseFromStorage(goalNodesString);
-var pathNodes = {};
+export var learnedNodes = initialiseFromStorage(learnedNodesString);
+export var goalNodes = initialiseFromStorage(goalNodesString);
+export var pathNodes = {};
 
 
-function clearMap() {
+export function clearMap() {
     for (const goalId in goalNodes){
         unsetGoal(cy.nodes(`[id="${goalId}"]`));
     }
@@ -39,7 +39,7 @@ function checkEdgeLearned(edge) {
     }
 }
 
-function onLearnedSliderClick(node) {
+export function onLearnedSliderClick(node) {
     return function () {
         let nodeId = node.data().id;
         if (!(nodeId in learnedNodes)) {  // Not learned
@@ -100,7 +100,7 @@ function unsetGoal(node) {
 }
 
 
-function onSetGoalSliderClick(node) {
+export function onSetGoalSliderClick(node) {
     return function () {
         let nodeId = node.data().id;
 
@@ -117,7 +117,7 @@ function onSetGoalSliderClick(node) {
     }
 }
 
-function initialiseGraphState() {
+export function initialiseGraphState() {
     for (const nodeId in learnedNodes) {
         let node = cy.nodes(`[id = '${nodeId}']`);
         if (node.data() !== undefined){
@@ -140,5 +140,3 @@ function initialiseGraphState() {
         }
     }
 }
-
-export {onLearnedSliderClick, learnedNodes, onSetGoalSliderClick, goalNodes, pathNodes, initialiseGraphState, clearMap}

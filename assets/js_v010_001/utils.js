@@ -1,6 +1,6 @@
 
 const userdata = JSON.parse(document.getElementById('userdata').textContent);
-var userId;
+export var userId;
 if (userdata !== ""){
     userId = userdata.email;
 } else {
@@ -9,7 +9,7 @@ if (userdata !== ""){
 
 var localStorage = window.localStorage;
 
-function createTipElement(tag, attrs, children){
+export function createTipElement(tag, attrs, children){
     let el = document.createElement(tag);
     if(attrs != null && typeof attrs === typeof {}){
         Object.keys(attrs).forEach(function(key){
@@ -28,31 +28,105 @@ function createTipElement(tag, attrs, children){
     return el;
 }
 
-function LightenDarkenColor(col, amt) {
-    var usePound = false;
+function hexToHSL(hex) {
+  // Convert hex to RGB first
+  let r = 0, g = 0, b = 0;
+  if (hex.length === 4) {
+    r = "0x" + hex[1] + hex[1];
+    g = "0x" + hex[2] + hex[2];
+    b = "0x" + hex[3] + hex[3];
+  } else if (hex.length === 7) {
+    r = "0x" + hex[1] + hex[2];
+    g = "0x" + hex[3] + hex[4];
+    b = "0x" + hex[5] + hex[6];
+  }
+  // Then to HSL
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  let cmin = Math.min(r,g,b),
+      cmax = Math.max(r,g,b),
+      delta = cmax - cmin,
+      h,
+      s,
+      l;
 
-    if (col[0] === "#") {
-        col = col.slice(1);
-        usePound = true;
+  if (delta === 0)
+    h = 0;
+  else if (cmax === r)
+    h = ((g - b) / delta) % 6;
+  else if (cmax === g)
+    h = (b - r) / delta + 2;
+  else
+    h = (r - g) / delta + 4;
+
+  h = Math.round(h * 60);
+
+  if (h < 0)
+    h += 360;
+
+  l = (cmax + cmin) / 2;
+  s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+  s = +(s * 100).toFixed(1);
+  l = +(l * 100).toFixed(1);
+
+  return [h, s, l];
+}
+
+function HSLToHex(h,s,l) {
+  s /= 100;
+  l /= 100;
+
+  let c = (1 - Math.abs(2 * l - 1)) * s,
+      x = c * (1 - Math.abs((h / 60) % 2 - 1)),
+      m = l - c/2,
+      r = 0,
+      g = 0,
+      b = 0;
+
+  if (0 <= h && h < 60) {
+    r = c; g = x; b = 0;
+  } else if (60 <= h && h < 120) {
+    r = x; g = c; b = 0;
+  } else if (120 <= h && h < 180) {
+    r = 0; g = c; b = x;
+  } else if (180 <= h && h < 240) {
+    r = 0; g = x; b = c;
+  } else if (240 <= h && h < 300) {
+    r = x; g = 0; b = c;
+  } else if (300 <= h && h < 360) {
+    r = c; g = 0; b = x;
+  }
+  // Having obtained RGB, convert channels to hex
+  r = Math.round((r + m) * 255).toString(16);
+  g = Math.round((g + m) * 255).toString(16);
+  b = Math.round((b + m) * 255).toString(16);
+
+  // Prepend 0s, if necessary
+  if (r.length === 1)
+    r = "0" + r;
+  if (g.length === 1)
+    g = "0" + g;
+  if (b.length === 1)
+    b = "0" + b;
+
+  return `#${r}${g}${b}`;
+}
+
+export function LightenDarkenColorByFactor(col, factor) {
+    if (factor < 0) {
+        console.error(`Factor given (${factor}) in LightenDarkenColorByFactor() cannot be negative!`);
     }
 
-    var num = parseInt(col,16);
-    var r = (num >> 16) + amt;
+    let hsl = hexToHSL(col)
 
-    if (r > 255) r = 255;
-    else if  (r < 0) r = 0;
+    hsl[2] *= factor;
 
-    var b = ((num >> 8) & 0x00FF) + amt;
+    if (hsl[2] < 0) {
+        hsl[2] = 0;
+    }
 
-    if (b > 255) b = 255;
-    else if  (b < 0) b = 0;
-
-    var g = (num & 0x0000FF) + amt;
-
-    if (g > 255) g = 255;
-    else if (g < 0) g = 0;
-
-    return (usePound?"#":"") + String("000000" + (g | (b << 8) | (r << 16)).toString(16)).slice(-6);
+    return HSLToHex(Math.round(hsl[0]), Math.round(hsl[1]), Math.round(hsl[2]));
 }
 
 function isValidURL(str) {
@@ -61,7 +135,7 @@ function isValidURL(str) {
     return (a.host && a.host !== window.location.host);
 }
 
-function getValidURLs(urls){
+export function getValidURLs(urls){
     var url_array = [];
 
     function validateURL(url){
@@ -131,7 +205,7 @@ function ajaxError(xhr,errmsg,err) {
 }
 
 
-function initialiseFromStorage(name) {
+export function initialiseFromStorage(name) {
     let storedItem = localStorage.getItem(name);
     let apiEndpoint = getAPIEndpoint(name);
 
@@ -176,7 +250,7 @@ function initialiseFromStorage(name) {
     }
 }
 
-function saveToStorage(name, object, saveItToDB) {
+export function saveToStorage(name, object, saveItToDB) {
     localStorage.setItem(name, JSON.stringify(object));
     if (userId !== undefined && saveItToDB === true) {
         saveToDB(name, object);
@@ -211,18 +285,24 @@ function saveToDB(name, object) {
 }
 
 
-function logPageView() {
-    $.ajax({
-        url : "/api/v0/page_visit",
-        type : "POST",
-        data : {user_id: userId},
+export function logPageView() {
+    fetch("/api/v0/page_visit", {
+        method : "POST",
+        body : {user_id: userId},
         success : ajaxSuccess,
         error : ajaxError
     });
+    // $.ajax({
+    //     url : "/api/v0/page_visit",
+    //     type : "POST",
+    //     data : {user_id: userId},
+    //     success : ajaxSuccess,
+    //     error : ajaxError
+    // });
 }
 
 
-function logContentClick(url) {
+export function logContentClick(url) {
     $.ajax({
         url : "/api/v0/link_click",
         type : "POST",
@@ -235,7 +315,7 @@ function logContentClick(url) {
     });
 }
 
-function updateQuestionAnswerUsers() {
+export function updateQuestionAnswerUsers() {
     if (userId !== "default_user_id") {
       $.ajax({
         url : "/api/v0/add_user",
@@ -246,5 +326,3 @@ function updateQuestionAnswerUsers() {
       });
     }
 }
-
-export {LightenDarkenColor, getValidURLs, createTipElement, initialiseFromStorage, saveToStorage, logPageView, logContentClick, updateQuestionAnswerUsers, userId};

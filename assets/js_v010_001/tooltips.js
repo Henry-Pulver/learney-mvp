@@ -2,7 +2,7 @@ import {onLearnedSliderClick, learnedNodes, onSetGoalSliderClick, goalNodes} fro
 import {removeIntroTippy} from "./intro.js";
 import {getValidURLs, createTipElement, initialiseFromStorage, saveToStorage, logContentClick, userId} from "./utils.js";
 
-var shownTippy;
+export var shownTippy;
 
 const staticFileLocation = document.getElementById("static-root").getAttribute("data-name");
 
@@ -15,7 +15,7 @@ var selectedNode;
 
 var cachedLinkPreviews = {};
 
-function makeTippy(node){
+export function makeTippy(node){
     removeTippy();
     selectedNode = node;
     let html = createTooltipHTML(node);
@@ -40,7 +40,7 @@ function makeTippy(node){
     return shownTippy;
 }
 
-function removeTippy(){
+export function removeTippy(){
   // Hide profile div!
   document.getElementById("profile-div").style.display = "none";
   // Hide intro div!
@@ -250,5 +250,3 @@ function createTooltipHTML(node) {
 
     return createTipElement("div", {"class": "tooltip-contents"}, marginTipArray);
 }
-
-export {makeTippy, removeTippy, createTipElement, shownTippy};

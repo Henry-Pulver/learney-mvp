@@ -6,13 +6,10 @@ import { logPageView, updateQuestionAnswerUsers } from "./utils.js";
 
 logPageView();
 
-var toJson = function(obj){ return obj.json(); };
-var toText = function(obj){ return obj.text(); };
-
 const staticFileLocation = document.getElementById("static-root").getAttribute("data-name");
 
-var graphP = fetch(`${staticFileLocation}positions_knowledge_graph_v010.json`).then(toJson);
-var styleP = fetch(`${staticFileLocation}knowledge_graph.cycss`).then(toText);
+var graphP = fetch(`${staticFileLocation}positions_knowledge_graph_v010.json`).then(file => file.json());
+var styleP = fetch(`${staticFileLocation}knowledge_graph.cycss`).then(file => file.text());
 
 document.getElementById("shiprightButton").addEventListener("mouseover", makeMouseoverTippy("#shiprightButton", "Want a new feature? Or bugfix? We want to hear about it - click here to suggest it!"));
 document.getElementById("slackButton").addEventListener("mouseover", makeMouseoverTippy("#slackButton", "Want to give direct feedback? Is there content we've missed, or are the connections wrong? Join our Slack and tell us!"));
@@ -27,7 +24,7 @@ document.getElementsByClassName("profile-image")[0].onclick = function () {
     }
 };
 
-Promise.all([fetch(`${staticFileLocation}introSlides_v010.json`).then(toJson)]).then(
+Promise.all([fetch(`${staticFileLocation}introSlides_v010.json`).then(file => file.json())]).then(
     function (slides) {
         let introSlides = slides[0];
         showIntroTippy(introSlides);

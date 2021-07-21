@@ -1,6 +1,6 @@
 import {createTipElement} from "./utils.js";
 
-function makeMouseoverTippy(selector, text) {
+export function makeMouseoverTippy(selector, text) {
     return function() {
         tippy(selector, {
             html: createTipElement("p", {"class": "feedback-tooltip-text"}, text),
@@ -10,5 +10,3 @@ function makeMouseoverTippy(selector, text) {
         }).tooltips[0].show();
     };
 }
-
-export {makeMouseoverTippy};

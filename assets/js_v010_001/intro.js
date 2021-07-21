@@ -10,7 +10,7 @@ function createIntroHTML(introSlides) {
     let slideInfo = introSlides[introSlideNumber]
 
     let title = createTipElement("h2", {"class": "intro-text"}, slideInfo.title);
-    let gif = createTipElement("img", {"class": "intro-gif", "src": staticFileLocation + slideInfo.gif}, []);
+    let gif = createTipElement("video", {"class": "intro-gif", "src": staticFileLocation + slideInfo.gif, "autoplay": ""}, []);
     let gifDiv = createTipElement("div", {"class": "intro-gif-div"}, [gif]);
     let textDiv = createTipElement("div", {"class": "intro-text-div"}, []);
 
@@ -54,7 +54,7 @@ function createIntroHTML(introSlides) {
     return createTipElement("div", {"class": "intro-content-container"}, [introContainer, closeButton]);
 }
 
-function showIntroTippy(introSlides) {
+export function showIntroTippy(introSlides) {
     shownIntroTippy = tippy("#introButton", {
         html: createIntroHTML(introSlides),
         allowHTML: true,
@@ -68,14 +68,14 @@ function showIntroTippy(introSlides) {
     introTippyShown = true;
 }
 
-function removeIntroTippy() {
+export function removeIntroTippy() {
     if (introTippyShown) {
         shownIntroTippy.hide();
         introTippyShown = false;
     }
 }
 
-function toggleIntro(introSlides) {
+export function toggleIntro(introSlides) {
     return function () {
         if (!introTippyShown) {
             showIntroTippy(introSlides);
@@ -96,5 +96,3 @@ function changeSlideFunction(next, introSlides) {
         showIntroTippy(introSlides);
     }
 }
-
-export {showIntroTippy, removeIntroTippy, toggleIntro}

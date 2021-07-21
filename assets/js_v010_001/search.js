@@ -1,4 +1,4 @@
-function setupSearch(elements) {
+export function setupSearch(elements) {
     // Build array for search
     let conceptsAndFields = [];
     let fieldLocation = {};
@@ -36,5 +36,3 @@ function setupSearch(elements) {
         searchBarDiv.val(null).trigger('change');
     })
 }
-
-export { setupSearch }

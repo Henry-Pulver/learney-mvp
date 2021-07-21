@@ -1,4 +1,4 @@
-import { LightenDarkenColor } from "./utils.js"
+import { LightenDarkenColorByFactor } from "./utils.js"
 import { makeTippy, removeTippy } from "./tooltips.js"
 import {initialiseGraphState, goalNodes, pathNodes, learnedNodes, clearMap} from "./learningAndPlanning.js";
 import { setupSearch } from "./search.js";
@@ -13,12 +13,12 @@ var initialZoom;
 
 var selectedNodeID = Infinity;
 
-function initCy(then) {
+export function initCy(then) {
     /** Initialise Cytoscape graph.*/
     let elements = then[1];
     elements.nodes.forEach(function(node){
         if (node.data.colour !== undefined){
-            node.data.colour = LightenDarkenColor(node.data.colour, -200)
+            node.data.colour = LightenDarkenColorByFactor(node.data.colour, 0.15)
         }
     });
     window.cy = window.cytoscape({
@@ -275,5 +275,3 @@ function bindRouters() {
         cy.animate({fit: {eles: edge.connectedNodes(), padding: 50}, duration: 400, easing: "ease-in-out"});
     });
 }
-
-export {initCy};
