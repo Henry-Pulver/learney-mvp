@@ -1,9 +1,11 @@
+import unittest
 from datetime import time
 from typing import Dict, Set
 
 import pytest
+from django.test import TestCase
 
-from question_bot.utils import MapStatus, get_nearest_half_hour, get_utc_time_to_send
+from question_bot.utils import MapStatus, check_answer, get_nearest_half_hour, get_utc_time_to_send
 
 
 @pytest.mark.parametrize(
@@ -54,3 +56,14 @@ def test_get_next_concepts(
     goals: Dict[str, bool], learned: Dict[str, bool], expected_output: Set[str]
 ):
     assert MapStatus(goals, learned).next_concepts == expected_output
+
+
+class TestCheckAnswer(TestCase):
+    MC = "multiple-choice"
+
+    def test_check_answer_multiple_choice(self):
+        check_answer(self.MC, "A", "A", False)
+        check_answer(self.MC, "2", "2", False)
+        # TODO: Finish this function (use parameterizes)
+
+    # TODO: Finish this class
