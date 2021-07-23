@@ -1,7 +1,7 @@
 *.idea
 pgadmin4/
 *.tsv
-assets/NodePositions.json
+assets/NodePositions*
 assets/knowledge_graph.json
 **/auth0_conf.yaml
 **/dev_env.yaml

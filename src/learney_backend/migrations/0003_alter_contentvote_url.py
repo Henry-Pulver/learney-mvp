@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('learney_backend', '0002_auto_20210516_1532'),
+        ("learney_backend", "0002_auto_20210516_1532"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contentvote',
-            name='url',
+            model_name="contentvote",
+            name="url",
             field=models.URLField(),
         ),
     ]

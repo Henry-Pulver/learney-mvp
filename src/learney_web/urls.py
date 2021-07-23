@@ -1,4 +1,4 @@
-"""learney_web URL Configuration
+"""learney_web URL Configuration.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/3.2/topics/http/urls/
@@ -14,10 +14,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
-
+from django.urls import include, path
 
 urlpatterns = [
+    path("", include("question_bot.urls")),
     path("", include("learney_backend.urls")),
     path("", include("auth0login.urls")),
     path("", include("goals.urls")),

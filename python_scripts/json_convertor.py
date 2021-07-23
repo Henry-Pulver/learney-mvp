@@ -1,12 +1,12 @@
-from argparse import ArgumentParser
 import csv
-from collections import Counter
 import json
+from argparse import ArgumentParser
+from collections import Counter
 from pathlib import Path
 from typing import Dict, List
 
-import numpy as np
 import matplotlib.cm as cm
+import numpy as np
 
 JSON_GRAPH_DICT = Dict[str, List[Dict[str, Dict[str, str]]]]
 
@@ -16,26 +16,22 @@ def subject_to_id(subject: str) -> str:
 
 
 def get_colours(num_colours: int) -> List:
-    colour_tuples = [
-        cm.rainbow(x) for x in np.arange(0, 1, (1 / (num_colours - 1)) - 1e-8)
-    ]
+    colour_tuples = [cm.rainbow(x) for x in np.arange(0, 1, (1 / (num_colours - 1)) - 1e-8)]
 
     def col2byte(colour: float) -> int:
-        """Convert a colour float to a byte integer"""
+        """Convert a colour float to a byte integer."""
         return int(np.round(colour * 255))
 
     return [
-        "#{:02x}{:02x}{:02x}".format(
-            col2byte(col[0]), col2byte(col[1]), col2byte(col[3])
-        )
+        "#{:02x}{:02x}{:02x}".format(col2byte(col[0]), col2byte(col[1]), col2byte(col[3]))
         for col in colour_tuples
     ]
 
 
 def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRAPH_DICT:
-    """
-    Converts a .tsv into a dictionary of the form that can be consumed by
-     cytoscape.js as a .json
+    """Converts a .tsv into a dictionary of the form that can be consumed by cytoscape.js as a.
+
+    .json.
 
     Args:
         tsv_path: path to .tsv file to convert
@@ -47,9 +43,7 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
     assert (
         tsv_path.is_file() and tsv_path.exists()
     ), f"Path given ({tsv_path}) doesn't point to a valid file!"
-    assert (
-        tsv_path.suffix == ".tsv"
-    ), f"Path given ({tsv_path}) doesn't point to a `.tsv` file!"
+    assert tsv_path.suffix == ".tsv", f"Path given ({tsv_path}) doesn't point to a `.tsv` file!"
 
     with open(tsv_path, newline="") as tsvfile:
         file = csv.reader(tsvfile, delimiter="\t", quotechar="|")
@@ -115,21 +109,15 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
     for source_id, num_targets in Counter(sources).items():
         for node in nodes:
             if node["data"]["id"] == source_id:
-                node["data"]["relative_importance"] = max(
-                    1, 0.7 * (num_targets + 1) ** 0.5
-                )
+                node["data"]["relative_importance"] = max(1, 0.7 * (num_targets + 1) ** 0.5)
                 continue
 
     return {"nodes": nodes, "edges": edges}
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(
-        "Convert a .tsv to a .json for visualisation by cytoscape.js"
-    )
-    parser.add_argument(
-        "-t", "--tsv", type=str, required=True, help=".tsv file to convert"
-    )
+    parser = ArgumentParser("Convert a .tsv to a .json for visualisation by cytoscape.js")
+    parser.add_argument("-t", "--tsv", type=str, required=True, help=".tsv file to convert")
     parser.add_argument(
         "-j",
         "--json",
@@ -148,7 +136,5 @@ if __name__ == "__main__":
     json_save_path = Path(args.json)
     json_save_path.parent.mkdir(exist_ok=True, parents=True)
     with json_save_path.open("w") as json_save_file:
-        json.dump(
-            convert_tsv_to_json(Path(args.tsv), args.show_subjects), json_save_file
-        )
+        json.dump(convert_tsv_to_json(Path(args.tsv), args.show_subjects), json_save_file)
         print(f"Successfully saved to {json_save_path}")

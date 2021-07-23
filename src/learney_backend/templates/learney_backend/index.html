@@ -3,8 +3,8 @@
 <head>
     {% load static %}
     <meta charset="UTF-8">
-    <title>Learney</title>
-    <link rel="icon" href="{% static 'images/favicon-32x32.png' %}">
+    <title>Learney Prototype</title>
+    <link rel="icon" href="{% static 'images/favicon_new-32x32.png' %}">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="{% static 'css/buttons.css' %}">
     <link rel="stylesheet" href="{% static 'css/tooltip.css' %}">
@@ -13,8 +13,9 @@
     <meta xmlns="http://www.w3.org/1999/xhtml">
     <meta name="title" property="og:title" content="Learney" />
     <meta name="image" property="og:image" content="{% static 'images/2021/05/19/learney_background.png' %}" />
+    <meta property="og:image:url" content="{% static 'images/2021/05/19/learney_background.png' %}" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="http://app.learney.me" />
+    <meta property="og:url" content="https://app.learney.me" />
     <meta name="description" property="og:description" content="The online learning platform designed to help you efficiently take your own path." />
     <meta id="static-root" data-name="{% static '/' %}">
     {{ userdata|json_script:"userdata" }}
@@ -76,12 +77,13 @@
         </div>
     </div>
 
-    
+
     <div class="top-button-toolbar">
-        <label style="width:300px;margin-right:10px;">
+        <label style="width:100%;margin-right:10px;max-width:16rem;margin-top:2px;">
             <select id="concept-search-bar" name="concept" style="width: 100%;"></select>
         </label>
                <!-- <button id="captureLayout" >Capture Layout</button> -->
+        <button id="clearMap" >Reset Progress</button>
         <button id="resetPan" >Centre View</button>
     </div>
 
@@ -90,13 +92,13 @@
     </div>
 
     <div class="feedback-buttons">
-        <button class="circle" id="shiprightButton" onclick="window.open('https://shipright.community/learney', '_blank')">
+        <button class="circle" id="shiprightButton" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSeWyrpKy0r4LbQuuHt5FIL9PYU7KFfLSxFnnuBDs3-zaofW7A/viewform', '_blank')">
             <img src="{% static 'images/feedback_icon.png' %}" id="feedbackIcon" alt="Feedback icon">
         </button>
-        <button class="circle" id="slackButton" onclick="window.open('https://join.slack.com/t/learneyalphatesters/shared_invite/zt-q1rnj8tt-4895F06RAImSEDtMNE6sUg','_blank')">
+        <button class="circle" id="slackButton" onclick="window.open('https://join.slack.com/t/learneyalphatesters/shared_invite/zt-tf37n610-x8rIwDk6eeVctTVZqQkp7Q','_blank')">
             <img src="{% static 'images/slack_logo.png' %}" id="slackLogo" alt="Slack logo">
         </button>
-        <button class="circle feedback" id="feedbackButton" onclick="window.open('mailto:henrypulver13@gmail.com?subject=Feedback about Learney&cc=matthewphillips5320@googlemail.com','_blank')">?</button>
+<!--        <button class="circle feedback" id="feedbackButton" onclick="window.open('mailto:henrypulver13@gmail.com?subject=Feedback about Learney&cc=matthewphillips5320@googlemail.com','_blank')">?</button>-->
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.18.2/cytoscape.min.js" integrity="sha512-CBGCXtszkG5rYlQSTNUzk54/731Kz28WPk2uT1GCPCqgfVRJ2v514vzzf16HuGX9WVtE7JLqRuAERNAzFZ9Hpw==" crossorigin="anonymous"></script>
@@ -107,6 +109,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/cytoscape-popper@1.0.2/cytoscape-popper.js"></script>
-    <script type="module" src="{% static 'js_v009/main.js' %}"></script>
+    <script type="module" src="{% static 'js_v010_001/main.js' %}"></script>
 </body>
 </html>

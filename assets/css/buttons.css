@@ -7,7 +7,7 @@ button {
     border-radius: 0.25em;
     font-family: helvetica neue, helvetica, arial, sans-serif;
     outline: 0;
-    margin: 2px 2px 2px 0;
+    margin: 2px 5px 2px 0;
 }
 
 button:hover {
@@ -32,6 +32,8 @@ button.close:hover {
     top: 0;
     right: 60px;
     display: flex;
+    width: 100%;
+    justify-content: flex-end;
 }
 
 .feedback-buttons {
@@ -49,6 +51,17 @@ button.circle {
     -webkit-border-radius: 18px;
     -moz-border-radius: 18px;
     border-radius: 18px;
+}
+
+#clearMap {
+    background-color: #bf0000;
+    font-weight: 600;
+    width: 100%;
+    max-width: 8rem;
+}
+
+#clearMap:hover {
+    background-color: #fa0505;
 }
 
 #shiprightButton {

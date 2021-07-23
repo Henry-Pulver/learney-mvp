@@ -7,29 +7,44 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='ContentLinkPreview',
+            name="ContentLinkPreview",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('concept', models.TextField()),
-                ('url', models.URLField(unique=True)),
-                ('last_retrieved', models.DateTimeField(auto_now=True)),
-                ('title', models.TextField()),
-                ('description', models.TextField()),
-                ('image_url', models.URLField()),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("concept", models.TextField()),
+                ("url", models.URLField(unique=True)),
+                ("last_retrieved", models.DateTimeField(auto_now=True)),
+                ("title", models.TextField()),
+                ("description", models.TextField()),
+                ("image_url", models.URLField()),
             ],
         ),
         migrations.CreateModel(
-            name='ContentVote',
+            name="ContentVote",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('url', models.URLField()),
-                ('vote', models.BooleanField()),
-                ('vote_time', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("url", models.URLField()),
+                ("vote", models.BooleanField()),
+                ("vote_time", models.DateTimeField(auto_now=True)),
             ],
         ),
     ]

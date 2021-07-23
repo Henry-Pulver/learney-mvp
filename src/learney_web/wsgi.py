@@ -1,5 +1,4 @@
-"""
-WSGI config for learney_web project.
+"""WSGI config for learney_web project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
