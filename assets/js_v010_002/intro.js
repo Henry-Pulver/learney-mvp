@@ -10,7 +10,7 @@ function createIntroHTML(introSlides) {
     let slideInfo = introSlides[introSlideNumber]
 
     let title = createTipElement("h2", {"class": "intro-text"}, slideInfo.title);
-    let gif = createTipElement("video", {"class": "intro-gif", "src": staticFileLocation + slideInfo.gif, "autoplay": ""}, []);
+    let gif = createTipElement("video", {"class": "intro-gif", "src": staticFileLocation + slideInfo.gif, "autoplay": "", "loop": ""}, []);
     let gifDiv = createTipElement("div", {"class": "intro-gif-div"}, [gif]);
     let textDiv = createTipElement("div", {"class": "intro-text-div"}, []);
 
