@@ -8,7 +8,7 @@ const staticFileLocation = document.getElementById("static-root").getAttribute("
 
 localStorage.removeItem("viewed_before");
 
-var graphP = fetch(`${staticFileLocation}positions_knowledge_graph_v010.json`).then(file => file.json());
+var graphP = fetch(`${staticFileLocation}positions_knowledge_graph_v011.json`).then(file => file.json());
 var styleP = fetch(`${staticFileLocation}knowledge_graph.cycss`).then(file => file.text());
 
 document.getElementById("shiprightButton").addEventListener("mouseover", makeMouseoverTippy("#shiprightButton", "Play your part in the future of Learney! We want to hear your thoughts and suggestions!"));
@@ -30,7 +30,7 @@ $(document).ready(function(){
 
 updateQuestionAnswerUsers();
 
-Promise.all([fetch(`${staticFileLocation}introSlides_v010.json`).then(file => file.json())]).then(
+Promise.all([fetch(`${staticFileLocation}introSlides_v011.json`).then(file => file.json())]).then(
     function (slides) {
         let introSlides = slides[0];
         if (userId === defaultUserId && localStorage.getItem("viewed_before") !== null) {
