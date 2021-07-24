@@ -2,7 +2,7 @@ import {createTipElement} from "./utils.js";
 
 var introSlideNumber = 0;
 var shownIntroTippy;
-var introTippyShown = true;
+var introTippyShown;
 
 const staticFileLocation = document.getElementById("static-root").getAttribute("data-name");
 
@@ -69,10 +69,10 @@ export function showIntroTippy(introSlides) {
 }
 
 export function removeIntroTippy() {
-    if (introTippyShown) {
+    if (introTippyShown === true) {
         shownIntroTippy.hide();
-        introTippyShown = false;
     }
+    introTippyShown = false;
 }
 
 export function toggleIntro(introSlides) {
