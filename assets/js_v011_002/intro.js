@@ -2,7 +2,7 @@ import {createTipElement} from "./utils.js";
 
 var introSlideNumber = 0;
 var shownIntroTippy;
-var introTippyShown = true;
+var introTippyShown;
 
 const staticFileLocation = document.getElementById("static-root").getAttribute("data-name");
 
@@ -10,7 +10,7 @@ function createIntroHTML(introSlides) {
     let slideInfo = introSlides[introSlideNumber]
 
     let title = createTipElement("h2", {"class": "intro-text"}, slideInfo.title);
-    let gif = createTipElement("video", {"class": "intro-gif", "src": staticFileLocation + slideInfo.gif, "autoplay": ""}, []);
+    let gif = createTipElement("video", {"class": "intro-gif", "src": staticFileLocation + slideInfo.gif, "autoplay": "", "loop": ""}, []);
     let gifDiv = createTipElement("div", {"class": "intro-gif-div"}, [gif]);
     let textDiv = createTipElement("div", {"class": "intro-text-div"}, []);
 
@@ -69,10 +69,10 @@ export function showIntroTippy(introSlides) {
 }
 
 export function removeIntroTippy() {
-    if (introTippyShown) {
+    if (introTippyShown === true) {
         shownIntroTippy.hide();
-        introTippyShown = false;
     }
+    introTippyShown = false;
 }
 
 export function toggleIntro(introSlides) {

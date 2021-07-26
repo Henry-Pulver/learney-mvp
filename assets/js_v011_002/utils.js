@@ -1,19 +1,20 @@
 
 const userdata = JSON.parse(document.getElementById('userdata').textContent);
 export var userId;
+export const defaultUserId = "default_user_id";
 if (userdata !== ""){
     userId = userdata.email;
 } else {
-    userId = "default_user_id";
+    userId = defaultUserId;
 }
 
-var localStorage = window.localStorage;
+export const localStorage = window.localStorage;
 
 export function createTipElement(tag, attrs, children){
     let el = document.createElement(tag);
     if(attrs != null && typeof attrs === typeof {}){
         Object.keys(attrs).forEach(function(key){
-            var val = attrs[key];
+            const val = attrs[key];
 
             el.setAttribute(key, val);
         });
@@ -136,7 +137,7 @@ function isValidURL(str) {
 }
 
 export function getValidURLs(urls){
-    var url_array = [];
+    let url_array = [];
 
     function validateURL(url){
         url.replace(" ", "");
@@ -155,7 +156,7 @@ export function getValidURLs(urls){
 
 
 function getAPIEndpoint(name) {
-    var extension;
+    let extension;
     if (name === "learnedNodes") {
         extension = "learned";
     } else if (name === "goalNodes") {
@@ -163,8 +164,7 @@ function getAPIEndpoint(name) {
     } else {
         extension = name;
     }
-    let endpoint = `api/v0/${extension}`;
-    return endpoint;
+    return `api/v0/${extension}`;
 }
 
 
@@ -294,6 +294,7 @@ export function logPageView() {
             },
             body : JSON.stringify({user_id: userId})
     });
+    localStorage.setItem("viewed_before", "true");
     // $.ajax({
     //     url : "/api/v0/page_visit",
     //     type : "POST",

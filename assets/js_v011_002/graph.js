@@ -7,9 +7,7 @@ var resetProgressButtonClicked = false;
 
 const fieldOpacity = 0.7;
 const lowestConceptOpacity = 0.4;
-
-var initialPan;
-var initialZoom;
+var cKeyPressed = false;
 
 var selectedNodeID = Infinity;
 
@@ -54,8 +52,6 @@ export function initCy(then) {
     // console.log(window.cy.elements());
     // window.cy.elements().layout({name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 300}).run();
 
-    initialPan = Object.assign({}, window.cy.pan());
-    initialZoom = window.cy.zoom();
     window.cy.elements().panify();
     unhighlightNodes(cy.nodes());
 
@@ -88,13 +84,17 @@ function clearMapButton() {
 document.getElementById("resetPan").onclick = resetPan;
 document.onkeypress = function(e) {
     if (document.activeElement !== document.getElementsByClassName("select2-search__field")[0]){
-        if (e.code === "KeyC"){
+        if (e.code === "KeyC" && !cKeyPressed){
             resetPan();
+            cKeyPressed = true;
         }
     }
 };
 function resetPan() {
-    cy.animate({zoom: initialZoom, pan: initialPan, duration: 400, easing: "ease-in-out"});
+    cy.animate({ fit: {eles: cy.nodes(), padding: 50}, duration: 400, easing: "ease-in-out", complete: function () {
+        cKeyPressed = false;
+    }
+    });
 }
 
 

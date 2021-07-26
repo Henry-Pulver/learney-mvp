@@ -63,7 +63,7 @@ def check_answer(
                 return AnswerOutcome.incorrect
         elif correct_answer.isalpha():
             if correct_answer.lower() in answer_given.lower():
-                if correct_answer in answer_given:
+                if correct_answer in answer_given:  # Check given answer contains the correct answer
                     alphabetic_count = sum([char.isalpha() for char in answer_given])
                     return (
                         AnswerOutcome.correct if alphabetic_count == 1 else AnswerOutcome.try_again
