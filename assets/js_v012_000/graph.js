@@ -1,6 +1,13 @@
 import { LightenDarkenColorByFactor } from "./utils.js"
 import { makeTippy, removeTippy } from "./tooltips.js"
-import {initialiseGraphState, goalNodes, pathNodes, learnedNodes, clearMap} from "./learningAndPlanning.js";
+import {
+    initialiseGraphState,
+    goalNodes,
+    pathNodes,
+    learnedNodes,
+    clearMap,
+    onSetGoalSliderClick
+} from "./learningAndPlanning.js";
 import { setupSearch } from "./search.js";
 
 var resetProgressButtonClicked = false;
@@ -163,13 +170,27 @@ function setEdgeOpacity(edges, multiplicativeFactor) {
         let targetMaxOpacity = tId in learnedNodes || tId in pathNodes || tId in goalNodes || tId === selectedNodeID;
         if (sourceMaxOpacity && targetMaxOpacity){
             edge.style("opacity", 1);
-        } else{
+        } else if (checkEdgeInvisible(edge)) {
+            edge.style("opacity", 0.1)
+        }else{
             let sourceNodeOpacity = Math.min(multiplicativeFactor * getConceptNodeOpacity(edge.source(), lowestConceptOpacity), 1);
             let targetNodeOpacity = Math.min(multiplicativeFactor * getConceptNodeOpacity(edge.target(), lowestConceptOpacity), 1);
             let opacity = (sourceNodeOpacity + targetNodeOpacity) / 2;
             edge.style("opacity", opacity);
         }
     })
+}
+
+function checkEdgeInvisible(edge) {
+    if (edge.source().data().parent !== edge.target().data().parent) {
+        let sx = edge.source().position().x;
+        let sy = edge.source().position().y;
+        let tx = edge.target().position().x;
+        let ty = edge.target().position().y;
+        return ((sx - tx) ** 2 + (sy - ty) ** 2) ** (1/2) > 1500;
+    } else {
+        return false;
+    }
 }
 
 function highlightNodes(nodes, resize) {
@@ -273,5 +294,10 @@ function bindRouters() {
     cy.on("tap", "edge", function(e) {
         let edge = e.target;
         cy.animate({fit: {eles: edge.connectedNodes(), padding: 50}, duration: 400, easing: "ease-in-out"});
+    });
+
+    // Right click concepts
+    cy.on('cxttap', 'node[nodetype = "concept"]', function (e) {
+        onSetGoalSliderClick(e.target)();
     });
 }

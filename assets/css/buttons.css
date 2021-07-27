@@ -8,10 +8,36 @@ button {
     font-family: helvetica neue, helvetica, arial, sans-serif;
     outline: 0;
     margin: 2px 5px 2px 0;
+
 }
 
 button:hover {
     background-color: #2341c9;
+}
+
+@keyframes glowing {
+    0% {
+      background-color: #2578fc;
+      box-shadow: 0 0 5px #2578fc;
+    }
+    50% {
+      background-color: #83adff;
+      box-shadow: 0 0 15px #83adff;
+    }
+    100% {
+      background-color: #2578fc;
+      box-shadow: 0 0 5px #2578fc;
+    }
+}
+
+#shiprightButton {
+    animation: glowing 1300ms infinite;
+}
+
+#shiprightButton:hover {
+    background-color: #accaff;
+    box-shadow: 0 0 10px #accaff;
+    animation: none;
 }
 
 button.close {
@@ -24,7 +50,7 @@ button.close {
 }
 
 button.close:hover {
-    background-color: #ff5050;
+    background-color: #747475;
 }
 
 .top-button-toolbar {
@@ -46,11 +72,11 @@ button.close:hover {
 
 button.circle {
     font-size: 2em;
-    width: 36px;
-    height: 36px;
-    -webkit-border-radius: 18px;
-    -moz-border-radius: 18px;
-    border-radius: 18px;
+    width: 2em;
+    height: 2em;
+    -webkit-border-radius: 1em;
+    -moz-border-radius: 1em;
+    border-radius: 1em;
 }
 
 #clearMap {
@@ -64,18 +90,10 @@ button.circle {
     background-color: #fa0505;
 }
 
-#shiprightButton {
-    background-color: #2578fc;
-}
-
-#shiprightButton:hover {
-    background-color: #4f93ff;
-}
-
 #feedbackIcon {
-    width: 28px;
-    height: 28px;
-    margin: 1px -4px;
+    width: 1.5em;
+    height: 1.5em;
+    margin: 0.12em -0.2em;
 }
 
 #slackButton {
@@ -89,9 +107,9 @@ button.circle {
 }
 
 #slackLogo {
-    width: 24px;
-    height: 24px;
-    padding: 4px 0;
+    width: 1.4em;
+    height: 1.4em;
+    padding: 0.2em 0;
 }
 
 .feedback-tooltip-text {
