@@ -184,7 +184,7 @@ function createLinkPreviewArray (nodeName, urls) {
                     linkDescription.innerHTML = data.description;
 
                     if (data.image_url === ""){
-                        data.image_url = `${staticFileLocation}images/android-chrome-512x512.png`;
+                        data.image_url = `${staticFileLocation}images/learney_logo_256x256.png`;
                     }
                     linkImage.setAttribute("src", data.image_url);
 
@@ -220,7 +220,7 @@ function createTooltipHTML(node) {
     }
 
     let heading = createTipElement("h4", {"class": "tooltip-heading"}, node.data().name);
-    let description = createTipElement("div", {"class": "tooltip-description tooltip-text"}, node.data().description);
+    let description = createTipElement("div", {"class": "tooltip-description"}, node.data().description);
     let closeButton = createTipElement("button", {"class": "close"}, "X")
     closeButton.onclick = removeTippy;
 
@@ -244,9 +244,9 @@ function createTooltipHTML(node) {
 
     // List of pretty link previews for all content for this node
     if (urls.length > 0) {
-        let linkList = createTipElement("ol", {"class": "tooltip-link tooltip-text"}, createLinkPreviewArray(node.data().name, urls));
+        let linkList = createTipElement("ol", {"class": "tooltip-link"}, createLinkPreviewArray(node.data().name, urls));
         marginTipArray.push(linkList);
     }
 
-    return createTipElement("div", {"class": "tooltip-contents"}, marginTipArray);
+    return createTipElement("div", {"class": "tooltip-contents disable-touch-actions"}, marginTipArray);
 }

@@ -10,11 +10,11 @@ export var pathNodes = {};
 
 export function clearMap() {
     for (const goalId in goalNodes){
-        unsetGoal(cy.nodes(`[id="${goalId}"]`));
+        unsetGoal(cy.getElementById(goalId));
     }
     for (const learnedId in learnedNodes) {
         if (learnedNodes[learnedId] === true) {
-            onLearnedSliderClick(cy.nodes(`[id="${learnedId}"]`))();
+            onLearnedSliderClick(cy.getElementById(learnedId));
         }
     }
     learnedNodes = {};

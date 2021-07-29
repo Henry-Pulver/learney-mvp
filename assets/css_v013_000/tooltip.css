@@ -1,30 +1,40 @@
 .tooltip-contents{
     background-color: #d9d9d9;
-    width: 600px;
+    width: 70vw;
 }
 
 .slider-container {
     border-top: 1px solid #555555;
     padding: 5px 10px;
+    display: flex;
 }
 
 .switch-container {
     display: flex;
     margin-bottom: 3px;
+    margin-right: 5px;
 }
 
 p.switch-text {
-    text-align: left;
+    text-align: right;
     margin: 0 2px 0 auto;
     color: black;
-    font-size: 0.8em;
 }
 
 /* The switch - the box around the slider */
-.switch {
-    position: relative;
-    width: 30px;
-    height: 17px;
+@media only screen and (max-device-width: 768px) {
+    .switch {
+        position: relative;
+        width: 45px;
+        height: 26px;
+    }
+}
+@media only screen and (min-device-width: 769px) {
+    .switch {
+        position: relative;
+        width: 30px;
+        height: 17px;
+    }
 }
 
 /* Hide default HTML checkbox */
@@ -50,10 +60,6 @@ p.switch-text {
 .slider:before {
     position: absolute;
     content: "";
-    height: 13px;
-    width: 13px;
-    left: 2px;
-    bottom: 2px;
     background-color: white;
     -webkit-transition: .4s;
     transition: .4s;
@@ -63,19 +69,55 @@ input:checked + .slider {
     background-color: #2196F3;
 }
 
-input:focus + .slider {
-    box-shadow: 0 0 1px #2196F3;
-}
+@media only screen and (max-device-width: 768px) {
+    .slider:before {
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+    }
 
-input:checked + .slider:before {
-    -webkit-transform: translateX(13px);
-    -ms-transform: translateX(13px);
-    transform: translateX(13px);
-}
+    input:focus + .slider {
+        box-shadow: 0 0 2px #2196F3;
+    }
 
-/* Rounded sliders */
-.slider.round {
-    border-radius: 34px;
+    input:checked + .slider:before {
+        -webkit-transform: translateX(20px);
+        -ms-transform: translateX(20px);
+        transform: translateX(20px);
+    }
+
+    /* Rounded sliders */
+    .slider.round {
+        border-radius: 48px;
+    }
+}
+@media only screen and (min-device-width: 769px) {
+    .slider:before {
+        height: 13px;
+        width: 13px;
+        left: 2px;
+        bottom: 2px;
+    }
+
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+
+    input:focus + .slider {
+        box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+        -webkit-transform: translateX(13px);
+        -ms-transform: translateX(13px);
+        transform: translateX(13px);
+    }
+
+    /* Rounded sliders */
+    .slider.round {
+        border-radius: 34px;
+    }
 }
 
 .slider.round:before {
@@ -87,10 +129,6 @@ input:checked + .slider:before {
     font-size: 22pt;
     text-align: center;
     margin: 0;
-}
-
-.tooltip-text{
-    font-size: 12pt;
 }
 
 .tooltip-description{
@@ -147,7 +185,6 @@ ol {
 }
 
 .link-preview-title{
-    font-size: 18px;
     margin-top: 2px;
     margin-bottom: 4px;
     overflow: hidden;
@@ -159,8 +196,6 @@ ol {
 }
 
 .link-preview-description{
-    font-size: 14px;
-    max-height: 40%;
     margin-top: 0;
     margin-bottom: 2px;
     overflow: hidden;
@@ -177,9 +212,54 @@ ol {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 200px;
+    max-width: 200px;
     margin-top: 0;
     margin-bottom: 0;
+}
+
+/*MOBILE*/
+@media only screen and (max-device-width: 768px) {
+    .tooltip-description {
+        font-size: 1rem;
+    }
+    .slider-container {
+        justify-content: space-around;
+    }
+    .switch-text {
+        font-size: 16px;
+    }
+    .link-preview-title {
+        font-size: 20px;
+    }
+    .link-preview-description {
+        font-size: 16px;
+        max-height: 70%;
+    }
+    .link-preview-url {
+        display: none;
+    }
+}
+/*DESKTOP*/
+@media only screen and (min-device-width: 769px) {
+    .tooltip-contents{
+        max-width: 600px;
+    }
+    .tooltip-description {
+        font-size: 1rem;
+    }
+    .switch-text {
+        font-size: 0.8em;
+    }
+    .slider-container {
+        justify-content: flex-end;
+    }
+    .link-preview-title {
+        font-size: 18px;
+    }
+    .link-preview-description {
+        font-size: 14px;
+        max-height: 40%;
+    }
 }
 
 .link-preview-image-container{

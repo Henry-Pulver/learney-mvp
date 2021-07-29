@@ -10,6 +10,7 @@ import {
 } from "./learningAndPlanning.js";
 import { setupSearch } from "./search.js";
 
+export const isMobile = screen.width < 768;
 var resetProgressButtonClicked = false;
 
 const fieldOpacity = 0.7;
@@ -26,6 +27,7 @@ export function initCy(then) {
             node.data.colour = LightenDarkenColorByFactor(node.data.colour, 0.15)
         }
     });
+
     window.cy = window.cytoscape({
         elements: elements,
         container: document.getElementById("cy"),
@@ -37,12 +39,17 @@ export function initCy(then) {
         zoom: 1,
         pan: {x: 0, y: 0},
 
-        motionBlur: true,
-        motionBlurOpacity: 0.1,
         maxZoom: 1.5,
         minZoom: 0.15,
-        wheelSensitivity: 0.25,
     });
+
+    if (isMobile) {
+        // Performance enhancements
+        let concepts = cy.nodes('[nodetype = "concept"]');
+        concepts.style("min-zoomed-font-size", "2.5em");
+    } else {
+        cy.wheelSensitivity = 0.25;
+    }
     // DO DAGRE FOR EACH SUBJECT
     // subjects.forEach(function(subject, index) {
     //     var subject_subgraph = window.cy.filter('node[subject = "' + subject + '"]');
@@ -64,7 +71,6 @@ export function initCy(then) {
 
     // Set initially learned or goal nodes
     initialiseGraphState();
-    document.getElementById("loading").style.display = "none";
 
     bindRouters();
     setupSearch(elements);
@@ -88,22 +94,24 @@ function clearMapButton() {
     }
 }
 
-document.getElementById("resetPan").onclick = resetPan;
+document.getElementById("resetPan").onclick = function () {fitCytoTo({eles: cy.nodes(), padding: 50})};
 document.onkeypress = function(e) {
     if (document.activeElement !== document.getElementsByClassName("select2-search__field")[0]){
         if (e.code === "KeyC" && !cKeyPressed){
-            resetPan();
+            fitCytoTo({eles: cy.nodes(), padding: 50}, function () {cKeyPressed = false;});
             cKeyPressed = true;
         }
     }
 };
-function resetPan() {
-    cy.animate({ fit: {eles: cy.nodes(), padding: 50}, duration: 400, easing: "ease-in-out", complete: function () {
-        cKeyPressed = false;
+function fitCytoTo(fitParams, onComplete = function () {}) {
+    if (isMobile) {
+        cy.fit(fitParams.eles, fitParams.padding);
+        onComplete();
+    } else {
+        cy.animate({ fit: fitParams, duration: 400, easing: "ease-in-out", complete: onComplete
+        });
     }
-    });
 }
-
 
 // REMOVE FOR PROD
 // document.getElementById("captureLayout").onclick = captureLayout
@@ -140,8 +148,8 @@ function resizeNodes(nodes, newBaseSize) {
             let nodeSize = node.data().relative_importance * newBaseSize;
             node.style("width", nodeSize.toString() + "px");
             node.style("height", nodeSize.toString() + "px");
-            let fontSize = 1.25 * node.data().relative_importance * 1.5;
-            node.style("font-size", fontSize.toString() + "em");
+            let fontSize = 1.25 * node.data().relative_importance * 24;
+            node.style("font-size", fontSize.toString() + "px");
         }
     });
 }
@@ -277,23 +285,23 @@ function bindRouters() {
     // Show tooltip when clicked
     cy.on('tap', 'node[nodetype = "concept"]', function (e) {
         let concept = e.target;
-        cy.animate({ fit: {eles: concept.neighborhood(), padding: 50}, duration: 400, easing: "ease-in-out", complete: function () {
+        fitCytoTo({eles: concept.neighborhood(), padding: 50}, function () {
                 makeTippy(concept);
                 let previousSelectedNodeID = selectedNodeID;
                 selectedNodeID = concept.data().id;
-                unhighlightNodes(cy.nodes(`[id="${previousSelectedNodeID}"]`))
+                unhighlightNodes(cy.getElementById(previousSelectedNodeID))
                 highlightNodes(concept, true);
-        }});
+        });
     });
 
     cy.on("tap", "node[nodetype = \"field\"]", function(e) {
         let field = e.target;
-        cy.animate({fit: {eles: field, padding: 25}, duration: 400, easing: "ease-in-out"});
+        fitCytoTo({eles: field, padding: 25});
     });
 
     cy.on("tap", "edge", function(e) {
         let edge = e.target;
-        cy.animate({fit: {eles: edge.connectedNodes(), padding: 50}, duration: 400, easing: "ease-in-out"});
+        fitCytoTo({eles: edge.connectedNodes(), padding: 50});
     });
 
     // Right click concepts

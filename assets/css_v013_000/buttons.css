@@ -1,0 +1,184 @@
+.button-toolbar-div {
+  display: contents;
+}
+
+button {
+    border: 2px solid white;
+    background-color: #001fab;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 0.25em;
+    font-family: helvetica neue, helvetica, arial, sans-serif;
+    outline: 0;
+}
+
+button:hover {
+    background-color: #2341c9;
+}
+
+@keyframes glowing {
+    0% {
+      background-color: #2578fc;
+      box-shadow: 0 0 5px #2578fc;
+    }
+    50% {
+      background-color: #83adff;
+      box-shadow: 0 0 15px #83adff;
+    }
+    100% {
+      background-color: #2578fc;
+      box-shadow: 0 0 5px #2578fc;
+    }
+}
+
+button.close {
+    position: absolute;
+    margin: 10px;
+    padding: 2px 5px 0;
+    top: 0;
+    right: 0;
+    background-color: red;
+}
+
+button.close:hover {
+    background-color: #747475;
+}
+
+.top-button-toolbar {
+    position: absolute;
+    top: 0;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2px;
+}
+
+#concept-search-bar-label {
+    width: 100%;
+}
+
+.feedback-buttons {
+    right: 0;
+    bottom: 0;
+    position: absolute;
+    display: grid;
+    margin: 1em;
+}
+
+button.circle {
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    border-radius: 50%;
+}
+
+#shiprightButton {
+    animation: glowing 1300ms infinite;
+}
+
+#shiprightButton:hover {
+    background-color: #accaff;
+    box-shadow: 0 0 10px #accaff;
+    animation: none;
+}
+
+#clearMap {
+    background-color: #bf0000;
+    font-weight: 600;
+}
+
+#clearMap:hover {
+    background-color: #fa0505;
+}
+
+#feedbackIcon {
+    width: 100%;
+    height: 80%;
+    margin: 10% 0;
+}
+
+#slackButton {
+    background-color: #ffffff;
+    padding: 0;
+}
+
+#slackButton:hover {
+    background-color: #dfdfdf;
+}
+
+#slackLogo {
+    padding: 10%;
+    width: 80%;
+    height: 80%;
+}
+
+.feedback-tooltip-text {
+    max-width: 200px;
+}
+
+#closeButton {
+    display: block;
+    margin: auto;
+}
+
+button.large {
+    padding: 0 20px;
+    font-size: 1.5em;
+}
+
+/*MOBILE*/
+@media only screen and (max-device-width: 768px) {
+    button {
+      font-size: 1em;
+      margin: 0 5px;
+    }
+    button.close {
+        font-size: 16px;
+    }
+    .feedback-buttons {
+    }
+    #clearMap {
+      width: 50%;
+    }
+    #resetPan {
+      width: 50%;
+    }
+    button.circle {
+        width: 3em;
+        height: 3em;
+    }
+    #concept-search-bar-label {
+      margin: 0 5px;
+    }
+    #shiprightButton {
+        display: none;
+    }
+    .top-button-toolbar {
+      right: 0;
+      width: 100%;
+  }
+}
+
+/*DESKTOP*/
+@media only screen and (min-device-width: 769px) {
+    button {
+      margin: 2px 5px 2px 0;
+    }
+    #concept-search-bar-label {
+      max-width: 16rem;
+      margin-right: 10px;
+    }
+    #clearMap {
+      width: 100%;
+      max-width: 8rem;
+    }
+    #slackButton {
+      margin-bottom: 5px;
+    }
+    button.circle {
+      width: 4em;
+      height: 4em;
+    }
+    .top-button-toolbar {
+      right: 60px;
+      width: 60%;
+  }
+}

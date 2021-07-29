@@ -1,5 +1,5 @@
 import "./crsf.js"
-import { initCy } from "./graph.js"
+import { initCy, isMobile } from "./graph.js"
 import { makeMouseoverTippy } from "./iconsAndButtons.js";
 import { showIntroTippy, toggleIntro } from "./intro.js";
 import { logPageView, updateQuestionAnswerUsers, defaultUserId, userId, localStorage } from "./utils.js";
@@ -8,7 +8,7 @@ const staticFileLocation = document.getElementById("static-root").getAttribute("
 
 localStorage.removeItem("viewed_before");
 
-var graphP = fetch(`${staticFileLocation}positions_knowledge_graph_v012.json`).then(file => file.json());
+var graphP = fetch(`${staticFileLocation}positions_knowledge_graph_v013.json`).then(file => file.json());
 var styleP = fetch(`${staticFileLocation}knowledge_graph.cycss`).then(file => file.text());
 
 document.getElementById("shiprightButton").addEventListener("mouseover", makeMouseoverTippy("#shiprightButton", "Play your part in the future of Learney! We want to hear your thoughts and suggestions!"));
@@ -30,10 +30,10 @@ $(document).ready(function(){
 
 updateQuestionAnswerUsers();
 
-Promise.all([fetch(`${staticFileLocation}introSlides_v012.json`).then(file => file.json())]).then(
+Promise.all([fetch(`${staticFileLocation}introSlides_v013.json`).then(file => file.json())]).then(
     function (slides) {
         let introSlides = slides[0];
-        if (userId === defaultUserId && localStorage.getItem("viewed_before") !== null) {
+        if (userId === defaultUserId && localStorage.getItem("viewed_before") !== null && !isMobile) {
             showIntroTippy(introSlides);
         }
         document.getElementById("introButton").onclick = toggleIntro(introSlides);

@@ -1,13 +1,13 @@
-.intro-container {
-    max-width: 400px;
-    color: black;
-    display: block;
-}
-
 .intro-content-container {
     position: relative;
     background-color: white;
     padding: 20px;
+}
+
+.intro-container {
+    max-width: 400px;
+    color: black;
+    display: block;
 }
 
 .intro-slide-change {
@@ -30,6 +30,7 @@
     display: flex;
     margin-bottom: 20px;
 }
+
 .intro-gif {
     margin: auto;
     max-width: 100%;
@@ -63,4 +64,11 @@
     text-align: center;
     padding: 10px 15px 0;
     color: #888888;
+}
+
+/*MOBILE*/
+@media only screen and (max-device-width: 767px) {
+    #introButton {
+        display: none;
+    }
 }
