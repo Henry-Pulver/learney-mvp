@@ -28,6 +28,7 @@ export function initCy(then) {
         }
     });
 
+    if (isMobile) {var minZoom = 0.075;} else {minZoom = 0.15;}
     window.cy = window.cytoscape({
         elements: elements,
         container: document.getElementById("cy"),
@@ -40,7 +41,7 @@ export function initCy(then) {
         pan: {x: 0, y: 0},
 
         maxZoom: 1.5,
-        minZoom: 0.15,
+        minZoom: minZoom,
     });
 
     if (isMobile) {
