@@ -5,13 +5,13 @@
     <meta charset="UTF-8">
     <title>Learney Prototype</title>
     <link rel="icon" href="{% static 'images/favicon_new-32x32.png' %}">
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
-    <link rel="stylesheet" href="{% static 'css/buttons.css' %}">
-    <link rel="stylesheet" href="{% static 'css/tooltip.css' %}">
-    <link rel="stylesheet" href="{% static 'css/intro.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v013_000/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v013_000/buttons.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v013_000/tooltip.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v013_000/intro.css' %}">
     <link rel="stylesheet" href="https://cdn.auth0.com/js/auth0-samples-theme/1.0/css/auth0-theme.min.css"/>
     <meta xmlns="http://www.w3.org/1999/xhtml">
-    <meta name="title" property="og:title" content="Learney" />
+    <meta name="title" property="og:title" content="Learney Prototype" />
     <meta name="image" property="og:image" content="https://app.learney.me/static/images/2021/05/19/learney_background.png" />
     <meta property="og:image:url" content="https://app.learney.me/static/images/2021/05/19/learney_background.png" />
     <meta property="og:image:secure_url" content="https://app.learney.me/static/images/2021/05/19/learney_background.png" />
@@ -19,6 +19,7 @@
     <meta property="og:url" content="https://app.learney.me" />
     <meta name="description" property="og:description" content="The online learning platform designed to help you efficiently take your own path." />
     <meta id="static-root" data-name="{% static '/' %}">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     {{ userdata|json_script:"userdata" }}
 
     <!-- Global site tag (gtag.js) - Google Analytics -->
@@ -48,14 +49,11 @@
 </head>
 
 <body>
-    <div id="loading">
-        <iframe src="https://lottiefiles.com/iframe/8308-loading" scrolling="no"></iframe>
-    </div>
     {% csrf_token %}
     <div id="cy"></div>
 
     <!--Profile stuff-->
-    <div class="overall-profile-div">
+    <div class="overall-profile-div disable-touch-actions">
 
         <div class="profile-image-container">
             <div id="profile-image-button">
@@ -79,20 +77,22 @@
     </div>
 
 
-    <div class="top-button-toolbar">
-        <label style="width:100%;margin-right:10px;max-width:16rem;margin-top:2px;">
+    <div class="top-button-toolbar disable-touch-actions">
+        <div class="intro-button-container">
+            <button class="large" id="introButton" >Intro</button>
+        </div>
+        <label id="concept-search-bar-label">
             <select id="concept-search-bar" name="concept" style="width: 100%;"></select>
         </label>
-<!--        <button id="captureLayout" >Capture Layout</button>-->
-        <button id="clearMap" >Reset Progress</button>
-        <button id="resetPan" >Centre View</button>
+        <div class="button-toolbar-div">
+<!--            <button id="captureLayout" >Capture Layout</button>-->
+            <button id="clearMap" >Reset Progress</button>
+            <button id="resetPan" >Centre View</button>
+        </div>
     </div>
 
-    <div class="intro-button-container">
-        <button class="large" id="introButton" >Intro</button>
-    </div>
 
-    <div class="feedback-buttons">
+    <div class="feedback-buttons disable-touch-actions">
         <button class="circle" id="shiprightButton" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSeWyrpKy0r4LbQuuHt5FIL9PYU7KFfLSxFnnuBDs3-zaofW7A/viewform', '_blank')">
             <img src="{% static 'images/feedback_icon.png' %}" id="feedbackIcon" alt="Feedback icon">
         </button>
@@ -110,6 +110,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/cytoscape-popper@1.0.2/cytoscape-popper.js"></script>
-    <script type="module" src="{% static 'js_v012_000/main.js' %}"></script>
+    <script type="module" src="{% static 'js_v013_000/main.js' %}"></script>
 </body>
 </html>

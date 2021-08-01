@@ -32,7 +32,7 @@ export function setupSearch(elements) {
 
     // Add event handler for when an item is selected
     searchBarDiv.on("select2:select", function (event){
-        cy.nodes(`[id = "${event.params.data.id}"]`).emit("tap");
+        cy.getElementById(event.params.data.id).emit("tap");
         searchBarDiv.val(null).trigger('change');
     })
 }
