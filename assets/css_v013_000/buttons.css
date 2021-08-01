@@ -133,7 +133,8 @@ button.large {
     button.close {
         font-size: 16px;
     }
-    .feedback-buttons {
+    .select2-search__field{
+        height: auto !important;
     }
     #clearMap {
       width: 50%;
