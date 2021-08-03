@@ -209,7 +209,7 @@ export function initialiseFromStorage(name) {
     let storedItem = localStorage.getItem(name);
     let apiEndpoint = getAPIEndpoint(name);
 
-    if (userId !== undefined){
+    if (userId !== defaultUserId){
         if (storedItem !== null) {
             // If stored locally, check DB and add it if it's not there!
             $.ajax({
@@ -319,7 +319,7 @@ export function logContentClick(url) {
 }
 
 export function updateQuestionAnswerUsers() {
-    if (userId !== "default_user_id") {
+    if (userId !== defaultUserId) {
       $.ajax({
         url : "/api/v0/add_user",
         type : "PUT",

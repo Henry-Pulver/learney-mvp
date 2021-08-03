@@ -1,8 +1,41 @@
-import { initialiseFromStorage, saveToStorage, updateQuestionAnswerUsers } from "./utils.js";
+import {
+    createTipElement,
+    defaultUserId,
+    initialiseFromStorage, localStorage,
+    saveToStorage,
+    updateQuestionAnswerUsers,
+    userId
+} from "./utils.js";
 
 
 const learnedNodesString = "learnedNodes";
 const goalNodesString = "goalNodes";
+
+// Remove Sept 2021 and remove storing state in cookies entirely
+const deleteStoredProgress = "deleteStoredProgress";
+const transferredToProfileOnce = "transferredToProfileOnce";
+export var signInTooltip = null;
+// Deals with old users
+if (userId === defaultUserId){
+    // Doesn't delete progress of prev users. Deletes user progress when they've visited multiple times!
+    if (localStorage.getItem(deleteStoredProgress) === "true") {
+        localStorage.removeItem(learnedNodesString);
+        localStorage.removeItem(goalNodesString);
+    }
+    localStorage.setItem(deleteStoredProgress, "true");
+    // Deals with previous users who have things set already
+    signInTooltip = promptSignInTooltip("To keep progress across sessions, sign in here!");
+    signInTooltip.show();
+} else if (localStorage.getItem(transferredToProfileOnce) === null) {  // Deals with first-time signed in users
+    localStorage.setItem(transferredToProfileOnce, "true");
+} else {  // Deals with other signed in users
+    if (localStorage.getItem(deleteStoredProgress) === "true") {
+        localStorage.removeItem(learnedNodesString);
+        localStorage.removeItem(goalNodesString);
+    }
+}
+
+// End remove Sept 2021
 export var learnedNodes = initialiseFromStorage(learnedNodesString);
 export var goalNodes = initialiseFromStorage(goalNodesString);
 export var pathNodes = {};
@@ -60,6 +93,10 @@ export function onLearnedSliderClick(node) {
             });
         }
         saveToStorage(learnedNodesString, learnedNodes, true);
+        if (userId === defaultUserId){
+            // promptSignInTooltip("To keep what you know across sessions, sign in here!")
+            signInTooltip.show();
+        }
     }
 }
 
@@ -73,6 +110,26 @@ function setPath(node) {
     path.edges().forEach(function(edge){
         edge.style("opacity", 1);
     });
+}
+
+function promptSignInTooltip(text) {
+    return tippy("#profile-image-button", {
+            html: createTipElement("p", {"class": "feedback-tooltip-text"}, text),
+            allowHTML: true,
+            arrow: true,
+            placement: "bottom",
+            delay: [0, 3000],
+        }).tooltips[0];
+}
+
+
+function setGoalIfSignedIn(node) {
+    setGoal(node);
+    if (userId === defaultUserId) {
+        // Prompt sign in
+        // promptSignInTooltip("To keep your goals across sessions, sign in here!");
+        signInTooltip.show();
+    }
 }
 
 function setGoal(node) {
@@ -107,7 +164,7 @@ export function onSetGoalSliderClick(node) {
         // If not already set!
         if (!(nodeId in goalNodes)){
             // Set goal to class goal and unknown dependencies to class: path
-            setGoal(node);
+            setGoalIfSignedIn(node);
         } else {
             // If unsetting a goal, remove path from its predecessors and recalculate path to remaining goals
             unsetGoal(node);
@@ -134,7 +191,7 @@ export function initialiseGraphState() {
     for (const nodeId in goalNodes) {
         let node = cy.nodes("[id = '" + nodeId + "']");
         if (node.data() !== undefined) {
-            setGoal(node);
+            setGoalIfSignedIn(node);
         } else{
             delete goalNodes[nodeId];
         }

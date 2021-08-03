@@ -30,6 +30,9 @@ button:hover {
       box-shadow: 0 0 5px #2578fc;
     }
 }
+.flashing {
+    animation: glowing 1300ms infinite;
+}
 
 button.close {
     position: absolute;
@@ -68,10 +71,6 @@ button.circle {
     -webkit-border-radius: 50%;
     -moz-border-radius: 50%;
     border-radius: 50%;
-}
-
-#shiprightButton {
-    animation: glowing 1300ms infinite;
 }
 
 #shiprightButton:hover {

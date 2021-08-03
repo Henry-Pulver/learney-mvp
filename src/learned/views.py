@@ -17,7 +17,7 @@ class LearnedView(APIView):
             serializer = LearnedSerializer(entry)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ObjectDoesNotExist as error:
-            return Response(error, status=status.HTTP_204_NO_CONTENT)
+            return Response(str(error), status=status.HTTP_204_NO_CONTENT)
 
     def post(self, request: Request, format=None):
         serializer = LearnedSerializer(data=request.data, context={"request": request})
