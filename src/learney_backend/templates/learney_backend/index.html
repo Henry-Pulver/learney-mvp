@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <title>Learney Prototype</title>
     <link rel="icon" href="{% static 'images/favicon_new-32x32.png' %}">
-    <link rel="stylesheet" href="{% static 'css_v013_000/main.css' %}">
-    <link rel="stylesheet" href="{% static 'css_v013_000/buttons.css' %}">
-    <link rel="stylesheet" href="{% static 'css_v013_000/tooltip.css' %}">
-    <link rel="stylesheet" href="{% static 'css_v013_000/intro.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v013_001/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v013_001/buttons.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v013_001/tooltip.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v013_001/intro.css' %}">
     <link rel="stylesheet" href="https://cdn.auth0.com/js/auth0-samples-theme/1.0/css/auth0-theme.min.css"/>
     <meta xmlns="http://www.w3.org/1999/xhtml">
     <meta name="title" property="og:title" content="Learney Prototype" />
@@ -71,7 +71,7 @@
             <button onclick="location.href='/logout'">Logout</button>
             {% else %}
             <h2>Welcome!</h2>
-            <button class="large" onclick="location.href='/login/auth0'">Log In</button>
+            <button class="large flashing" onclick="location.href='/login/auth0'">Log In</button>
             {% endif %}
         </div>
     </div>
@@ -93,7 +93,7 @@
 
 
     <div class="feedback-buttons disable-touch-actions">
-        <button class="circle" id="shiprightButton" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSeWyrpKy0r4LbQuuHt5FIL9PYU7KFfLSxFnnuBDs3-zaofW7A/viewform', '_blank')">
+        <button class="circle flashing" id="shiprightButton" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSeWyrpKy0r4LbQuuHt5FIL9PYU7KFfLSxFnnuBDs3-zaofW7A/viewform', '_blank')">
             <img src="{% static 'images/feedback_icon.png' %}" id="feedbackIcon" alt="Feedback icon">
         </button>
         <button class="circle" id="slackButton" onclick="window.open('https://join.slack.com/t/learneyalphatesters/shared_invite/zt-tf37n610-x8rIwDk6eeVctTVZqQkp7Q','_blank')">
@@ -110,6 +110,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/cytoscape-popper@1.0.2/cytoscape-popper.js"></script>
-    <script type="module" src="{% static 'js_v013_000/main.js' %}"></script>
+    <script type="module" src="{% static 'js_v013_001/main.js' %}"></script>
 </body>
 </html>
