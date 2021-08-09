@@ -38,6 +38,8 @@ ALLOWED_HOSTS = [
     "learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
     "172.31.8.139",
     "172.31.13.26",
+    # staging url
+    "staging.learney.me",
     # staging aws
     "staging-learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
     "172.31.39.124",
@@ -184,7 +186,7 @@ USE_L10N = True
 USE_TZ = True
 
 # Set to use HTTPS if on production server
-if PYTHON_ENV == "production":
+if PYTHON_ENV in ["production", "staging"]:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
