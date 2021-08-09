@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.datastructures import MultiValueDictKeyError
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -18,6 +19,8 @@ class GoalView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ObjectDoesNotExist as error:
             return Response(str(error), status=status.HTTP_204_NO_CONTENT)
+        except MultiValueDictKeyError as error:
+            return Response(str(error), status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request: Request, format=None):
         serializer = GoalSerializer(data=request.data, context={"request": request})
