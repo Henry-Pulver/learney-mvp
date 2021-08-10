@@ -22,10 +22,14 @@ var selectedNodeID = Infinity;
 export function initCy(then) {
     /** Initialise Cytoscape graph.*/
     let elements = then[1];
+    // let subjects = [];
     elements.nodes.forEach(function(node){
         if (node.data.colour !== undefined){
-            node.data.colour = LightenDarkenColorByFactor(node.data.colour, 0.15)
+            node.data.colour = LightenDarkenColorByFactor(node.data.colour, 0.15);
         }
+        // if (node.data.nodetype === "field") {
+        //     subjects.push(node.name);
+        // }
     });
 
     window.cy = window.cytoscape({
@@ -40,7 +44,7 @@ export function initCy(then) {
         pan: {x: 0, y: 0},
 
         maxZoom: 1.5,
-        minZoom: 0.15,
+        minZoom: 0.02,
     });
 
     if (isMobile) {
@@ -57,7 +61,7 @@ export function initCy(then) {
     //     subject_subgraph.layout({
     //         name: "dagre",
     //         rankDir: "BT",
-    //         boundingBox: {x1: xLocations[index][0] * 20, y1: -250, x2: xLocations[index][1] * 20, y2: 250}
+    //         // boundingBox: {x1: xLocations[index][0] * 20, y1: -250, x2: xLocations[index][1] * 20, y2: 250}
     //     }).run()
     // })
 
@@ -66,7 +70,7 @@ export function initCy(then) {
     // console.log(window.cy.elements());
     // window.cy.elements().layout({name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 300}).run();
 
-    window.cy.elements().panify();
+    // window.cy.elements().panify();
     unhighlightNodes(cy.nodes());
 
     // Set initially learned or goal nodes
@@ -114,29 +118,29 @@ function fitCytoTo(fitParams, onComplete = function () {}) {
 }
 
 // REMOVE FOR PROD
-// document.getElementById("captureLayout").onclick = captureLayout
-// function captureLayout() {
-//     var positions = {};
-//     var nodes = window.cy.nodes();
-//     nodes.forEach(function(node) {
-//         positions[node.data().id] = node.position();
-//     });
-//
-//     var myBlob = new Blob([JSON.stringify(positions)], {type: 'application/json'});
-//
-//     // CREATE DOWNLOAD LINK
-//     var url = window.URL.createObjectURL(myBlob);
-//     var anchor = document.createElement("a");
-//     anchor.href = url;
-//     anchor.download = "NodePositions.json";
-//
-//     // FORCE DOWNLOAD
-//     // NOTE: MAY NOT ALWAYS WORK DUE TO BROWSER SECURITY
-//     // BETTER TO LET USERS CLICK ON THEIR OWN
-//     anchor.click();
-//     window.URL.revokeObjectURL(url);
-//     anchor.remove();
-// }
+document.getElementById("captureLayout").onclick = captureLayout
+function captureLayout() {
+    var positions = {};
+    var nodes = window.cy.nodes();
+    nodes.forEach(function(node) {
+        positions[node.data().id] = node.position();
+    });
+
+    var myBlob = new Blob([JSON.stringify(positions)], {type: 'application/json'});
+
+    // CREATE DOWNLOAD LINK
+    var url = window.URL.createObjectURL(myBlob);
+    var anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "NodePositions.json";
+
+    // FORCE DOWNLOAD
+    // NOTE: MAY NOT ALWAYS WORK DUE TO BROWSER SECURITY
+    // BETTER TO LET USERS CLICK ON THEIR OWN
+    anchor.click();
+    window.URL.revokeObjectURL(url);
+    anchor.remove();
+}
 
 function getConceptNodeOpacity(node, normalOpacity) {
     return normalOpacity + ((node.data().relative_importance - 1)  * (1 - normalOpacity) / 2);

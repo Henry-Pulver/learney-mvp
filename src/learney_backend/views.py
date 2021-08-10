@@ -29,23 +29,26 @@ def index(request):
 class ContentLinkPreviewView(APIView):
     def get(self, request: Request, format=None) -> Response:
         try:
+            map_name = request.GET["map_name"]
             concept = request.GET["concept"]
             url = request.GET["url"]
-            print(f"Attempting to retrieve from DB with concept: {concept}, url: {url}")
-            retrieved_entry = ContentLinkPreview.objects.get(concept=concept, url=url)
+            print(f"Attempting to retrieve concept: {concept} from map {map_name}, url: {url}")
+            retrieved_entry = ContentLinkPreview.objects.get(
+                map_name=map_name, concept=concept, url=url
+            )
             print("Object exists in DB!")
             serializer = LinkPreviewSerializer(retrieved_entry)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ObjectDoesNotExist as e:
+            print(f"ContentLinkPreviewView error: {e}")
             preview_data = requests.get(
                 "http://api.linkpreview.net",
                 params={"q": request.GET["url"], "key": LINK_PREVIEW_API_KEY},
             )
-            print(f"ContentLinkPreviewView error: {e}")
-            print(f"OBJECT DOESN'T EXIST, link preview response:{preview_data.status_code}")
             if preview_data.status_code == 200:
                 link_prev_dict: Dict[str, str] = json.loads(preview_data.text)
                 db_dict = {
+                    "map_name": request.GET["map_name"],
                     "description": link_prev_dict["description"],
                     "concept": request.GET["concept"],
                     "url": request.GET["url"],
@@ -72,7 +75,7 @@ class ContentLinkPreviewView(APIView):
             print(f"{serializer.data} saved in DB!")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         print(f"ContentLinkPreviewSerializer errors: {serializer.errors}")
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(str(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
 
 
 class ContentVoteView(APIView):

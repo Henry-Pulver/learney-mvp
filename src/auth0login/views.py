@@ -7,13 +7,19 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
 
+INDEX_HTML = f"{settings.BASE_DIR}/learney_backend/templates/learney_backend/index.html"
+
 
 def index(request):
     user = request.user
     if user.is_authenticated:
         return redirect(dashboard)
     else:
-        return render(request, "index.html")
+        return render(
+            request,
+            INDEX_HTML,
+            {"auth0User": "", "userdata": "", "map_name": settings.MAP_NAME},
+        )
 
 
 @login_required
@@ -23,7 +29,7 @@ def dashboard(request):
 
     return render(
         request,
-        f"{os.path.dirname(os.getcwd())}/src/learney_backend/templates/learney_backend/index.html",
+        INDEX_HTML,
         {
             "auth0User": auth0user,
             "userdata": {
@@ -32,6 +38,7 @@ def dashboard(request):
                 "picture": auth0user.extra_data["picture"],
                 "email": auth0user.extra_data["email"],
             },
+            "map_name": settings.MAP_NAME,
         },
     )
 

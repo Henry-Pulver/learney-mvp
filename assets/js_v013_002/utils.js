@@ -1,5 +1,7 @@
 
+// Get context from html
 const userdata = JSON.parse(document.getElementById('userdata').textContent);
+export const mapName = JSON.parse(document.getElementById('map_name').textContent);
 export var userId;
 export const defaultUserId = "default_user_id";
 if (userdata !== ""){
@@ -230,8 +232,10 @@ export function initialiseFromStorage(name) {
                 data : {user_id: userId},
                 success : function (json) {
                     ajaxSuccess(json);
-                    storedItem = getGetResponseData(name, json);
-                    saveToStorage(name, JSON.parse(storedItem), false);
+                    if (json !== undefined && json.status === 200){
+                        storedItem = getGetResponseData(name, json);
+                        saveToStorage(name, JSON.parse(storedItem), false);
+                    }
                 },
                 error : function(xhr,errmsg,err) {
                     console.log(`${name} not found in DB or on browser!`);
