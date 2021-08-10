@@ -1,36 +1,30 @@
 from django.shortcuts import render
 from django.urls import path, re_path
 
+from auth0login.views import index
 from learney_backend.views import ContentLinkPreviewView, ContentVoteView
 from learney_web import settings
 
-
-def index(request):
-    return render(
-        request,
-        f"{settings.BASE_DIR}/learney_backend/templates/learney_backend/index.html",
-        {"auth0User": "", "userdata": ""},
-    )
+HTML_BASE_DIR = f"{settings.BASE_DIR}/learney_backend/templates/learney_backend/"
 
 
-def privacy_policy(request):
-    return render(
-        request,
-        f"{settings.BASE_DIR}/learney_backend/templates/learney_backend/privacy_policy.html",
-    )
-
-
-def terms_of_use(request):
-    return render(
-        request,
-        f"{settings.BASE_DIR}/learney_backend/templates/learney_backend/terms_of_use.html",
-    )
+def render_request(template_name: str):
+    return lambda request: render(request, template_name)
 
 
 urlpatterns = [
     path("", index, name="index"),
-    path("2021/05/26/privacy_policy", privacy_policy, name="privacy_policy"),
-    path("2021/05/26/terms_of_use", terms_of_use, name="terms_of_use"),
+    # path("maps/shahaf", index, name=""),
+    path(
+        "2021/05/26/privacy_policy",
+        render_request(f"{HTML_BASE_DIR}/privacy_policy.html"),
+        name="privacy_policy",
+    ),
+    path(
+        "2021/05/26/terms_of_use",
+        render_request(f"{HTML_BASE_DIR}/terms_of_use.html"),
+        name="terms_of_use",
+    ),
     re_path("api/v0/link_previews", ContentLinkPreviewView.as_view(), name="link previews"),
     re_path("api/v0/votes", ContentVoteView.as_view(), name="votes"),
 ]

@@ -2,13 +2,21 @@ import csv
 import json
 from argparse import ArgumentParser
 from collections import Counter
+from copy import copy
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Set, Union
+from warnings import warn
 
 import matplotlib.cm as cm
 import numpy as np
 
-JSON_GRAPH_DICT = Dict[str, List[Dict[str, Dict[str, str]]]]
+from learney_web.utils import get_predecessor_dict
+
+JSON_GRAPH_DICT = Dict[str, List[Dict[str, Union[Dict[str, str], str]]]]
+
+
+class ContentError(Exception):
+    pass
 
 
 def subject_to_id(subject: str) -> str:
@@ -28,6 +36,78 @@ def get_colours(num_colours: int) -> List:
     ]
 
 
+def remove_edge(source: str, target: str, edges: List[Dict[str, Dict[str, str]]]) -> None:
+    print(f"Removing edge connecting {source} -> {target}")
+    for edge in edges:
+        if edge["data"]["source"] == source and edge["data"]["target"] == target:
+            edges.remove(edge)
+            break
+
+
+def remove_unnecessary_edges(edges: List[Dict[str, Dict[str, str]]]) -> None:
+    """Remove edges whose dependency structures are already covered by existing edges.
+
+    e.g.     If X -> Y -> Z and X -> Z, then X -> Z can be cut as this dependency is already implied
+    with X -> Y -> Z.
+    """
+    predecessor_dict = get_predecessor_dict(edges)
+    for node, direct_predecessors in predecessor_dict.items():
+        # check the predecessors don't overlap
+        for predecessor in direct_predecessors:
+            second_layer_predecessors = predecessor_dict.get(predecessor, set())
+            [
+                remove_edge(second_layer_pred, node, edges)  # type: ignore
+                for second_layer_pred in second_layer_predecessors
+                if second_layer_pred in direct_predecessors
+            ]
+
+
+def assert_edges_valid(edges: List[Dict[str, Dict[str, str]]]) -> List[Dict[str, Dict[str, str]]]:
+    """Assert there are no loops in the tree & remove repeated."""
+    error_list = []
+
+    predecessor_dict = get_predecessor_dict(edges)
+    for node, direct_predecessors in predecessor_dict.items():
+        for predecessor in direct_predecessors:
+            second_layer_predecessors = predecessor_dict.get(predecessor, set())
+            if not all(
+                [second_layer_pred != node for second_layer_pred in second_layer_predecessors]
+            ):
+                error_list.append(
+                    f"Two nodes have each other as dependencies! {node} <-> {predecessor}"
+                )
+
+        # check for longer loops
+        predecessor_set = copy(direct_predecessors)
+        prev_predecessor_set: Set[str] = set()
+        while len(prev_predecessor_set) != len(predecessor_set):
+            prev_predecessor_set = copy(predecessor_set)
+            [
+                predecessor_set.union(predecessor_dict.get(predecessor, set()))
+                for predecessor in prev_predecessor_set
+            ]
+        if node in predecessor_set:
+            error_list.append(f"Found a dependency loop including node: {node}!")
+
+    if len(set([str(edge) for edge in edges])) != len(edges):
+        repeated_edges = []
+        for edge in edges:
+            repetition_count = edges.count(edge)
+            if repetition_count > 1:
+                # Remove repeated edges
+                repeated_edges.append(edge)
+                warn(
+                    f"Edge from {edge['data']['source']} -> {edge['data']['target']} repeated {repetition_count} times!"
+                )
+        for edge_index_to_remove in range(1, len(repeated_edges), 2):
+            edges.remove(repeated_edges[edge_index_to_remove])
+
+    if len(error_list) > 0:
+        raise ContentError(str(error_list))
+
+    return edges
+
+
 def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRAPH_DICT:
     """Converts a .tsv into a dictionary of the form that can be consumed by cytoscape.js as a.
 
@@ -45,19 +125,27 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
     ), f"Path given ({tsv_path}) doesn't point to a valid file!"
     assert tsv_path.suffix == ".tsv", f"Path given ({tsv_path}) doesn't point to a `.tsv` file!"
 
+    subject_missing_errors = []
     with open(tsv_path, newline="") as tsvfile:
         file = csv.reader(tsvfile, delimiter="\t", quotechar="|")
 
         nodes, edges, subjects, sources = [], [], set(), []
         for i, row in enumerate(file):
-            if i == 0:
+            if i == 0 or len(str(row[1])) == 0:
                 continue
 
-            # CONVERT THE DEPENDENCIES TO A LIST
+            # Ensure it's a regulation-length row
+            row = [row[i] if i < len(row) else "" for i in range(9)]
+
+            # Convert dependencies to a list
             dependencies = row[2].replace(" ", "").split(",")
 
             node_id = str(row[0])
             subjects.add(str(row[3]))
+
+            if row[3] == "":
+                subject_missing_errors.append(f"{row[1]} (ID={node_id}) is missing its subject!")
+
             nodes.append(
                 {
                     "data": {
@@ -73,7 +161,7 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
                 }
             )
             if show_subjects:
-                nodes[-1]["data"].update({"parent": subject_to_id(row[3])})
+                nodes[-1]["data"].update({"parent": subject_to_id(row[3])})  # type: ignore
 
             for dependency in dependencies:
                 if dependency == "":
@@ -108,11 +196,17 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
 
     for source_id, num_targets in Counter(sources).items():
         for node in nodes:
-            if node["data"]["id"] == source_id:
-                node["data"]["relative_importance"] = max(1, 0.7 * (num_targets + 1) ** 0.5)
+            if node["data"]["id"] == source_id:  # type: ignore
+                node["data"]["relative_importance"] = max(1, 0.7 * (num_targets + 1) ** 0.5)  # type: ignore
                 continue
 
-    return {"nodes": nodes, "edges": edges}
+    remove_unnecessary_edges(edges)
+    edges = assert_edges_valid(edges)
+
+    if len(subject_missing_errors) > 0:
+        raise ContentError(str(subject_missing_errors))
+
+    return {"nodes": nodes, "edges": edges}  # type: ignore
 
 
 if __name__ == "__main__":

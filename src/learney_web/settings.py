@@ -17,6 +17,8 @@ import yaml
 
 from learney_web.utils import get_concept_names, get_predecessor_dict
 
+MAP_NAME = "shahafs_map"
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

@@ -1,6 +1,6 @@
 import {onLearnedSliderClick, learnedNodes, onSetGoalSliderClick, goalNodes} from "./learningAndPlanning.js";
 import {removeIntroTippy} from "./intro.js";
-import {getValidURLs, createTipElement, initialiseFromStorage, saveToStorage, logContentClick, userId} from "./utils.js";
+import {getValidURLs, createTipElement, initialiseFromStorage, saveToStorage, logContentClick, userId, mapName} from "./utils.js";
 
 export var shownTippy;
 
@@ -171,7 +171,7 @@ function createLinkPreviewArray (nodeName, urls) {
             $.ajax({
                 url: "api/v0/link_previews",
                 type: "GET",
-                data: {concept: nodeName, url: urls[i]},
+                data: {map_name: mapName, concept: nodeName, url: urls[i]},
                 success: function (data) {
                     console.log(data);
                     // If successful, show data in link preview, filling gaps with default values
