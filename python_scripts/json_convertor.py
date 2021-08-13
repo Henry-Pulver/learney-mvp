@@ -6,9 +6,11 @@ from copy import copy
 from pathlib import Path
 from typing import Dict, List, Set, Union
 from warnings import warn
+from typing import Any, Dict, List, Union
 
 import matplotlib.cm as cm
 import numpy as np
+import validators
 
 from learney_web.utils import get_predecessor_dict
 
@@ -108,10 +110,25 @@ def assert_edges_valid(edges: List[Dict[str, Dict[str, str]]]) -> List[Dict[str,
     return edges
 
 
-def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRAPH_DICT:
-    """Converts a .tsv into a dictionary of the form that can be consumed by cytoscape.js as a.
+def process_urls(url_string: str) -> List[str]:
+    """Converts string of comma-separated urls to list of url strings."""
+    output_url_list = []
+    for potential_url in url_string.replace(" ", "").split(","):
+        if validators.url(potential_url):
+            output_url_list.append(potential_url)
+        else:
+            output_url_list[-1] += potential_url
+    return output_url_list
 
-    .json.
+
+def validate_url_list(url_list: List[str]) -> None:
+    for url in url_list:
+        if not validators.url(url):
+            raise ValueError(f"Not a valid URL: {url}")
+
+
+def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRAPH_DICT:
+    """Converts a .tsv into a dictionary of the form that can be consumed by cytoscape.js as a.json.
 
     Args:
         tsv_path: path to .tsv file to convert
@@ -129,7 +146,8 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
     with open(tsv_path, newline="") as tsvfile:
         file = csv.reader(tsvfile, delimiter="\t", quotechar="|")
 
-        nodes, edges, subjects, sources = [], [], set(), []
+        nodes: List[Dict[str, Dict[str, Any]]] = []
+        edges, subjects, sources = [], set(), []
         for i, row in enumerate(file):
             if i == 0 or len(str(row[1])) == 0:
                 continue
@@ -155,11 +173,11 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
                         "name": str(row[1]),
                         "lectures": str(row[4]),
                         "description": str(row[5]),
-                        "urls": row[6].replace(" ", "").split(","),
+                        "urls": process_urls(row[6]),
                         "nodetype": "concept",
                         "relative_importance": 1,
                     },
-                    "classes": "concept",
+                    "classes": "concept",  # type: ignore
                 }
             )
             if show_subjects:
@@ -192,7 +210,7 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
                             "colour": colour,
                             "nodetype": "field",
                         },
-                        "classes": "subject",
+                        "classes": "subject",  # type: ignore
                     },
                 )
 
