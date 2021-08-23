@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.urls import path, re_path
 
-from auth0login.views import index
-from learney_backend.views import ContentLinkPreviewView, ContentVoteView
+from auth0login.views import view_map
+from learney_backend.views import ContentLinkPreviewView, ContentVoteView, redirect_to_map
 from learney_web import settings
 
 HTML_BASE_DIR = f"{settings.BASE_DIR}/learney_backend/templates/learney_backend/"
@@ -13,8 +13,8 @@ def render_request(template_name: str):
 
 
 urlpatterns = [
-    path("", index, name="index"),
-    # path("maps/shahaf", index, name=""),
+    path("", view_map, name="index"),
+    path("dashboard", redirect_to_map),
     path(
         "2021/05/26/privacy_policy",
         render_request(f"{HTML_BASE_DIR}/privacy_policy.html"),

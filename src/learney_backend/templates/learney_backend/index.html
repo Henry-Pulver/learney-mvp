@@ -23,7 +23,8 @@
 
     <!--    Context from Django-->
     {{ userdata|json_script:"userdata" }}
-    {{ map_name|json_script:"map_name" }}
+    {{ map_uuid|json_script:"map_uuid" }}
+    {{ map_version|json_script:"map_version" }}
 
     <!-- STAGING - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-4F72V4175C"></script>
@@ -85,6 +86,7 @@
             {% else %}
             <h2>Welcome!</h2>
             <button class="large flashing" onclick="location.href='/login/auth0'">Log In</button>
+<!--            <button class="large flashing" onclick=logIn()>Log In</button>-->
             {% endif %}
         </div>
     </div>
@@ -98,7 +100,7 @@
             <select id="concept-search-bar" name="concept" style="width: 100%;"></select>
         </label>
         <div class="button-toolbar-div">
-            <button id="captureLayout" >Capture Layout</button>
+<!--            <button id="captureLayout" >Capture Layout</button>-->
             <button id="clearMap" >Reset Progress</button>
             <button id="resetPan" >Centre View</button>
         </div>
@@ -123,6 +125,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/cytoscape-popper@1.0.2/cytoscape-popper.js"></script>
-    <script type="module" src="{% static 'js_v013_002/main.js' %}"></script>
+    <script type="module" src="{% static 'js_v020_000/main.js' %}"></script>
 </body>
 </html>

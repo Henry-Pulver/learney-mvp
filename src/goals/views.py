@@ -11,7 +11,9 @@ from goals.serializers import GoalSerializer
 class GoalView(APIView):
     def get(self, request: Request, format=None):
         try:
-            entry = GoalModel.objects.filter(user_id=request.GET["user_id"]).latest("last_updated")
+            entry = GoalModel.objects.filter(
+                user_id=request.GET["user_id"], map_uuid=request.GET["map_uuid"]
+            ).latest("last_updated")
             serializer = GoalSerializer(entry)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ObjectDoesNotExist as error:

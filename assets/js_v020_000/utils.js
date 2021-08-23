@@ -1,7 +1,9 @@
+import { csrftoken } from "./csrf.js"
 
 // Get context from html
+export const mapUUID = JSON.parse(document.getElementById('map_uuid').textContent);
+export const mapVersion = JSON.parse(document.getElementById('map_version').textContent);
 const userdata = JSON.parse(document.getElementById('userdata').textContent);
-export const mapName = JSON.parse(document.getElementById('map_name').textContent);
 export var userId;
 export const defaultUserId = "default_user_id";
 if (userdata !== ""){
@@ -166,12 +168,12 @@ function getAPIEndpoint(name) {
     } else {
         extension = name;
     }
-    return `api/v0/${extension}`;
+    return `/api/v0/${extension}`;
 }
 
 
 function getPostRequestData(name, objectToStore) {
-    let payload = {user_id: userId};
+    let payload = {user_id: userId, map_uuid: mapUUID};
     let objectString = JSON.stringify(objectToStore);
     if (name === "learnedNodes") {
         payload["learned_concepts"] = objectString;
@@ -217,7 +219,7 @@ export function initialiseFromStorage(name) {
             $.ajax({
                 url : apiEndpoint,
                 type : "GET",
-                data : {user_id: userId},
+                data : {user_id: userId, map_uuid: mapUUID},
                 success : ajaxSuccess,
                 error : function(xhr,errmsg,err) {
                     saveToDB(name, JSON.parse(storedItem));
@@ -229,7 +231,7 @@ export function initialiseFromStorage(name) {
             $.ajax({
                 url : apiEndpoint,
                 type : "GET",
-                data : {user_id: userId},
+                data : {user_id: userId, map_uuid: mapUUID},
                 success : function (json) {
                     ajaxSuccess(json);
                     if (json !== undefined && json.status === 200){
@@ -295,8 +297,9 @@ export function logPageView() {
             method : "POST",
             headers: {
                 'Content-Type': 'application/json',
+                "X-CSRFToken": csrftoken,
             },
-            body : JSON.stringify({user_id: userId})
+            body : JSON.stringify({user_id: userId, page_extension: location.pathname})
     });
     localStorage.setItem("viewed_before", "true");
     // $.ajax({
