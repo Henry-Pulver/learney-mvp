@@ -1,9 +1,9 @@
-from typing import Dict, Set
+from typing import Dict, List, Set
 
 
-def get_predecessor_dict(content_json: Dict[str, Dict]) -> Dict[str, Set[str]]:
+def get_predecessor_dict(edges: List[Dict[str, Dict[str, str]]]) -> Dict[str, Set[str]]:
     predecessor_dict: Dict[str, Set] = {}
-    for edge in content_json["edges"]:
+    for edge in edges:
         if edge["data"]["target"] in predecessor_dict:
             predecessor_dict[edge["data"]["target"]].add(edge["data"]["source"])
         else:
