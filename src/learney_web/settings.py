@@ -17,8 +17,6 @@ import yaml
 
 from learney_web.utils import get_concept_names, get_predecessor_dict
 
-MAP_NAME = "shahafs_map"
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,6 +27,7 @@ SECRET_KEY = dev_secrets_dict["SECRET_KEY"]
 
 SLACK_TOKEN = dev_secrets_dict["SLACK_TOKEN"]
 NOTION_KEY = dev_secrets_dict["NOTION_KEY"]
+AWS_CREDENTIALS = dev_secrets_dict["AWS_CREDENTIALS"]
 
 PYTHON_ENV = os.environ.get("PYTHON_ENV", "dev")
 DEBUG = PYTHON_ENV not in ["production", "staging"]
@@ -98,6 +97,7 @@ INSTALLED_APPS = [
     "auth0login",
     "learney_backend",
     "goals",
+    "knowledge_maps",
     "learned",
     "link_clicks",
     "page_visits",
@@ -204,11 +204,11 @@ STATIC_ROOT = str(BASE_DIR / "static")
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Load content json in once
-with open(f"{STATICFILES_DIRS[0]}/positions_knowledge_graph_v013.json", "r") as content_json_file:
+with open(f"{STATICFILES_DIRS[0]}/positions_map_v013.json", "r") as content_json_file:
     CONTENT_JSON = json.load(content_json_file)
 
-PREDECESSOR_DICT = get_predecessor_dict(CONTENT_JSON)
-CONCEPT_NAMES = get_concept_names(CONTENT_JSON)
+ORIG_MAP_PREDECESSOR_DICT = get_predecessor_dict(CONTENT_JSON["edges"])
+ORIG_MAP_CONCEPT_NAMES = get_concept_names(CONTENT_JSON)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

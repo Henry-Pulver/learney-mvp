@@ -22,6 +22,7 @@ urlpatterns = [
     path("", include("auth0login.urls")),
     path("", include("goals.urls")),
     path("", include("learned.urls")),
+    path("", include("knowledge_maps.urls")),
     path("", include("link_clicks.urls")),
     path("", include("page_visits.urls")),
     path("admin/", admin.site.urls),
