@@ -2,7 +2,9 @@ from django.db import models
 
 
 class ContentLinkPreview(models.Model):
-    map_name = models.TextField()
+    map_uuid = models.UUIDField(
+        editable=False, help_text="UUID of the map this content link corresponds to"
+    )
     concept = models.TextField()
     url = models.URLField()
 
@@ -14,6 +16,9 @@ class ContentLinkPreview(models.Model):
 
 
 class ContentVote(models.Model):
+    map_uuid = models.UUIDField(
+        editable=False, help_text="UUID of the map this content link corresponds to"
+    )
     concept = models.TextField()
     url = models.URLField()
     user_id = models.TextField(default="")

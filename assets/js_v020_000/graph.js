@@ -20,12 +20,14 @@ var cKeyPressed = false;
 var selectedNodeID = Infinity;
 
 export function initCy(then) {
+    let elements = JSON.parse(then[1]);
     /** Initialise Cytoscape graph.*/
-    let elements = then[1];
+    console.log(typeof elements);
+    console.log(elements);
     // let subjects = [];
     elements.nodes.forEach(function(node){
         if (node.data.colour !== undefined){
-            node.data.colour = LightenDarkenColorByFactor(node.data.colour, 0.15);
+            node.data.colour = LightenDarkenColorByFactor(node.data.colour, 0.25);
         }
         // if (node.data.nodetype === "field") {
         //     subjects.push(node.name);
@@ -40,20 +42,12 @@ export function initCy(then) {
         style: then[0],
 
         // initial viewport state:
-        zoom: 1,
-        pan: {x: 0, y: 0},
+        // zoom: 1,
+        // pan: {x: 0, y: 0},
 
         maxZoom: 1.5,
-        minZoom: 0.02,
     });
 
-    if (isMobile) {
-        // Performance enhancements
-        let concepts = cy.nodes('[nodetype = "concept"]');
-        concepts.style("min-zoomed-font-size", "2.5em");
-    } else {
-        cy.wheelSensitivity = 0.25;
-    }
     // DO DAGRE FOR EACH SUBJECT
     // subjects.forEach(function(subject, index) {
     //     var subject_subgraph = window.cy.filter('node[subject = "' + subject + '"]');
@@ -70,7 +64,18 @@ export function initCy(then) {
     // console.log(window.cy.elements());
     // window.cy.elements().layout({name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 300}).run();
 
-    // window.cy.elements().panify();
+    if (isMobile) {
+        // Performance enhancements
+        let concepts = cy.nodes('[nodetype = "concept"]');
+        concepts.style("min-zoomed-font-size", "2.5em");
+    } else {
+        cy.wheelSensitivity = 0.25;
+    }
+    // set initial viewport state
+    cy.fit(cy.elements(), 50);
+    cy.minZoom(cy.zoom());
+
+    cy.elements().panify();
     unhighlightNodes(cy.nodes());
 
     // Set initially learned or goal nodes
@@ -117,30 +122,41 @@ function fitCytoTo(fitParams, onComplete = function () {}) {
     }
 }
 
-// REMOVE FOR PROD
-document.getElementById("captureLayout").onclick = captureLayout
-function captureLayout() {
-    var positions = {};
-    var nodes = window.cy.nodes();
-    nodes.forEach(function(node) {
-        positions[node.data().id] = node.position();
-    });
-
-    var myBlob = new Blob([JSON.stringify(positions)], {type: 'application/json'});
-
-    // CREATE DOWNLOAD LINK
-    var url = window.URL.createObjectURL(myBlob);
-    var anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "NodePositions.json";
-
-    // FORCE DOWNLOAD
-    // NOTE: MAY NOT ALWAYS WORK DUE TO BROWSER SECURITY
-    // BETTER TO LET USERS CLICK ON THEIR OWN
-    anchor.click();
-    window.URL.revokeObjectURL(url);
-    anchor.remove();
+export function panByAndZoom(xPan, yPan, zoomFactor, onComplete) {
+    if (isMobile) {
+        cy.panBy({x: xPan, y: yPan / 2});
+        cy.zoom(cy.zoom() * zoomFactor);
+        onComplete();
+    } else {
+        cy.animate({ panBy: {x: xPan, y: yPan}, zoom: cy.zoom() * zoomFactor, duration: 1200, easing: "ease-in-out", complete: onComplete
+        });
+    }
 }
+
+// REMOVE FOR PROD
+// document.getElementById("captureLayout").onclick = captureLayout
+// function captureLayout() {
+//     var positions = {};
+//     var nodes = window.cy.nodes();
+//     nodes.forEach(function(node) {
+//         positions[node.data().id] = node.position();
+//     });
+//
+//     var myBlob = new Blob([JSON.stringify(positions)], {type: 'application/json'});
+//
+//     // CREATE DOWNLOAD LINK
+//     var url = window.URL.createObjectURL(myBlob);
+//     var anchor = document.createElement("a");
+//     anchor.href = url;
+//     anchor.download = "NodePositions.json";
+//
+//     // FORCE DOWNLOAD
+//     // NOTE: MAY NOT ALWAYS WORK DUE TO BROWSER SECURITY
+//     // BETTER TO LET USERS CLICK ON THEIR OWN
+//     anchor.click();
+//     window.URL.revokeObjectURL(url);
+//     anchor.remove();
+// }
 
 function getConceptNodeOpacity(node, normalOpacity) {
     return normalOpacity + ((node.data().relative_importance - 1)  * (1 - normalOpacity) / 2);

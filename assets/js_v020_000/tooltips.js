@@ -1,6 +1,6 @@
 import {onLearnedSliderClick, learnedNodes, onSetGoalSliderClick, goalNodes} from "./learningAndPlanning.js";
 import {removeIntroTippy} from "./intro.js";
-import {getValidURLs, createTipElement, initialiseFromStorage, saveToStorage, logContentClick, userId, mapName} from "./utils.js";
+import {getValidURLs, createTipElement, initialiseFromStorage, saveToStorage, logContentClick, userId, mapUUID } from "./utils.js";
 
 export var shownTippy;
 
@@ -55,6 +55,7 @@ export function removeTippy(){
                 url : "api/v0/votes",
                 type : "POST",
                 data : {
+                    map_uuid: mapUUID,
                     user_id: userId,
                     concept: selectedNode.data().name,
                     url: url,
@@ -146,7 +147,7 @@ function createLinkPreviewArray (nodeName, urls) {
         let linkUrl = createTipElement("p", {"class": "link-preview-url"}, urls[i]);
         let linkTextContainer = createTipElement("div", {"class": "link-preview-text-container"}, [linkTitle, linkDescription, linkUrl]);
         let linkImage = createTipElement("img", {
-            "src": "assets/images/loading.jpg",
+            "src": `${staticFileLocation}images/loading.jpg`,
             "class": "link-preview-image"
         }, []);
         let linkImageContainer = createTipElement("div", {"class": "link-preview-image-container"}, [linkImage]);
@@ -171,9 +172,8 @@ function createLinkPreviewArray (nodeName, urls) {
             $.ajax({
                 url: "api/v0/link_previews",
                 type: "GET",
-                data: {map_name: mapName, concept: nodeName, url: urls[i]},
+                data: {map_uuid: mapUUID, concept: nodeName, url: urls[i]},
                 success: function (data) {
-                    console.log(data);
                     // If successful, show data in link preview, filling gaps with default values
                     if (data === undefined) {
                         data = {title: "", description: "", image_url: ""};
