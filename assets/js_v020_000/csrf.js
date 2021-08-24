@@ -48,3 +48,12 @@ $.ajaxSetup({
         }
     }
 });
+
+export var headers = new Headers();
+headers.append("X-CSRFToken", csrftoken);
+
+export var jsonHeaders = headers.valueOf();
+jsonHeaders.append('Content-Type', 'application/json');
+
+export var cacheHeaders = jsonHeaders.valueOf();
+cacheHeaders.append("Cache-Control", "max-age=604800");

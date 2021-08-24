@@ -1,12 +1,13 @@
 import { LightenDarkenColorByFactor } from "./utils.js"
 import { makeTippy, removeTippy } from "./tooltips.js"
 import {
+    initialiseGoalsAndLearned,
     initialiseGraphState,
     goalNodes,
     pathNodes,
     learnedNodes,
     clearMap,
-    onSetGoalSliderClick
+    onSetGoalSliderClick, learnedNodesPromise, goalNodesPromise
 } from "./learningAndPlanning.js";
 import { setupSearch } from "./search.js";
 
@@ -22,8 +23,6 @@ var selectedNodeID = Infinity;
 export function initCy(then) {
     let elements = JSON.parse(then[1]);
     /** Initialise Cytoscape graph.*/
-    console.log(typeof elements);
-    console.log(elements);
     // let subjects = [];
     elements.nodes.forEach(function(node){
         if (node.data.colour !== undefined){
@@ -76,10 +75,13 @@ export function initCy(then) {
     cy.minZoom(cy.zoom());
 
     cy.elements().panify();
-    unhighlightNodes(cy.nodes());
 
-    // Set initially learned or goal nodes
-    initialiseGraphState();
+    Promise.all([learnedNodesPromise, goalNodesPromise]).then(response => {
+        initialiseGoalsAndLearned(response[0], response[1]);
+        unhighlightNodes(cy.nodes('[nodetype = "concept"]'));
+        // Set initially learned or goal nodes
+        initialiseGraphState();
+    })
 
     bindRouters();
     setupSearch(elements);
