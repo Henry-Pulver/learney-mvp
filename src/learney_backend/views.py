@@ -91,14 +91,16 @@ class ContentVoteView(APIView):
 
     def post(self, request: Request, format=None) -> Response:
         data = {
-            "map_uuid": UUID(request.POST["map_uuid"]),
-            "user_id": request.POST["user_id"],
-            "concept": request.POST.get(
+            "map_uuid": UUID(request.data["map_uuid"]),
+            "user_id": request.data["user_id"],
+            "concept": request.data.get(
                 "concept",
-                ContentLinkPreview.objects.get(url=request.POST["url"]).concept,
+                ContentLinkPreview.objects.get(
+                    map_uuid=request.data["map_uuid"], url=request.data["url"]
+                ).concept,
             ),
-            "url": request.POST["url"],
-            "vote": request.POST["vote"],
+            "url": request.data["url"],
+            "vote": request.data["vote"] == "true",
         }
         print(f"ContentVoteView request data: {data}")
         serializer = VoteSerializer(data=data)

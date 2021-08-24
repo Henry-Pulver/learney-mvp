@@ -12,7 +12,7 @@ import {
     mapUUID,
     mapVersion
 } from "./utils.js";
-import { csrftoken } from "./csrf.js";
+import {cacheHeaders} from "./csrf.js";
 
 const staticFileLocation = document.getElementById("static-root").getAttribute("data-name");
 
@@ -20,11 +20,7 @@ const graphPromise = fetch(
     "/api/v0/knowledge_maps?" + new URLSearchParams({map_uuid: mapUUID, version: mapVersion}),
         {
             method : "GET",
-            headers: {
-                'Content-Type': 'application/json',
-                "X-CSRFToken": csrftoken,
-                "Cache-Control": "max-age=604800"
-            },
+            headers: cacheHeaders,
         }
         ).then(file => file.json());
 const stylePromise = fetch(`${staticFileLocation}knowledge_graph.cycss`).then(file => file.text());
@@ -70,7 +66,8 @@ function introSequence() {
             panByAndZoom(-cy.width() / 6, -cy.height() * 4 / 9, 1.5, showIntroIfNew);
 
             document.getElementById("introButton").onclick = toggleIntro(introSlides);
-            logPageView();
         }
 );
 }
+
+logPageView();

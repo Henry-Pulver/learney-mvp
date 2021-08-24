@@ -1,8 +1,7 @@
 import {
     createTipElement,
     defaultUserId,
-    initialiseFromStorage, localStorage,
-    saveToStorage,
+    initialiseFromStorage, localStorage, saveToDB,
     updateQuestionAnswerUsers,
     userId
 } from "./utils.js";
@@ -36,9 +35,24 @@ if (userId === defaultUserId){
 }
 
 // End remove Sept 2021
-export var learnedNodes = initialiseFromStorage(learnedNodesString);
-export var goalNodes = initialiseFromStorage(goalNodesString);
+export var learnedNodes;
+export var learnedNodesPromise = Promise.resolve(initialiseFromStorage(learnedNodesString));
+export var goalNodes;
+export var goalNodesPromise = Promise.resolve(initialiseFromStorage(goalNodesString));
 export var pathNodes = {};
+
+export function initialiseGoalsAndLearned(learned, goals) {
+    if (typeof learned === "string") {
+        learnedNodes = JSON.parse(learned);
+    } else {
+        learnedNodes = learned;
+    }
+    if (typeof goals === "string") {
+        goalNodes = JSON.parse(goals);
+    } else {
+        goalNodes = goals;
+    }
+}
 
 
 export function clearMap() {
@@ -53,8 +67,8 @@ export function clearMap() {
     learnedNodes = {};
     goalNodes = {};
     pathNodes = {};
-    saveToStorage(learnedNodesString, learnedNodes, true);
-    saveToStorage(goalNodesString, goalNodes, true);
+    saveToDB(learnedNodesString, learnedNodes);
+    saveToDB(goalNodesString, goalNodes);
 }
 
 function nodeLearned(node) {
@@ -92,7 +106,7 @@ export function onLearnedSliderClick(node) {
                 checkEdgeLearned(edge);
             });
         }
-        saveToStorage(learnedNodesString, learnedNodes, true);
+        saveToDB(learnedNodesString, learnedNodes);
         if (userId === defaultUserId){
             // promptSignInTooltip("To keep what you know across sessions, sign in here!")
             signInTooltip.show();
@@ -169,7 +183,7 @@ export function onSetGoalSliderClick(node) {
             // If unsetting a goal, remove path from its predecessors and recalculate path to remaining goals
             unsetGoal(node);
         }
-        saveToStorage(goalNodesString, goalNodes, true);
+        saveToDB(goalNodesString, goalNodes);
         updateQuestionAnswerUsers();
     }
 }

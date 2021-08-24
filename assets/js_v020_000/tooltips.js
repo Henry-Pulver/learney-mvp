@@ -1,6 +1,15 @@
 import {onLearnedSliderClick, learnedNodes, onSetGoalSliderClick, goalNodes} from "./learningAndPlanning.js";
 import {removeIntroTippy} from "./intro.js";
-import {getValidURLs, createTipElement, initialiseFromStorage, saveToStorage, logContentClick, userId, mapUUID } from "./utils.js";
+import {
+    getValidURLs,
+    createTipElement,
+    initialiseFromStorage,
+    logContentClick,
+    userId,
+    mapUUID,
+    handleFetchResponses
+} from "./utils.js";
+import {jsonHeaders} from "./csrf.js";
 
 export var shownTippy;
 
@@ -8,7 +17,15 @@ const staticFileLocation = document.getElementById("static-root").getAttribute("
 
 const votesKeyName = "votes";
 // Up/down votes made this session. true means upvote, false means downvote.
-var sessionVotes = initialiseFromStorage(votesKeyName);
+var sessionVotes;
+Promise.resolve(initialiseFromStorage(votesKeyName)).then(response => {
+    if (typeof response === "string") {
+        sessionVotes = JSON.parse(response);
+    } else {
+        sessionVotes = response;
+    }
+})
+
 // Up/down votes
 var savedVotes = Object.assign({}, sessionVotes);
 var selectedNode;
@@ -51,27 +68,18 @@ export function removeTippy(){
     for (const url in sessionVotes) {
         if (!(url in savedVotes) || sessionVotes[url] !== savedVotes[url]) {
             console.log(`Saving vote (up = ${sessionVotes[url]}) for ${url}`);
-            $.ajax({
-                url : "api/v0/votes",
-                type : "POST",
-                data : {
-                    map_uuid: mapUUID,
-                    user_id: userId,
-                    concept: selectedNode.data().name,
-                    url: url,
-                    vote: sessionVotes[url],
-                },
-
-                success : function(json) {
-                    console.log(json);
-                    console.log("Success!");
-                },
-
-                error : function(xhr,errmsg,err) {
-                    console.error("Oops! We have encountered an error!")
-                    console.error(xhr.status + ": " + xhr.responseText);
-                }
-            });
+            fetch("api/v0/votes",
+                {
+                    method : "POST",
+                    headers: jsonHeaders,
+                    body: JSON.stringify({
+                        map_uuid: mapUUID,
+                        user_id: userId,
+                        concept: selectedNode.data().name,
+                        url: url,
+                        vote: sessionVotes[url],
+                    })
+                }).then(response => handleFetchResponses(response))
             savedVotes[url] = sessionVotes[url];
         }
     }
@@ -112,7 +120,7 @@ function voteFunction(up, url, vote_arrow) {
             thisCheckbox.checked = true;
             // SEND INFO TO DATABASE
         }
-        saveToStorage(votesKeyName, sessionVotes, false);
+        localStorage.setItem(votesKeyName, JSON.stringify(sessionVotes));
     }
 }
 
