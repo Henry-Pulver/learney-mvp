@@ -144,7 +144,9 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
             subjects.add(str(row[3]))
 
             if row[3] == "":
-                subject_missing_errors.append(f"{row[1]} (ID={node_id}) is missing its subject!")
+                subject_missing_errors.append(
+                    f"{row[1]} (ID={node_id}, index={i}) is missing its subject! Row in full: {row}"
+                )
 
             nodes.append(
                 {
