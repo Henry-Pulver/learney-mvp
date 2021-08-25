@@ -1,4 +1,4 @@
-import {cacheHeaders, headers, jsonHeaders} from "./csrf.js"
+import { headers, jsonHeaders } from "./csrf.js"
 
 // Get context from html
 export const mapUUID = JSON.parse(document.getElementById('map_uuid').textContent);
@@ -230,7 +230,7 @@ export function initialiseFromStorage(name) {
             return fetch(`${apiEndpoint}?` + new URLSearchParams({user_id: userId, map_uuid: mapUUID}),
                 {
                     method: "GET",
-                    headers: cacheHeaders,
+                    headers: headers,
                 }).then(response => response.json())
                 .then(json => getGetResponseData(name, json))
         } else {
