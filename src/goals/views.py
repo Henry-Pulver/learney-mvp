@@ -17,7 +17,7 @@ class GoalView(APIView):
             serializer = GoalSerializer(entry)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ObjectDoesNotExist as error:
-            return Response(error, status=status.HTTP_204_NO_CONTENT)
+            return Response(str(error), status=status.HTTP_204_NO_CONTENT)
 
     def post(self, request: Request, format=None):
         serializer = GoalSerializer(data=request.data, context={"request": request})

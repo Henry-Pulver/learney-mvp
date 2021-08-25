@@ -231,7 +231,19 @@ export function initialiseFromStorage(name) {
                 {
                     method: "GET",
                     headers: headers,
-                }).then(response => response.json())
+                }).then(handleFetchResponses).then(response => {
+                    if (response.status === 200) {
+                        return response.json();
+                    } else {
+                        if (name === "votes") {
+                            return {}
+                        } else if (name === "learnedNodes") {
+                            return {learned_concepts: {}};
+                        } else {
+                            return {goal_concepts: {}};
+                        }
+                    }
+                })
                 .then(json => getGetResponseData(name, json))
         } else {
             return Promise.resolve({});
@@ -315,7 +327,7 @@ export function handleFetchResponses(response) {
     if (response.status === 200 || response.status === 201) {
         console.log(`Success! Status: ${response.status}`);
     } else {
-        console.error(`Error! Status: ${response.status} \n ${response.message}`);
+        console.log(`Unhappy response! Status: ${response.status} \n ${response}`);
     }
     return response;
 }
