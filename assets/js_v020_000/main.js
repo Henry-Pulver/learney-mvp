@@ -24,7 +24,7 @@ const graphPromise = fetch(
         }
         ).then(file => file.json());
 const stylePromise = fetch(`${staticFileLocation}knowledge_graph.cycss`).then(file => file.text());
-const introPromise = fetch(`${staticFileLocation}introSlides_v013.json`).then(file => file.json())
+const introPromise = fetch(`${staticFileLocation}introSlides_v020.json`).then(file => file.json())
 
 makeMouseoverTippy("#shiprightButton", "Play your part in the future of Learney! We want your feedback and suggestions!");
 makeMouseoverTippy("#slackButton", "Want to join our thriving community of contributors and learners? Join our Slack!");
