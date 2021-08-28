@@ -23,6 +23,16 @@ def get_cache_file_location(knowledge_map_model: KnowledgeMapModel) -> Path:
     return S3_CACHE_DIR / knowledge_map_model.s3_bucket_name / filename
 
 
+def remove_old_cache_files(knowledge_map_model: KnowledgeMapModel, max_age: int = 7) -> None:
+    """Delete old cache files older than `max_age`.
+
+    Currently unused
+    """
+    for file in (S3_CACHE_DIR / knowledge_map_model.s3_bucket_name).iterdir():
+        if datetime.timedelta(seconds=time.time() - file.stat().st_mtime).days >= max_age:
+            file.unlink()
+
+
 def retrieve_map_from_s3(knowledge_map_db_entry: KnowledgeMapModel) -> bytes:
     """Check local file first, then get it from S3 if tricky."""
     cache_file_location = get_cache_file_location(knowledge_map_db_entry)
