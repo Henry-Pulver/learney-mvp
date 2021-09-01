@@ -1,16 +1,30 @@
-import "./crsf.js"
-import { initCy, isMobile } from "./graph.js"
+import "./csrf.js"
+import { initCy, isMobile, panByAndZoom } from "./graph.js"
 import { makeMouseoverTippy } from "./iconsAndButtons.js";
 import { signInTooltip } from "./learningAndPlanning.js";
 import { showIntroTippy, toggleIntro } from "./intro.js";
-import { logPageView, updateQuestionAnswerUsers, defaultUserId, userId, localStorage } from "./utils.js";
+import {
+    logPageView,
+    updateQuestionAnswerUsers,
+    defaultUserId,
+    userId,
+    localStorage,
+    mapUUID,
+    mapVersion
+} from "./utils.js";
+import {cacheHeaders} from "./csrf.js";
 
 const staticFileLocation = document.getElementById("static-root").getAttribute("data-name");
 
-localStorage.removeItem("viewed_before");
-
-var graphP = fetch(`${staticFileLocation}positions_knowledge_graph_v013.json`).then(file => file.json());
-var styleP = fetch(`${staticFileLocation}knowledge_graph.cycss`).then(file => file.text());
+const graphPromise = fetch(
+    "/api/v0/knowledge_maps?" + new URLSearchParams({map_uuid: mapUUID, version: mapVersion}),
+        {
+            method : "GET",
+            headers: cacheHeaders,
+        }
+        ).then(file => file.json());
+const stylePromise = fetch(`${staticFileLocation}knowledge_graph.cycss`).then(file => file.text());
+const introPromise = fetch(`${staticFileLocation}introSlides_v020.json`).then(file => file.json())
 
 makeMouseoverTippy("#shiprightButton", "Play your part in the future of Learney! We want your feedback and suggestions!");
 makeMouseoverTippy("#slackButton", "Want to join our thriving community of contributors and learners? Join our Slack!");
@@ -35,19 +49,25 @@ document.getElementsByClassName("profile-image")[0].onclick = function () {
     }
 };
 
-$(document).ready(function(){
-    Promise.all([styleP, graphP]).then(initCy);
-});
+Promise.all([stylePromise, graphPromise]).then(initCy).then(introSequence);
 
 updateQuestionAnswerUsers();
 
-Promise.all([fetch(`${staticFileLocation}introSlides_v013.json`).then(file => file.json())]).then(
-    function (slides) {
-        let introSlides = slides[0];
-        if (userId === defaultUserId && localStorage.getItem("viewed_before") !== null && !isMobile) {
-            showIntroTippy(introSlides);
+function introSequence() {
+    Promise.resolve(introPromise).then(
+        function (slides) {
+            let introSlides = slides;
+            function showIntroIfNew() {
+                if (userId === defaultUserId && localStorage.getItem("viewed_before") !== null && !isMobile) {
+                    showIntroTippy(introSlides);
+                }
+            }
+            // TODO: if goal is set, zoom there instead of to the bottom?
+            panByAndZoom(-cy.width() / 6, -cy.height() * 4 / 9, 1.5, showIntroIfNew);
+
+            document.getElementById("introButton").onclick = toggleIntro(introSlides);
         }
-        document.getElementById("introButton").onclick = toggleIntro(introSlides);
-        logPageView();
-    }
 );
+}
+
+logPageView();

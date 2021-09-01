@@ -130,13 +130,13 @@ class MapStatus:
         immediate_next_concepts = set()
         for concept_to_learn in self.concepts_to_learn:
             # No predecessors
-            if concept_to_learn not in settings.PREDECESSOR_DICT:
+            if concept_to_learn not in settings.ORIG_MAP_PREDECESSOR_DICT:
                 immediate_next_concepts.add(concept_to_learn)
             # All predecessors must be known
             elif all(
                 [
                     pre in self.learned_concepts
-                    for pre in settings.PREDECESSOR_DICT[concept_to_learn]
+                    for pre in settings.ORIG_MAP_PREDECESSOR_DICT[concept_to_learn]
                 ]
             ):
                 immediate_next_concepts.add(concept_to_learn)
@@ -148,7 +148,9 @@ class MapStatus:
         while len(current_nodes) > 0:
             predecessor_nodes = set()
             for current_node in current_nodes:
-                predecessor_nodes.update(settings.PREDECESSOR_DICT.get(current_node, set()))
+                predecessor_nodes.update(
+                    settings.ORIG_MAP_PREDECESSOR_DICT.get(current_node, set())
+                )
             to_learn.update(predecessor_nodes)
             current_nodes = predecessor_nodes
         return to_learn.difference(self.learned_concepts)

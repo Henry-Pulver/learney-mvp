@@ -1,12 +1,13 @@
 import { LightenDarkenColorByFactor } from "./utils.js"
 import { makeTippy, removeTippy } from "./tooltips.js"
 import {
+    initialiseGoalsAndLearned,
     initialiseGraphState,
     goalNodes,
     pathNodes,
     learnedNodes,
     clearMap,
-    onSetGoalSliderClick
+    onSetGoalSliderClick, learnedNodesPromise, goalNodesPromise
 } from "./learningAndPlanning.js";
 import { setupSearch } from "./search.js";
 
@@ -20,12 +21,16 @@ var cKeyPressed = false;
 var selectedNodeID = Infinity;
 
 export function initCy(then) {
+    let elements = JSON.parse(then[1]);
     /** Initialise Cytoscape graph.*/
-    let elements = then[1];
+    // let subjects = [];
     elements.nodes.forEach(function(node){
         if (node.data.colour !== undefined){
-            node.data.colour = LightenDarkenColorByFactor(node.data.colour, 0.15)
+            node.data.colour = LightenDarkenColorByFactor(node.data.colour, 0.25);
         }
+        // if (node.data.nodetype === "field") {
+        //     subjects.push(node.name);
+        // }
     });
 
     window.cy = window.cytoscape({
@@ -34,22 +39,9 @@ export function initCy(then) {
         // layout: {name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 400},
         layout: {name: "preset"},
         style: then[0],
-
-        // initial viewport state:
-        zoom: 1,
-        pan: {x: 0, y: 0},
-
         maxZoom: 1.5,
-        minZoom: 0.15,
     });
 
-    if (isMobile) {
-        // Performance enhancements
-        let concepts = cy.nodes('[nodetype = "concept"]');
-        concepts.style("min-zoomed-font-size", "2.5em");
-    } else {
-        cy.wheelSensitivity = 0.25;
-    }
     // DO DAGRE FOR EACH SUBJECT
     // subjects.forEach(function(subject, index) {
     //     var subject_subgraph = window.cy.filter('node[subject = "' + subject + '"]');
@@ -57,7 +49,7 @@ export function initCy(then) {
     //     subject_subgraph.layout({
     //         name: "dagre",
     //         rankDir: "BT",
-    //         boundingBox: {x1: xLocations[index][0] * 20, y1: -250, x2: xLocations[index][1] * 20, y2: 250}
+    //         // boundingBox: {x1: xLocations[index][0] * 20, y1: -250, x2: xLocations[index][1] * 20, y2: 250}
     //     }).run()
     // })
 
@@ -66,11 +58,25 @@ export function initCy(then) {
     // console.log(window.cy.elements());
     // window.cy.elements().layout({name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 300}).run();
 
-    window.cy.elements().panify();
-    unhighlightNodes(cy.nodes());
+    if (isMobile) {
+        // Performance enhancements
+        let concepts = cy.nodes('[nodetype = "concept"]');
+        concepts.style("min-zoomed-font-size", "2.5em");
+    } else {
+        cy.wheelSensitivity = 0.25;
+    }
+    // set initial viewport state
+    cy.fit(cy.elements(), 50);
+    cy.minZoom(cy.zoom());
 
-    // Set initially learned or goal nodes
-    initialiseGraphState();
+    cy.elements().panify();
+
+    Promise.all([learnedNodesPromise, goalNodesPromise]).then(response => {
+        initialiseGoalsAndLearned(response[0], response[1]);
+        unhighlightNodes(cy.nodes('[nodetype = "concept"]'));
+        // Set initially learned or goal nodes
+        initialiseGraphState();
+    })
 
     bindRouters();
     setupSearch(elements);
@@ -109,6 +115,17 @@ function fitCytoTo(fitParams, onComplete = function () {}) {
         onComplete();
     } else {
         cy.animate({ fit: fitParams, duration: 400, easing: "ease-in-out", complete: onComplete
+        });
+    }
+}
+
+export function panByAndZoom(xPan, yPan, zoomFactor, onComplete) {
+    if (isMobile) {
+        cy.panBy({x: xPan, y: yPan / 2});
+        cy.zoom(cy.zoom() * zoomFactor);
+        onComplete();
+    } else {
+        cy.animate({ panBy: {x: xPan, y: yPan}, zoom: cy.zoom() * zoomFactor, duration: 1200, easing: "ease-in-out", complete: onComplete
         });
     }
 }

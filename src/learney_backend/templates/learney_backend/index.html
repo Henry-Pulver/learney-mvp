@@ -20,9 +20,23 @@
     <meta name="description" property="og:description" content="The online learning platform designed to help you efficiently take your own path." />
     <meta id="static-root" data-name="{% static '/' %}">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    {{ userdata|json_script:"userdata" }}
 
-    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <!--    Context from Django-->
+    {{ userdata|json_script:"userdata" }}
+    {{ map_uuid|json_script:"map_uuid" }}
+    {{ map_version|json_script:"map_version" }}
+
+    <!-- STAGING - Google Analytics -->
+<!--    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4F72V4175C"></script>-->
+<!--    <script>-->
+<!--      window.dataLayer = window.dataLayer || [];-->
+<!--      function gtag(){dataLayer.push(arguments);}-->
+<!--      gtag('js', new Date());-->
+
+<!--      gtag('config', 'G-4F72V4175C');-->
+<!--    </script>-->
+
+    <!-- PROD Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-PDX7JSVWKR"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -104,12 +118,12 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.18.2/cytoscape.min.js" integrity="sha512-CBGCXtszkG5rYlQSTNUzk54/731Kz28WPk2uT1GCPCqgfVRJ2v514vzzf16HuGX9WVtE7JLqRuAERNAzFZ9Hpw==" crossorigin="anonymous"></script>
 <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js" integrity="sha512-psLUZfcgPmi012lcpVHkWoOqyztollwCGu4w/mXijFMK/YcdUdP06voJNVOJ7f/dUIlO2tGlDLuypRyXX2lcvQ==" crossorigin="anonymous"></script>-->
-    <!--    <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.3.2/cytoscape-dagre.min.js"></script>-->
+<!--    <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.3.2/cytoscape-dagre.min.js"></script>-->
     <script src="https://unpkg.com/tippy.js@2.0.9/dist/tippy.all.js"></script>
     <script src="https://unpkg.com/popper.js@1.14.4/dist/umd/popper.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/cytoscape-popper@1.0.2/cytoscape-popper.js"></script>
-    <script type="module" src="{% static 'js_v013_001/main.js' %}"></script>
+    <script type="module" src="{% static 'js_v020_000/main.js' %}"></script>
 </body>
 </html>

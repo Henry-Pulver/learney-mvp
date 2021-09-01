@@ -1,6 +1,15 @@
 import {onLearnedSliderClick, learnedNodes, onSetGoalSliderClick, goalNodes} from "./learningAndPlanning.js";
 import {removeIntroTippy} from "./intro.js";
-import {getValidURLs, createTipElement, initialiseFromStorage, saveToStorage, logContentClick, userId} from "./utils.js";
+import {
+    getValidURLs,
+    createTipElement,
+    initialiseFromStorage,
+    logContentClick,
+    userId,
+    mapUUID,
+    handleFetchResponses
+} from "./utils.js";
+import {jsonHeaders} from "./csrf.js";
 
 export var shownTippy;
 
@@ -8,7 +17,15 @@ const staticFileLocation = document.getElementById("static-root").getAttribute("
 
 const votesKeyName = "votes";
 // Up/down votes made this session. true means upvote, false means downvote.
-var sessionVotes = initialiseFromStorage(votesKeyName);
+var sessionVotes;
+Promise.resolve(initialiseFromStorage(votesKeyName)).then(response => {
+    if (typeof response === "string") {
+        sessionVotes = JSON.parse(response);
+    } else {
+        sessionVotes = response;
+    }
+})
+
 // Up/down votes
 var savedVotes = Object.assign({}, sessionVotes);
 var selectedNode;
@@ -51,26 +68,18 @@ export function removeTippy(){
     for (const url in sessionVotes) {
         if (!(url in savedVotes) || sessionVotes[url] !== savedVotes[url]) {
             console.log(`Saving vote (up = ${sessionVotes[url]}) for ${url}`);
-            $.ajax({
-                url : "api/v0/votes",
-                type : "POST",
-                data : {
-                    user_id: userId,
-                    concept: selectedNode.data().name,
-                    url: url,
-                    vote: sessionVotes[url],
-                },
-
-                success : function(json) {
-                    console.log(json);
-                    console.log("Success!");
-                },
-
-                error : function(xhr,errmsg,err) {
-                    console.error("Oops! We have encountered an error!")
-                    console.error(xhr.status + ": " + xhr.responseText);
-                }
-            });
+            fetch("api/v0/votes",
+                {
+                    method : "POST",
+                    headers: jsonHeaders,
+                    body: JSON.stringify({
+                        map_uuid: mapUUID,
+                        user_id: userId,
+                        concept: selectedNode.data().name,
+                        url: url,
+                        vote: sessionVotes[url],
+                    })
+                }).then(response => handleFetchResponses(response))
             savedVotes[url] = sessionVotes[url];
         }
     }
@@ -111,7 +120,7 @@ function voteFunction(up, url, vote_arrow) {
             thisCheckbox.checked = true;
             // SEND INFO TO DATABASE
         }
-        saveToStorage(votesKeyName, sessionVotes, false);
+        localStorage.setItem(votesKeyName, JSON.stringify(sessionVotes));
     }
 }
 
@@ -146,7 +155,7 @@ function createLinkPreviewArray (nodeName, urls) {
         let linkUrl = createTipElement("p", {"class": "link-preview-url"}, urls[i]);
         let linkTextContainer = createTipElement("div", {"class": "link-preview-text-container"}, [linkTitle, linkDescription, linkUrl]);
         let linkImage = createTipElement("img", {
-            "src": "assets/images/loading.jpg",
+            "src": `${staticFileLocation}images/loading.jpg`,
             "class": "link-preview-image"
         }, []);
         let linkImageContainer = createTipElement("div", {"class": "link-preview-image-container"}, [linkImage]);
@@ -171,9 +180,8 @@ function createLinkPreviewArray (nodeName, urls) {
             $.ajax({
                 url: "api/v0/link_previews",
                 type: "GET",
-                data: {concept: nodeName, url: urls[i]},
+                data: {map_uuid: mapUUID, concept: nodeName, url: urls[i]},
                 success: function (data) {
-                    console.log(data);
                     // If successful, show data in link preview, filling gaps with default values
                     if (data === undefined) {
                         data = {title: "", description: "", image_url: ""};

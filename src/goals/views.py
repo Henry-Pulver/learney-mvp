@@ -11,11 +11,13 @@ from goals.serializers import GoalSerializer
 class GoalView(APIView):
     def get(self, request: Request, format=None):
         try:
-            entry = GoalModel.objects.filter(user_id=request.GET["user_id"]).latest("last_updated")
+            entry = GoalModel.objects.filter(
+                user_id=request.GET["user_id"], map_uuid=request.GET["map_uuid"]
+            ).latest("last_updated")
             serializer = GoalSerializer(entry)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ObjectDoesNotExist as error:
-            return Response(error, status=status.HTTP_204_NO_CONTENT)
+            return Response(str(error), status=status.HTTP_204_NO_CONTENT)
 
     def post(self, request: Request, format=None):
         serializer = GoalSerializer(data=request.data, context={"request": request})

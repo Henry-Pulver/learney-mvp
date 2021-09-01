@@ -11,9 +11,9 @@ from learned.serializers import LearnedSerializer
 class LearnedView(APIView):
     def get(self, request: Request, format=None):
         try:
-            entry = LearnedModel.objects.filter(user_id=request.GET["user_id"]).latest(
-                "last_updated"
-            )
+            entry = LearnedModel.objects.filter(
+                user_id=request.GET["user_id"], map_uuid=request.GET["map_uuid"]
+            ).latest("last_updated")
             serializer = LearnedSerializer(entry)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ObjectDoesNotExist as error:

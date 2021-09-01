@@ -97,7 +97,7 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
                 ordered_concept_ids.append(random.choice(list(map_status.next_concepts)))
 
             # Add known immediate predecessors as revision in any order
-            for concept_id in settings.PREDECESSOR_DICT.get(ordered_concept_ids[0], []):
+            for concept_id in settings.ORIG_MAP_PREDECESSOR_DICT.get(ordered_concept_ids[0], set()):
                 ordered_concept_ids.append(concept_id)
             # Add other next concepts + lastly other learned concepts
             for concept_id in list(map_status.next_concepts) + list(map_status.learned_concepts):
@@ -105,7 +105,7 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
                     ordered_concept_ids.append(concept_id)
             print(f"next concepts: {map_status.next_concepts}")
             print(
-                f"ordered_concept_ids: {[settings.CONCEPT_NAMES[c_id] for c_id in ordered_concept_ids]}"
+                f"ordered_concept_ids: {[settings.ORIG_MAP_CONCEPT_NAMES[c_id] for c_id in ordered_concept_ids]}"
             )
 
             if len(ordered_concept_ids) == 0:
@@ -136,7 +136,7 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
                 and len(ordered_concept_ids) > 0
             ):
                 chosen_concept = ordered_concept_ids[0]
-                print(f"Concept: {settings.CONCEPT_NAMES[chosen_concept]}")
+                print(f"Concept: {settings.ORIG_MAP_CONCEPT_NAMES[chosen_concept]}")
                 notion_response = notion_client.databases.query(
                     database_id=CONCEPTS_NOTION_DB_ID,
                     filter={"property": "ID", "text": {"equals": chosen_concept}},
@@ -167,7 +167,7 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
                             slack_client.chat_postMessage(
                                 channel=slack_id,
                                 text=Messages.run_out_of_questions(
-                                    settings.CONCEPT_NAMES[chosen_concept]
+                                    settings.ORIG_MAP_CONCEPT_NAMES[chosen_concept]
                                 ),
                             )
                     for num_added in range(min(num_qs_for_concept_to_add, num_qs_to_add)):
@@ -178,7 +178,7 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
                         slack_client.chat_postMessage(
                             channel=slack_id,
                             text=Messages.run_out_of_questions(
-                                settings.CONCEPT_NAMES[chosen_concept]
+                                settings.ORIG_MAP_CONCEPT_NAMES[chosen_concept]
                             ),
                         )
 
@@ -229,7 +229,7 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
             for concept_id in question_concept_counter:
                 slack_client.chat_postMessage(
                     channel=user_model.slack_user_id,
-                    text=Messages.question_start(settings.CONCEPT_NAMES[concept_id]),
+                    text=Messages.question_start(settings.ORIG_MAP_CONCEPT_NAMES[concept_id]),
                 )
                 break
 

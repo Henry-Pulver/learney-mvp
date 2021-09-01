@@ -1,4 +1,8 @@
+import { headers, jsonHeaders } from "./csrf.js"
 
+// Get context from html
+export const mapUUID = JSON.parse(document.getElementById('map_uuid').textContent);
+export const mapVersion = JSON.parse(document.getElementById('map_version').textContent);
 const userdata = JSON.parse(document.getElementById('userdata').textContent);
 export var userId;
 export const defaultUserId = "default_user_id";
@@ -9,6 +13,7 @@ if (userdata !== ""){
 }
 
 export const localStorage = window.localStorage;
+var alreadyQuestionAnswerUser = localStorage.getItem("questionAnswerUser") === "true"
 
 export function createTipElement(tag, attrs, children){
     let el = document.createElement(tag);
@@ -164,12 +169,23 @@ function getAPIEndpoint(name) {
     } else {
         extension = name;
     }
-    return `api/v0/${extension}`;
+    return `/api/v0/${extension}`;
 }
 
+function getGetResponseData(name, json) {
+    let payload;
+    if (name === "learnedNodes") {
+        payload = json.learned_concepts;
+    } else if (name === "goalNodes") {
+        payload = json.goal_concepts;
+    } else if (name === "votes") {
+        payload = json;
+    }
+    return payload;
+}
 
 function getPostRequestData(name, objectToStore) {
-    let payload = {user_id: userId};
+    let payload = {user_id: userId, map_uuid: mapUUID};
     let objectString = JSON.stringify(objectToStore);
     if (name === "learnedNodes") {
         payload["learned_concepts"] = objectString;
@@ -182,104 +198,84 @@ function getPostRequestData(name, objectToStore) {
 }
 
 
-function getGetResponseData(name, json) {
-    let payload;
-    if (name === "learnedNodes") {
-        payload = json.learned_concepts;
-    } else if (name === "goalNodes") {
-        payload = json.goal_concepts;
-    } else if (name === "votes") {
-        payload = json;
-    }
-    return JSON.stringify(payload);
-}
-
-
 function ajaxSuccess (json) {
     console.log(`Success!\n${JSON.stringify(json)}`);
 }
-
 
 function ajaxError(xhr,errmsg,err) {
     console.error(`Oops! We have encountered an error!\n${xhr.status + ": " + xhr.responseText}`);
 }
 
-
 export function initialiseFromStorage(name) {
     let storedItem = localStorage.getItem(name);
     let apiEndpoint = getAPIEndpoint(name);
 
-    if (userId !== defaultUserId){
-        if (storedItem !== null) {
+    if (storedItem !== null) {
+        if (userId !== defaultUserId) {
             // If stored locally, check DB and add it if it's not there!
-            $.ajax({
-                url : apiEndpoint,
-                type : "GET",
-                data : {user_id: userId},
-                success : ajaxSuccess,
-                error : function(xhr,errmsg,err) {
-                    saveToDB(name, JSON.parse(storedItem));
-                    ajaxError(xhr,errmsg,err);
-                }
-            });
-        } else {
-            // Not stored locally, try DB
-            $.ajax({
-                url : apiEndpoint,
-                type : "GET",
-                data : {user_id: userId},
-                success : function (json) {
-                    ajaxSuccess(json);
-                    storedItem = getGetResponseData(name, json);
-                    saveToStorage(name, JSON.parse(storedItem), false);
-                },
-                error : function(xhr,errmsg,err) {
-                    console.log(`${name} not found in DB or on browser!`);
-                },
-                async: false
+            fetch(
+                `${apiEndpoint}?` + new URLSearchParams({user_id: userId, map_uuid: mapUUID}),
+                {
+                        method: "GET",
+                        headers: headers,
+                    }
+            ).then(response => handleFetchResponses(response)).catch(error => {
+                console.error(error);
             });
         }
-    }
-
-    if (storedItem === null) {
-        // Not in DB or stored
-        return {};
+        return Promise.resolve(JSON.parse(storedItem));
     } else {
-        // In DB or stored
-        return JSON.parse(storedItem);
+        if (userId !== defaultUserId) {
+            // Not stored locally, try DB
+            return fetch(`${apiEndpoint}?` + new URLSearchParams({user_id: userId, map_uuid: mapUUID}),
+                {
+                    method: "GET",
+                    headers: headers,
+                }).then(handleFetchResponses).then(response => {
+                    if (response.status === 200) {
+                        return response.json();
+                    } else {
+                        if (name === "votes") {
+                            return {}
+                        } else if (name === "learnedNodes") {
+                            return {learned_concepts: {}};
+                        } else {
+                            return {goal_concepts: {}};
+                        }
+                    }
+                })
+                .then(json => getGetResponseData(name, json))
+        } else {
+            return Promise.resolve({});
+        }
     }
 }
 
-export function saveToStorage(name, object, saveItToDB) {
-    localStorage.setItem(name, JSON.stringify(object));
-    if (userId !== undefined && saveItToDB === true) {
-        saveToDB(name, object);
-    }
-}
 
-
-function saveToDB(name, object) {
+export function saveToDB(name, object) {
     if (name !== "votes") {
-        $.ajax({
-            url : getAPIEndpoint(name),
-            type : "POST",
-            data : getPostRequestData(name, object),
-            success : ajaxSuccess,
-            error : ajaxError
-        });
+        fetch(
+            getAPIEndpoint(name),
+            {
+                    method: "POST",
+                    body: JSON.stringify(getPostRequestData(name, object)),
+                    headers: jsonHeaders
+                }
+            ).then(response => handleFetchResponses(response));
     } else {
         for (const [url, vote] of Object.entries(object)) {
-            console.log(`URL: ${url}, votes: ${vote}`);
-            $.ajax({
-                url : getAPIEndpoint(name),
-                type : "POST",
-                data : {
-                    url: url,
-                    vote: vote,
-                },
-                success : ajaxSuccess,
-                error : ajaxError
-            });
+            fetch(
+                getAPIEndpoint(name),
+                {
+                    method: "POST",
+                    headers: jsonHeaders,
+                    body: JSON.stringify({
+                        map_uuid: mapUUID,
+                        user_id: userId,
+                        url: url,
+                        vote: vote,
+                    })
+                }).then(response => handleFetchResponses(response));
         }
     }
 }
@@ -289,37 +285,32 @@ export function logPageView() {
     fetch("/api/v0/page_visit",
         {
             method : "POST",
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body : JSON.stringify({user_id: userId})
-    });
+            headers: jsonHeaders,
+            body : JSON.stringify({user_id: userId, page_extension: location.pathname})
+    }).then(handleFetchResponses)
     localStorage.setItem("viewed_before", "true");
-    // $.ajax({
-    //     url : "/api/v0/page_visit",
-    //     type : "POST",
-    //     data : {user_id: userId},
-    //     success : ajaxSuccess,
-    //     error : ajaxError
-    // });
 }
 
 
 export function logContentClick(url) {
-    $.ajax({
-        url : "/api/v0/link_click",
-        type : "POST",
-        data : {
-            user_id: userId,
-            url: url
-        },
-        success : ajaxSuccess,
-        error : ajaxError
-    });
+    fetch(
+        "/api/v0/link_click",
+        {
+            method: "POST",
+            headers: jsonHeaders,
+            body: JSON.stringify({user_id: userId, url: url}),
+        }).then(response => handleFetchResponses(response));
 }
 
 export function updateQuestionAnswerUsers() {
-    if (userId !== defaultUserId) {
+    if (userId !== defaultUserId && !alreadyQuestionAnswerUser) {
+      // TODO: Swap out below once you've added tests for this view!
+        // fetch("/api/v0/add_user",
+      //     {
+      //         method: "PUT",
+      //         headers: heade
+      //         body: {email: userId, userOnLearney: true},
+      //     }).then(response => handleFetchResponses(response));
       $.ajax({
         url : "/api/v0/add_user",
         type : "PUT",
@@ -327,5 +318,16 @@ export function updateQuestionAnswerUsers() {
         success : ajaxSuccess,
         error : ajaxError
       });
+      localStorage.setItem("questionAnswerUser", "true");
+      alreadyQuestionAnswerUser = true;
     }
+}
+
+export function handleFetchResponses(response) {
+    if (response.status === 200 || response.status === 201) {
+        console.log(`Success! Status: ${response.status}`);
+    } else {
+        console.log(`Unhappy response! Status: ${response.status} \n ${response}`);
+    }
+    return response;
 }
