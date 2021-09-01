@@ -39,11 +39,6 @@ export function initCy(then) {
         // layout: {name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 400},
         layout: {name: "preset"},
         style: then[0],
-
-        // initial viewport state:
-        // zoom: 1,
-        // pan: {x: 0, y: 0},
-
         maxZoom: 1.5,
     });
 
