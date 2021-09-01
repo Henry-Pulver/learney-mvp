@@ -21,42 +21,32 @@ var cKeyPressed = false;
 var selectedNodeID = Infinity;
 
 export function initCy(then) {
-    let elements = JSON.parse(then[1]);
     /** Initialise Cytoscape graph.*/
-    // let subjects = [];
+    let elements = JSON.parse(then[1]);
     elements.nodes.forEach(function(node){
         if (node.data.colour !== undefined){
             node.data.colour = LightenDarkenColorByFactor(node.data.colour, 0.25);
         }
-        // if (node.data.nodetype === "field") {
-        //     subjects.push(node.name);
-        // }
     });
 
+    let positionsDefined = elements.nodes[0].position !== undefined;
+    let layout;
+    if (positionsDefined) {
+        layout = {name: "preset"};
+    } else {
+        layout = {name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 400};
+    }
+
+    // Initialise cytoscape!
     window.cy = window.cytoscape({
         elements: elements,
         container: document.getElementById("cy"),
-        // layout: {name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 400},
-        layout: {name: "preset"},
+        layout: layout,
         style: then[0],
         maxZoom: 1.5,
     });
 
-    // DO DAGRE FOR EACH SUBJECT
-    // subjects.forEach(function(subject, index) {
-    //     var subject_subgraph = window.cy.filter('node[subject = "' + subject + '"]');
-    //     subject_subgraph.merge(subject_subgraph.connectedEdges())
-    //     subject_subgraph.layout({
-    //         name: "dagre",
-    //         rankDir: "BT",
-    //         // boundingBox: {x1: xLocations[index][0] * 20, y1: -250, x2: xLocations[index][1] * 20, y2: 250}
-    //     }).run()
-    // })
-
-    // DO DAGRE ON WHOLE THANG
-    // console.log(window.cy.nodes().filter("[parent]"));
-    // console.log(window.cy.elements());
-    // window.cy.elements().layout({name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 300}).run();
+    if (!positionsDefined) {dagreOnSubjects();}
 
     if (isMobile) {
         // Performance enhancements
@@ -81,6 +71,23 @@ export function initCy(then) {
     bindRouters();
     setupSearch(elements);
 }
+
+
+function dagreOnSubjects() {
+    /** Run Dagre algorithm on each subject individually **/
+    let subjects = [];
+    cy.nodes("[nodetype= \"field\"]").forEach(field => subjects.push(field.name));
+
+    subjects.forEach(function(subject) {
+        var subject_subgraph = cy.filter('node[subject = "' + subject + '"]');
+        subject_subgraph.merge(subject_subgraph.connectedEdges())
+        subject_subgraph.layout({
+            name: "dagre",
+            rankDir: "BT",
+        }).run()
+    })
+}
+
 
 // BUTTONS
 document.getElementById("clearMap").onclick = clearMapButton;
