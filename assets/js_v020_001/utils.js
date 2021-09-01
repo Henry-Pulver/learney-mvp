@@ -15,6 +15,11 @@ if (userdata !== ""){
 export const localStorage = window.localStorage;
 var alreadyQuestionAnswerUser = localStorage.getItem("questionAnswerUser") === "true"
 
+
+export function isEditEndpoint() {
+    return location.pathname.slice(0, 11) === "/maps/edit/";
+}
+
 export function createTipElement(tag, attrs, children){
     let el = document.createElement(tag);
     if(attrs != null && typeof attrs === typeof {}){

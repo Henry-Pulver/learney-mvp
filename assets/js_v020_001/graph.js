@@ -1,4 +1,4 @@
-import { LightenDarkenColorByFactor } from "./utils.js"
+import {isEditEndpoint, LightenDarkenColorByFactor} from "./utils.js"
 import { makeTippy, removeTippy } from "./tooltips.js"
 import {
     initialiseGoalsAndLearned,
@@ -13,6 +13,7 @@ import { setupSearch } from "./search.js";
 
 export const isMobile = screen.width < 768;
 var resetProgressButtonClicked = false;
+const editMapEnabled = isEditEndpoint();
 
 const fieldOpacity = 0.7;
 const lowestConceptOpacity = 0.4;
@@ -59,7 +60,9 @@ export function initCy(then) {
     cy.fit(cy.elements(), 50);
     cy.minZoom(cy.zoom());
 
-    cy.elements().panify();
+    if (!editMapEnabled) {
+        cy.elements().panify();
+    }
 
     Promise.all([learnedNodesPromise, goalNodesPromise]).then(response => {
         initialiseGoalsAndLearned(response[0], response[1]);
@@ -137,30 +140,33 @@ export function panByAndZoom(xPan, yPan, zoomFactor, onComplete) {
     }
 }
 
-// REMOVE FOR PROD
-// document.getElementById("captureLayout").onclick = captureLayout
-// function captureLayout() {
-//     var positions = {};
-//     var nodes = window.cy.nodes();
-//     nodes.forEach(function(node) {
-//         positions[node.data().id] = node.position();
-//     });
-//
-//     var myBlob = new Blob([JSON.stringify(positions)], {type: 'application/json'});
-//
-//     // CREATE DOWNLOAD LINK
-//     var url = window.URL.createObjectURL(myBlob);
-//     var anchor = document.createElement("a");
-//     anchor.href = url;
-//     anchor.download = "NodePositions.json";
-//
-//     // FORCE DOWNLOAD
-//     // NOTE: MAY NOT ALWAYS WORK DUE TO BROWSER SECURITY
-//     // BETTER TO LET USERS CLICK ON THEIR OWN
-//     anchor.click();
-//     window.URL.revokeObjectURL(url);
-//     anchor.remove();
-// }
+if (editMapEnabled) {
+    document.getElementById("captureLayout").onclick = captureLayout;
+}else {
+    document.getElementById("captureLayout").style.display = "none";
+}
+function captureLayout() {
+    var positions = {};
+    var nodes = window.cy.nodes();
+    nodes.forEach(function(node) {
+        positions[node.data().id] = node.position();
+    });
+
+    var myBlob = new Blob([JSON.stringify(positions)], {type: 'application/json'});
+
+    // CREATE DOWNLOAD LINK
+    var url = window.URL.createObjectURL(myBlob);
+    var anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "NodePositions.json";
+
+    // FORCE DOWNLOAD
+    // NOTE: MAY NOT ALWAYS WORK DUE TO BROWSER SECURITY
+    // BETTER TO LET USERS CLICK ON THEIR OWN
+    anchor.click();
+    window.URL.revokeObjectURL(url);
+    anchor.remove();
+}
 
 function getConceptNodeOpacity(node, normalOpacity) {
     return normalOpacity + ((node.data().relative_importance - 1)  * (1 - normalOpacity) / 2);

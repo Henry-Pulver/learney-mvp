@@ -3,8 +3,9 @@ from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib.auth import logout as log_out
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 
 from knowledge_maps.models import KnowledgeMapModel
 
@@ -19,6 +20,11 @@ def get_user_data(auth0user, user) -> Dict[str, str]:
         "picture": auth0user.extra_data["picture"],
         "email": auth0user.extra_data["email"],
     }
+
+
+def redirect_to_map(request):
+    prev_map = request.session.get("previous_map", ORIG_MAP_NAME)
+    return redirect(f"/maps/{prev_map}")
 
 
 def view_map(request, map_name: str = ORIG_MAP_NAME):
@@ -39,6 +45,30 @@ def view_map(request, map_name: str = ORIG_MAP_NAME):
             "map_version": map_object.version,
         },
     )
+
+
+@login_required
+def edit_map(request, map_name: str):
+    user = request.user
+    auth0user = user.social_auth.get(provider="auth0")
+
+    request.session["previous_map"] = map_name
+    map_object = KnowledgeMapModel.objects.get(url_extension=map_name)
+
+    if auth0user.extra_data["email"].lower() == map_object.author_user_id.lower():
+        return render(
+            request,
+            INDEX_HTML,
+            {
+                "auth0User": auth0user,
+                "userdata": get_user_data(auth0user, user) if user.is_authenticated else "",
+                "map_uuid": map_object.unique_id,
+                "map_version": map_object.version,
+            },
+        )
+    else:
+        # TODO: add an error that says that you aren't the author of this map
+        return redirect_to_map(request)
 
 
 def logout(request):
