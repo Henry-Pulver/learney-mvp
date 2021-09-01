@@ -15,7 +15,7 @@ function getCookie(name) {
     }
     return cookieValue;
 }
-export const csrftoken = getCookie('csrftoken');
+const csrftoken = getCookie('csrftoken');
 
 /*
 The functions below will create a header with csrftoken
