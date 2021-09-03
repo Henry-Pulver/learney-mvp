@@ -1,6 +1,5 @@
 core {
-  active-bg-color: #000;
-  active-bg-opacity: 0.333;
+  active-bg-size: 0;
 }
 
 node {
