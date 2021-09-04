@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.urls import path, re_path
 
-from auth0login.views import view_map
-from learney_backend.views import ContentLinkPreviewView, ContentVoteView, redirect_to_map
+from auth0login.views import redirect_to_map, view_map
+from learney_backend.views import ContentLinkPreviewView, ContentVoteView
 from learney_web import settings
 
 HTML_BASE_DIR = f"{settings.BASE_DIR}/learney_backend/templates/learney_backend/"

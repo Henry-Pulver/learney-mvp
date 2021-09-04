@@ -5,23 +5,16 @@ from uuid import UUID
 import requests
 import yaml
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import redirect
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from auth0login.views import ORIG_MAP_NAME
 from learney_backend.models import ContentLinkPreview, ContentVote
 from learney_backend.serializers import LinkPreviewSerializer, VoteSerializer
 
 with open("link_preview_api_key.yaml", "r") as secrets_file:
     LINK_PREVIEW_API_KEY = yaml.load(secrets_file, Loader=yaml.Loader)["API_KEY"]
-
-
-def redirect_to_map(request):
-    prev_map = request.session.get("previous_map", ORIG_MAP_NAME)
-    return redirect(f"maps/{prev_map}")
 
 
 class ContentLinkPreviewView(APIView):

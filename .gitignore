@@ -1,3 +1,4 @@
+local_files/
 *.idea
 pgadmin4/
 *.tsv
