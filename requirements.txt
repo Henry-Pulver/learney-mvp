@@ -5,6 +5,7 @@ Django==3.2.2
 djangorestframework==3.12.4
 notion-client
 numpy
+mock
 psycopg2>=2.7.7
 python-jose>=3.2.0
 python-dotenv>=0.17.1

@@ -14,4 +14,5 @@ COPY . .
 
 # CMD cd src && python manage.py collectstatic && python manage.py runserver 0.0.0.0:8000
 CMD cd src && python manage.py migrate && python manage.py collectstatic --no-input && python manage.py runserver 0.0.0.0:8000
-#CMD cd src && python manage.py makemigrations && python manage.py migrate && DJANGO_SETTINGS_MODULE=learney_web.settings pytest -n auto && python manage.py collectstatic --no-input && python manage.py runserver 0.0.0.0:8000
+## TEST ##
+#CMD cd src && DJANGO_SETTINGS_MODULE=learney_web.settings pytest -n auto --no-migrations --reuse-db

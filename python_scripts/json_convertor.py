@@ -4,14 +4,13 @@ from argparse import ArgumentParser
 from collections import Counter
 from copy import copy
 from pathlib import Path
-from typing import Dict, List, Set, Union
+from typing import Any, Dict, List, Set, Union
 from warnings import warn
-from typing import Any, Dict, List, Union
 
 import matplotlib.cm as cm
 import numpy as np
-import validators
 
+import validators
 from learney_web.utils import get_predecessor_dict
 
 JSON_GRAPH_DICT = Dict[str, List[Dict[str, Union[Dict[str, str], str]]]]
