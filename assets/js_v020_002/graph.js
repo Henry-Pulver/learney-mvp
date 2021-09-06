@@ -35,7 +35,7 @@ export function initCy(then) {
     if (positionsDefined) {
         layout = {name: "preset"};
     } else {
-        layout = {name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 400};
+        layout = {name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 300};
     }
 
     // Initialise cytoscape!
