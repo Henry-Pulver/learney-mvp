@@ -21,13 +21,14 @@ const lowestConceptOpacity = 0.4;
 var cKeyPressed = false;
 
 var selectedNodeID = Infinity;
+var darkenFactor = 0.25;
 
 export function initCy(then) {
     /** Initialise Cytoscape graph.*/
     let elements = JSON.parse(then[1]);
     elements.nodes.forEach(function(node){
         if (node.data.colour !== undefined){
-            node.data.colour = LightenDarkenColorByFactor(node.data.colour, 0.25);
+            node.data.colour = LightenDarkenColorByFactor(node.data.colour, darkenFactor);
         }
     });
 
@@ -153,7 +154,11 @@ if (editMapEnabled) {
 function captureLayout() {
     let mapJson = {nodes: [], edges: []};
     cy.nodes().forEach(function(node) {
-        mapJson.nodes.push({data: node.data(), position: node.position()});
+        let nodeData = {data: node.data(), position: node.position()};
+        if (nodeData.data.colour !== undefined){
+            nodeData.data.colour = LightenDarkenColorByFactor(nodeData.data.colour, 1 / darkenFactor);
+        }
+        mapJson.nodes.push(nodeData);
     });
     cy.edges().forEach(function(edge) {
         mapJson.edges.push({data: edge.data()});
@@ -168,6 +173,11 @@ function captureLayout() {
             })
         }
     ).then(response => handleFetchResponses(response));
+    cy.nodes().forEach(function(node) {
+        if (node.data().colour !== undefined){
+            node.data().colour = LightenDarkenColorByFactor(node.data().colour, darkenFactor);
+        }
+    });
 }
 
 function getConceptNodeOpacity(node, normalOpacity) {
