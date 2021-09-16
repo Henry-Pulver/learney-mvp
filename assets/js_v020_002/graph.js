@@ -1,4 +1,4 @@
-import {isEditEndpoint, LightenDarkenColorByFactor} from "./utils.js"
+import { handleFetchResponses, isEditEndpoint, LightenDarkenColorByFactor, mapUUID } from "./utils.js"
 import { makeTippy, removeTippy } from "./tooltips.js"
 import {
     initialiseGoalsAndLearned,
@@ -10,6 +10,7 @@ import {
     onSetGoalSliderClick, learnedNodesPromise, goalNodesPromise
 } from "./learningAndPlanning.js";
 import { setupSearch } from "./search.js";
+import { jsonHeaders } from "./csrf.js";
 
 export const isMobile = screen.width < 768;
 var resetProgressButtonClicked = false;
@@ -146,26 +147,40 @@ if (editMapEnabled) {
     document.getElementById("captureLayout").style.display = "none";
 }
 function captureLayout() {
-    var positions = {};
-    var nodes = window.cy.nodes();
-    nodes.forEach(function(node) {
-        positions[node.data().id] = node.position();
+    let mapJson = {nodes: [], edges: []};
+    console.log(cy.data())
+    cy.nodes().forEach(function(node) {
+        mapJson.nodes.push({data: node.data(), position: node.position()});
     });
+    cy.edges().forEach(function(edge) {
+        mapJson.edges.push({data: edge.data()});
+    });
+    console.log(mapJson);
+    fetch("/api/v0/knowledge_maps",
+        {
+            method : "PUT",
+            headers: jsonHeaders,
+            body: JSON.stringify({
+                map_uuid: mapUUID,
+                map_data: mapJson,
+            })
+        }
+        ).then(response => handleFetchResponses(response));
 
-    var myBlob = new Blob([JSON.stringify(positions)], {type: 'application/json'});
+    // var myBlob = new Blob([JSON.stringify(positions)], {type: 'application/json'});
 
     // CREATE DOWNLOAD LINK
-    var url = window.URL.createObjectURL(myBlob);
-    var anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "NodePositions.json";
-
-    // FORCE DOWNLOAD
-    // NOTE: MAY NOT ALWAYS WORK DUE TO BROWSER SECURITY
-    // BETTER TO LET USERS CLICK ON THEIR OWN
-    anchor.click();
-    window.URL.revokeObjectURL(url);
-    anchor.remove();
+    // var url = window.URL.createObjectURL(myBlob);
+    // var anchor = document.createElement("a");
+    // anchor.href = url;
+    // anchor.download = "NodePositions.json";
+    //
+    // // FORCE DOWNLOAD
+    // // NOTE: MAY NOT ALWAYS WORK DUE TO BROWSER SECURITY
+    // // BETTER TO LET USERS CLICK ON THEIR OWN
+    // anchor.click();
+    // window.URL.revokeObjectURL(url);
+    // anchor.remove();
 }
 
 function getConceptNodeOpacity(node, normalOpacity) {
