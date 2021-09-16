@@ -29,7 +29,7 @@ class LearnedViewTests(TestCase):
         assert response.status_code == 204
 
     def test_get_doesnt_exist_no_user_id(self):
-        response = self.client.get("/api/v0/goals", data={"map_uuid": self.TEST_MAP_UUID})
+        response = self.client.get("/api/v0/learned", data={"map_uuid": self.TEST_MAP_UUID})
         assert response.status_code == 400
 
     def test_get_doesnt_exist_no_map_uuid(self):
@@ -54,7 +54,7 @@ class LearnedViewTests(TestCase):
 
     def test_post_invalid_no_user_id(self):
         response = self.client.post(
-            "/api/v0/goals",
+            "/api/v0/learned",
             data={
                 "learned_concepts": self.TEST_LEARNED,
                 "map_uuid": self.TEST_MAP_UUID,
@@ -64,7 +64,7 @@ class LearnedViewTests(TestCase):
 
     def test_post_invalid_no_map_uuid(self):
         response = self.client.post(
-            "/api/v0/goals",
+            "/api/v0/learned",
             data={
                 "user_id": self.TEST_USER_ID,
                 "learned_concepts": self.TEST_LEARNED,
