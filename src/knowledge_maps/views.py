@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -21,7 +22,7 @@ def get_cache_file_location(knowledge_map_model: KnowledgeMapModel) -> Path:
     return S3_CACHE_DIR / knowledge_map_model.s3_bucket_name / filename
 
 
-def retrieve_map_from_s3(knowledge_map_db_entry: KnowledgeMapModel) -> bytes:
+def retrieve_map(knowledge_map_db_entry: KnowledgeMapModel) -> bytes:
     """Check local file first, then get it from S3 if tricky."""
     cache_file_location = get_cache_file_location(knowledge_map_db_entry)
 
@@ -51,9 +52,13 @@ class KnowledgeMapView(APIView):
             entry = KnowledgeMapModel.objects.filter(
                 unique_id=request.GET["map_uuid"], version=int(request.GET["version"])
             ).latest("last_updated")
-            return Response(retrieve_map_from_s3(entry), status=status.HTTP_200_OK)
+            return Response(retrieve_map(entry), status=status.HTTP_200_OK)
         except ObjectDoesNotExist as error:
-            return Response(error, status=status.HTTP_204_NO_CONTENT)
+            return Response(str(error), status=status.HTTP_204_NO_CONTENT)
+        except MultiValueDictKeyError as e:
+            return Response(
+                f"Invalid request: {request.POST}\n\n{e}", status=status.HTTP_400_BAD_REQUEST
+            )
 
     def post(self, request: Request, format=None):
         serializer = KnowledgeMapSerializer(data=request.data, context={"request": request})
@@ -65,16 +70,37 @@ class KnowledgeMapView(APIView):
 
     def put(self, request: Request, format=None):
         # TODO: Write test for this view!
+        # TODO: Enable adding maps through this view
         try:
-            entry = KnowledgeMapModel.objects.filter(unique_id=request.PUT["map_uuid"]).latest(
+            # {
+            #     map_uuid: ,
+            #     map_data: ,
+            #     s3_key: , (optional)
+            #     s3_bucket_name: , (optional)
+            # }
+            request_body = json.loads(request.body.decode("utf-8"))
+            entry = KnowledgeMapModel.objects.filter(unique_id=request_body["map_uuid"]).latest(
                 "last_updated"
             )
+            entry.s3_bucket_name = request_body.get("s3_bucket_name", entry.s3_bucket_name)
+            entry.s3_key = request_body.get("s3_key", entry.s3_key)
+            s3 = boto3.resource(
+                "s3",
+                aws_access_key_id=AWS_CREDENTIALS["ACCESS_ID"],
+                aws_secret_access_key=AWS_CREDENTIALS["SECRET_KEY"],
+            )
+            s3.Bucket(entry.s3_bucket_name).put_object(
+                Key=entry.s3_key, Body=json.dumps(request_body["map_data"])
+            )
+
+            # Increment the version
             entry.version += 1
-            entry.s3_bucket_name = request.PUT.get("s3_bucket_name", entry.s3_bucket_name)
-            entry.s3_key = request.PUT.get("s3_key", entry.s3_key)
-            serializer = KnowledgeMapSerializer(entry)
-            return Response(serializer, status=status.HTTP_200_OK)
-        except MultiValueDictKeyError as e:
+            entry.save()
+
+            return Response(KnowledgeMapSerializer(entry).data, status=status.HTTP_201_CREATED)
+        except ObjectDoesNotExist as error:
+            return Response(str(error), status=status.HTTP_204_NO_CONTENT)
+        except KeyError as e:
             return Response(
-                f"Invalid request: {request.PUT}\n\n{e}", status=status.HTTP_400_BAD_REQUEST
+                f"Invalid request: {request_body}\n\n{e}", status=status.HTTP_400_BAD_REQUEST
             )
