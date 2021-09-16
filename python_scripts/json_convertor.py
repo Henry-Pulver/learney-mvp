@@ -13,7 +13,7 @@ import numpy as np
 import validators
 from learney_web.utils import get_predecessor_dict
 
-JSON_GRAPH_DICT = Dict[str, List[Dict[str, Union[Dict[str, str], str]]]]
+JSON_GRAPH_DICT = Dict[str, List[Dict[str, Dict[str, str]]]]
 
 
 class ContentError(Exception):
@@ -176,11 +176,10 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
                         "nodetype": "concept",
                         "relative_importance": 1,
                     },
-                    "classes": "concept",  # type: ignore
                 }
             )
             if show_subjects:
-                nodes[-1]["data"].update({"parent": subject_to_id(row[3])})  # type: ignore
+                nodes[-1]["data"].update({"parent": subject_to_id(row[3])})
 
             for dependency in dependencies:
                 if dependency == "":
@@ -209,14 +208,13 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
                             "colour": colour,
                             "nodetype": "field",
                         },
-                        "classes": "subject",  # type: ignore
                     },
                 )
 
     for source_id, num_targets in Counter(sources).items():
         for node in nodes:
-            if node["data"]["id"] == source_id:  # type: ignore
-                node["data"]["relative_importance"] = max(1, 0.7 * (num_targets + 1) ** 0.5)  # type: ignore
+            if node["data"]["id"] == source_id:
+                node["data"]["relative_importance"] = max(1, 0.7 * (num_targets + 1) ** 0.5)
                 continue
 
     remove_unnecessary_edges(edges)
@@ -225,7 +223,7 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
     if len(subject_missing_errors) > 0:
         raise ContentError(str(subject_missing_errors))
 
-    return {"nodes": nodes, "edges": edges}  # type: ignore
+    return {"nodes": nodes, "edges": edges}
 
 
 if __name__ == "__main__":

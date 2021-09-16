@@ -8,7 +8,7 @@ node {
   text-wrap: wrap;
 }
 
-node.concept {
+node:child {
   background-color: #9F9F9E;
   opacity: 0.6;
   width: 48px;
@@ -18,24 +18,24 @@ node.concept {
   text-max-width: 180;
 }
 
-node.concept:selected {
+node:child:selected {
   min-zoomed-font-size: 0;
   background-color: white;
   font-size: 0px;
   z-index: 9999;
 }
 
-node.concept.goal {
+node:child.goal {
   background-color: #ff9e00;
   color: #ff9e00;
 }
 
-node.concept.path {
+node:child.path {
   background-color: #2196F3;
   color: #2196F3;
 }
 
-node.concept.learned {
+node:child.learned {
   background-color: #299427;
   color: #299427;
 }
