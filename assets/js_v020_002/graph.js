@@ -94,7 +94,11 @@ function dagreOnSubjects() {
 
 
 // BUTTONS
-document.getElementById("clearMap").onclick = clearMapButton;
+if (editMapEnabled) {
+    document.getElementById("clearMap").style.display = "none";
+}else {
+    document.getElementById("clearMap").onclick = clearMapButton;
+}
 function clearMapButton() {
     if (resetProgressButtonClicked){
         clearMap();
@@ -148,14 +152,12 @@ if (editMapEnabled) {
 }
 function captureLayout() {
     let mapJson = {nodes: [], edges: []};
-    console.log(cy.data())
     cy.nodes().forEach(function(node) {
         mapJson.nodes.push({data: node.data(), position: node.position()});
     });
     cy.edges().forEach(function(edge) {
         mapJson.edges.push({data: edge.data()});
     });
-    console.log(mapJson);
     fetch("/api/v0/knowledge_maps",
         {
             method : "PUT",
@@ -165,22 +167,7 @@ function captureLayout() {
                 map_data: mapJson,
             })
         }
-        ).then(response => handleFetchResponses(response));
-
-    // var myBlob = new Blob([JSON.stringify(positions)], {type: 'application/json'});
-
-    // CREATE DOWNLOAD LINK
-    // var url = window.URL.createObjectURL(myBlob);
-    // var anchor = document.createElement("a");
-    // anchor.href = url;
-    // anchor.download = "NodePositions.json";
-    //
-    // // FORCE DOWNLOAD
-    // // NOTE: MAY NOT ALWAYS WORK DUE TO BROWSER SECURITY
-    // // BETTER TO LET USERS CLICK ON THEIR OWN
-    // anchor.click();
-    // window.URL.revokeObjectURL(url);
-    // anchor.remove();
+    ).then(response => handleFetchResponses(response));
 }
 
 function getConceptNodeOpacity(node, normalOpacity) {
