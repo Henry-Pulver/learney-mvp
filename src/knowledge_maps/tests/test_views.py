@@ -13,7 +13,7 @@ class KnowledgeMapViewTests(TestCase):
     TEST_USER_ID = "henrypulver13@gmail.com"
     TEST_MAP_UUID = UUID("015a52d3-1e58-47d6-abf4-35a60c0928ab")
     TEST_URL_EXT = "original_map"
-    TEST_S3_BUCKET = "learney-prod"
+    TEST_S3_BUCKET = "learney-test"
     TEST_S3_KEY = "TEST_positions_map_v013.json"
     TEST_ALTERNATIVE_S3_KEY = "TEST_alternative.json"
 
