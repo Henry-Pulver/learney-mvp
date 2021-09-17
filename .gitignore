@@ -4,6 +4,9 @@ pgadmin4/
 *.tsv
 assets/NodePositions*
 assets/knowledge_graph*
+assets/*positions_map.json
+assets/positions_map*
+!assets/positions_map_v013.json
 **/auth0_conf.yaml
 **/dev_env.yaml
 **/link_preview_api_key.yaml

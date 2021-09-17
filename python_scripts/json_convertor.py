@@ -115,7 +115,7 @@ def process_urls(url_string: str) -> List[str]:
     for potential_url in url_string.replace(" ", "").split(","):
         if validators.url(potential_url):
             output_url_list.append(potential_url)
-        else:
+        elif len(potential_url) > 0:
             output_url_list[-1] += potential_url
     return output_url_list
 
@@ -170,9 +170,9 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
                     "data": {
                         "id": node_id,
                         "name": str(row[1]),
-                        "lectures": str(row[4]),
-                        "description": str(row[5]),
-                        "urls": process_urls(row[6]),
+                        "lectures": str(row[3]),
+                        "description": str(row[4]),
+                        "urls": process_urls(row[5]),
                         "nodetype": "concept",
                         "relative_importance": 1,
                     },
@@ -184,7 +184,7 @@ def convert_tsv_to_json(tsv_path: Path, show_subjects: bool = False) -> JSON_GRA
             for dependency in dependencies:
                 if dependency == "":
                     continue
-                source_id = str(int(dependency))
+                source_id = str(dependency)
                 sources.append(source_id)
 
                 edges.append(
