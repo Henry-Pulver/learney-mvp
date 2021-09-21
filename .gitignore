@@ -2,14 +2,15 @@ local_files/
 *.idea
 pgadmin4/
 *.tsv
-assets/NodePositions*
-assets/knowledge_graph*
-assets/*positions_map.json
-assets/positions_map*
+assets/*.json
+
 !assets/positions_map_v013.json
+!assets/introSlides*
+
 **/auth0_conf.yaml
 **/dev_env.yaml
 **/link_preview_api_key.yaml
+
 .build_and_run.sh
 
 # Byte-compiled / optimized / DLL files
