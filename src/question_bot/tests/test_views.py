@@ -30,29 +30,29 @@ class QuestionBotViewTests(TestCase):
             assert response.content.decode("utf-8") == '"Questions sent to 1 users"'
             mock_question_send.assert_called_with([user])
 
-    def test_remind_about_activation(self):
-        SlackBotUserModel.objects.create(
-            user_id=self.TEST_USER_ID,
-            timezone=self.TEST_TIMEZONE,
-            relative_question_time=self.RELATIVE_QUESTION_TIME,
-            utc_time_to_send=get_nearest_half_hour(datetime.utcnow().time()),
-            on_slack=True,
-            on_learney=True,
-            goal_set=False,
-            active=False,
-        )
-        today = date.today()
-        random.seed(1)
-        with patch("question_bot.views.WebClient.chat_postMessage") as mock_slack_client:
-            with patch(
-                "question_bot.views.date", Mock(today=Mock(return_value=today + timedelta(days=3)))
-            ):
-                response = self.client.get("/api/v0/questions")
-                random.seed(1)
-                mock_slack_client.assert_called_with(
-                    channel=self.TEST_USER_ID, text=Messages.dont_forget_to_activate(3)
-                )
-                assert response.content.decode("utf-8") == '"Questions sent to 0 users"'
+    # def test_remind_about_activation(self):
+    #     SlackBotUserModel.objects.create(
+    #         user_id=self.TEST_USER_ID,
+    #         timezone=self.TEST_TIMEZONE,
+    #         relative_question_time=self.RELATIVE_QUESTION_TIME,
+    #         utc_time_to_send=get_nearest_half_hour(datetime.utcnow().time()),
+    #         on_slack=True,
+    #         on_learney=True,
+    #         goal_set=False,
+    #         active=False,
+    #     )
+    #     today = date.today()
+    #     random.seed(1)
+    #     with patch("question_bot.views.WebClient.chat_postMessage") as mock_slack_client:
+    #         with patch(
+    #             "question_bot.views.date", Mock(today=Mock(return_value=today + timedelta(days=3)))
+    #         ):
+    #             response = self.client.get("/api/v0/questions")
+    #             random.seed(1)
+    #             mock_slack_client.assert_called_with(
+    #                 channel=self.TEST_USER_ID, text=Messages.dont_forget_to_activate(3)
+    #             )
+    #             assert response.content.decode("utf-8") == '"Questions sent to 0 users"'
 
 
 # TODO: Write tests for literally every view (1 day)

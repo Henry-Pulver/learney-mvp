@@ -191,11 +191,10 @@ function getGetResponseData(name, json) {
 
 function getPostRequestData(name, objectToStore) {
     let payload = {user_id: userId, map_uuid: mapUUID};
-    let objectString = JSON.stringify(objectToStore);
     if (name === "learnedNodes") {
-        payload["learned_concepts"] = objectString;
+        payload["learned_concepts"] = objectToStore;
     } else if (name === "goalNodes") {
-        payload["goal_concepts"] = objectString;
+        payload["goal_concepts"] = objectToStore;
     } else if (name === "votes") {
         payload["vote_urls"] = objectToStore;
     }

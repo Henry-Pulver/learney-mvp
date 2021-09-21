@@ -1,3 +1,4 @@
+import json
 import random
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
@@ -7,6 +8,7 @@ import numpy as np
 from slack_sdk import WebClient as SlackWebClient
 
 from goals.models import GoalModel
+from knowledge_maps.orig_map_uuid import ORIG_MAP_UUID
 from learned.models import LearnedModel
 from learney_web import settings
 from notion_client import Client as NotionClient
@@ -61,19 +63,24 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
             >= user_model.num_questions_per_day - 1
         ):
             # Get the current state of this user's Knowledge Map(TM)
-            user_goals = GoalModel.objects.filter(user_id=user_model.user_id).latest("last_updated")
+            user_goals = GoalModel.objects.filter(
+                map_uuid=ORIG_MAP_UUID, user_id=user_model.user_id
+            ).latest("last_updated")
             if len(user_goals.goal_concepts) == 0:
                 slack_client.chat_postMessage(
                     channel=user_model.slack_user_id,
                     text=Messages.no_goals(),
                 )
                 return
-            user_learned_data = LearnedModel.objects.filter(user_id=user_model.user_id)
+            user_learned_data = LearnedModel.objects.filter(
+                map_uuid=ORIG_MAP_UUID, user_id=user_model.user_id
+            )
             learned_concepts = (
                 user_learned_data.latest("last_updated").learned_concepts
                 if user_learned_data.count() > 0
                 else {}
             )
+
             map_status = MapStatus(
                 goal_dict=user_goals.goal_concepts,
                 learned_dict=learned_concepts,

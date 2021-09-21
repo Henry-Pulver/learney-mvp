@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from slack_sdk import WebClient
 
 from goals.models import GoalModel
+from knowledge_maps.orig_map_uuid import ORIG_MAP_UUID
 from learney_web import settings
 from page_visits.models import PageVisitModel
 from question_bot.models import AnswerModel, SlackBotUserModel
@@ -78,7 +79,9 @@ class QuestionUserView(APIView):
         on_learney = is_on_learney(user_email)
         if on_learney:
             print("On Learney!")
-            goals_set = GoalModel.objects.filter(user_id=user_email).count() > 0
+            goals_set = (
+                GoalModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_email).count() > 0
+            )
             if not goals_set:
                 slack_client.chat_postMessage(
                     channel=slack_user_id,
@@ -145,7 +148,10 @@ class QuestionUserView(APIView):
             if user.on_learney:
                 print("On Learney!")
                 if not user.goal_set:
-                    goal_set = GoalModel.objects.filter(user_id=user_email).count() > 0
+                    goal_set = (
+                        GoalModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_email).count()
+                        > 0
+                    )
                     print("Goal now set!")
                     if goal_set:
                         if user.on_slack:
@@ -220,16 +226,17 @@ class QuestionsView(APIView):
 
         send_questions(users_to_send_to)
 
-        users_yet_to_activate = SlackBotUserModel.objects.filter(
-            utc_time_to_send=nearest_half_hour, active=False
-        )
-
-        for user in users_yet_to_activate:
-            if (date.today() - user.active_since).days >= 2 and not has_just_run(user):
-                WebClient(settings.SLACK_TOKEN).chat_postMessage(
-                    channel=user.user_id,
-                    text=Messages.dont_forget_to_activate((date.today() - user.active_since).days),
-                )
+        # UNCOMMENT BELOW TO BUMP USERS YET TO ACTIVATE!
+        # users_yet_to_activate = SlackBotUserModel.objects.filter(
+        #     utc_time_to_send=nearest_half_hour, active=False
+        # )
+        #
+        # for user in users_yet_to_activate:
+        #     if (date.today() - user.active_since).days >= 2 and not has_just_run(user):
+        #         WebClient(settings.SLACK_TOKEN).chat_postMessage(
+        #             channel=user.slack_user_id,
+        #             text=Messages.dont_forget_to_activate((date.today() - user.active_since).days),
+        #         )
         return Response(
             f"Questions sent to {len(users_to_send_to)} users", status=status.HTTP_200_OK
         )
@@ -277,11 +284,14 @@ class FeedbackView(APIView):
                     channel=user_model.slack_user_id,
                     text=Messages.signup(get_first_name(event_data)),
                 )
-                on_learney = (
-                    PageVisitModel.objects.filter(
-                        user_id=event_data["user"]["profile"]["email"]
-                    ).count()
-                    > 0
+                on_learney = any(
+                    [
+                        PageVisitModel.objects.filter(
+                            page_extension=ext, user_id=event_data["user"]["profile"]["email"]
+                        ).count()
+                        > 0
+                        for ext in ["/maps/original_map", "/", ""]
+                    ]
                 )
                 if not on_learney:
                     print("NOT ON LEARNEY")
