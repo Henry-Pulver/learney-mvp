@@ -24,14 +24,14 @@ class ContentLinkPreviewView(APIView):
             concept = request.GET["concept"]
             url = request.GET["url"]
             print(f"Attempting to retrieve concept: {concept} from map {map_uuid}, url: {url}")
-            retrieved_entry = ContentLinkPreview.objects.get(
+            retrieved_entry = ContentLinkPreview.objects.filter(
                 map_uuid=map_uuid, concept=concept, url=url
-            )
+            ).latest("preview_last_updated")
             print("Object exists in DB!")
             serializer = LinkPreviewSerializer(retrieved_entry)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ObjectDoesNotExist as e:
-            print(f"ContentLinkPreviewView error: {e}")
+            print(f"ContentLinkPreviewView error for url {request.GET['url']}: {e}")
             preview_data = requests.get(
                 "http://api.linkpreview.net",
                 params={"q": request.GET["url"], "key": LINK_PREVIEW_API_KEY},
@@ -83,14 +83,17 @@ class ContentVoteView(APIView):
             return Response(error, status=status.HTTP_204_NO_CONTENT)
 
     def post(self, request: Request, format=None) -> Response:
+        content_links = ContentLinkPreview.objects.filter(
+            map_uuid=request.data["map_uuid"], url=request.data["url"]
+        )
         data = {
             "map_uuid": UUID(request.data["map_uuid"]),
             "user_id": request.data["user_id"],
             "concept": request.data.get(
                 "concept",
-                ContentLinkPreview.objects.get(
-                    map_uuid=request.data["map_uuid"], url=request.data["url"]
-                ).concept,
+                content_links.latest("preview_last_updated").concept
+                if content_links.count() > 0
+                else "",
             ),
             "url": request.data["url"],
             "vote": request.data["vote"] == "true",
