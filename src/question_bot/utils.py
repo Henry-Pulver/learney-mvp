@@ -8,6 +8,7 @@ import numpy as np
 from django.db.models.query import QuerySet
 
 from goals.models import GoalModel
+from knowledge_maps.orig_map_uuid import ORIG_MAP_UUID
 from learned.models import LearnedModel
 from learney_web import settings
 from page_visits.models import PageVisitModel
@@ -169,9 +170,13 @@ def get_concepts_asked_about(last_set_of_questions: QuerySet) -> List[Tuple[str,
 
 
 def is_on_learney(user_email: str) -> bool:
-    page_visit_logged = PageVisitModel.objects.filter(user_id=user_email).count() > 0
+    page_visit_logged = (
+        PageVisitModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_email).count() > 0
+    )
     if not page_visit_logged:
-        goal_set = GoalModel.objects.filter(user_id=user_email).count() > 0
+        goal_set = GoalModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_email).count() > 0
         if not goal_set:
-            return LearnedModel.objects.filter(user_id=user_email).count() > 0
+            return (
+                LearnedModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_email).count() > 0
+            )
     return True

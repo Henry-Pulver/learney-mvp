@@ -30,7 +30,7 @@ class Messages:
         return (
             "Oh no! It seems you haven't made an account on the Learney platform yet!\n\n"
             "*Create an account* here using the *SAME EMAIL you used to sign up to Slack:* "
-            ":point_right: https://app.learney.me/dashboard :point_left: and *set your learning goals* "
+            ":point_right: https://app.learney.me :point_left: and *set your learning goals* "
             f":goal_net: and *what you know* to receive your questions at {relative_time_str}.\n\n {cls._reach_out()}"
         )
 
@@ -40,7 +40,7 @@ class Messages:
             "Last thing! I promise! :pray:\n\n"
             "All you need to do is set a goal on Learney! :goal_net:\n\n"
             "Click a concept on the interactive Knowledge Map and click *Set Goal*\n\n"
-            ":point_right: https://app.learney.me/dashboard :point_left:\n\n"
+            ":point_right: https://app.learney.me :point_left:\n\n"
             "*Refresh the page when you're done if you don't get a 'Signup complete' message* :smile:"
         )
 
@@ -199,7 +199,7 @@ class Messages:
         return (
             "Message received, loud and clear! :speaker:\n\n"
             "We'll send you more questions now - if they aren't hard enough, try updating the"
-            " Knowledge Map (here: https://app.learney.me/dashboard) and setting another concept"
+            " Knowledge Map (here: https://app.learney.me) and setting another concept"
             " as known so you get harder questions :smile:"
         )
 
@@ -208,7 +208,7 @@ class Messages:
         return (
             "Message received, loud and clear! :speaker:\n\n"
             "We'll send you more questions now - if they are still too difficult, try updating the"
-            " Knowledge Map (here: https://app.learney.me/dashboard) and remove another concept as known so you "
+            " Knowledge Map (here: https://app.learney.me) and remove another concept as known so you "
             "get questions on slightly easier concepts :smile:"
         )
 

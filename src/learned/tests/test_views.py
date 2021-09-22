@@ -7,6 +7,14 @@ from django.test import TestCase
 from learned.models import LearnedModel
 
 
+def assert_response_valid(response, map_uuid: str, user_id: str) -> None:
+    response_dict = json.loads(response.content.decode("utf-8"))
+    assert "id" in response_dict
+    assert response_dict["user_id"] == user_id
+    assert response_dict["map_uuid"] == map_uuid
+    assert "last_updated" in response_dict
+
+
 class LearnedViewTests(TestCase):
     TEST_USER_ID = "henrypulver13@gmail.com"
     TEST_LEARNED = {"1": True, "77": True, "32": False}
@@ -82,6 +90,26 @@ class LearnedViewTests(TestCase):
         )
         assert response.status_code == 400
 
+    # TODO: Add test when JSONField is validated properly that learned_concepts is a dict!
+    # def test_post_learned_type_str_to_dict(self):
+    #     response = self.client.post(
+    #         "/api/v0/learned",
+    #         content_type="application/json",
+    #         data={
+    #             "user_id": self.TEST_USER_ID,
+    #             "map_uuid": self.TEST_MAP_UUID,
+    #             "learned_concepts": "{}",
+    #         },
+    #     )
+    #     assert response.status_code == 201
+    #     assert_response_valid(response, str(self.TEST_MAP_UUID), self.TEST_USER_ID)
+    #     assert (
+    #             LearnedModel.objects.filter(
+    #                 user_id=self.TEST_USER_ID, map_uuid=self.TEST_MAP_UUID
+    #             ).latest("last_updated").learned_concepts
+    #             == {}
+    #     )
+
     def test_post_valid(self):
         new_user_id = f"22{self.TEST_USER_ID}"
         response = self.client.post(
@@ -95,17 +123,10 @@ class LearnedViewTests(TestCase):
         )
 
         assert response.status_code == 201
-        response_dict = json.loads(response.content.decode("utf-8"))
-        print("Response received!")
-        print(response_dict)
-        assert "id" in response_dict
-        assert response_dict["user_id"] == new_user_id
-        assert response_dict["map_uuid"] == str(self.TEST_MAP_UUID)
-        # assert response_dict["learned_concepts"] == self.TEST_LEARNED
-        assert "last_updated" in response_dict
+        assert_response_valid(response, str(self.TEST_MAP_UUID), new_user_id)
         assert (
-            LearnedModel.objects.get(
-                user_id=new_user_id, map_uuid=self.TEST_MAP_UUID
-            ).learned_concepts
+            LearnedModel.objects.filter(user_id=new_user_id, map_uuid=self.TEST_MAP_UUID)
+            .latest("last_updated")
+            .learned_concepts
             == self.TEST_LEARNED
         )

@@ -38,8 +38,8 @@ def test_get_utc_time_to_send(time_str: str, time_difference: str, expected_outp
     "goals,learned,expected_output",
     [
         ({}, {}, set()),
-        ({"11": True}, {}, {"9", "10", "11", "20", "17"}),
-        ({"11": True}, {"9": True}, {"10", "11", "20", "17"}),
+        ({"11": True}, {}, {"9", "11", "10", "134", "138"}),
+        ({"11": True}, {"9": True}, {"10", "11", "134", "138"}),
     ],
 )
 def test_get_concepts_to_learn(
@@ -50,7 +50,7 @@ def test_get_concepts_to_learn(
 
 @pytest.mark.parametrize(
     "goals,learned,expected_output",
-    [({}, {}, set()), ({"11": True}, {}, {"9", "17"}), ({"11": True}, {"9": True}, {"17"})],
+    [({}, {}, set()), ({"11": True}, {}, {"134", "138"}), ({"11": True}, {"134": True}, {"138"})],
 )
 def test_get_next_concepts(
     goals: Dict[str, bool], learned: Dict[str, bool], expected_output: Set[str]
