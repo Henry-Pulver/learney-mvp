@@ -41,6 +41,8 @@ From the root of this repo, simply run (add `sudo` at the start if necessary):
 ./.build_and_run.sh
 ```
 
+Now try visiting `http://0.0.0.0:8000/` (or try `http://localhost:8000/` if `0.0.0.0` isn't working!) and if you see a Learney map there, you're done!
+
 #### Running tests
 
 It's easiest to run tests in the Docker container.
