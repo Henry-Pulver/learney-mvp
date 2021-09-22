@@ -11,8 +11,6 @@ assets/*.json
 **/dev_env.yaml
 **/link_preview_api_key.yaml
 
-.build_and_run.sh
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
