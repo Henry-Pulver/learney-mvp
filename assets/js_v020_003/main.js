@@ -3,6 +3,7 @@ import { initCy, isMobile, panByAndZoom } from "./graph.js"
 import { makeMouseoverTippy } from "./iconsAndButtons.js";
 import { signInTooltip } from "./learningAndPlanning.js";
 import { showIntroTippy, toggleIntro } from "./intro.js";
+import "./buttons.js"
 import {
     logPageView,
     updateQuestionAnswerUsers,

@@ -55,7 +55,7 @@ export function initialiseGoalsAndLearned(learned, goals) {
 }
 
 
-export function clearMap() {
+export function resetProgress() {
     for (const goalId in goalNodes){
         unsetGoal(cy.getElementById(goalId));
     }

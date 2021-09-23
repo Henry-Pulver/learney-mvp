@@ -79,12 +79,12 @@ button.circle {
     animation: none;
 }
 
-#clearMap {
+#resetProgress {
     background-color: #bf0000;
     font-weight: 600;
 }
 
-#clearMap:hover {
+#resetProgress:hover {
     background-color: #fa0505;
 }
 
@@ -135,7 +135,7 @@ button.large {
     .select2-search__field{
         height: auto !important;
     }
-    #clearMap {
+    #resetProgress {
       width: 50%;
     }
     #resetPan {
@@ -166,7 +166,7 @@ button.large {
       max-width: 16rem;
       margin-right: 10px;
     }
-    #clearMap {
+    #resetProgress {
       width: 100%;
       max-width: 8rem;
     }
