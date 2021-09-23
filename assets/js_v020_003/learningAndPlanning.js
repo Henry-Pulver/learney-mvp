@@ -61,7 +61,7 @@ export function resetProgress() {
     }
     for (const learnedId in learnedNodes) {
         if (learnedNodes[learnedId] === true) {
-            onLearnedSliderClick(cy.getElementById(learnedId));
+            onLearnedSliderClick(cy.getElementById(learnedId))();
         }
     }
     learnedNodes = {};
