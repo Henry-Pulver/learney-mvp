@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <title>Learney Prototype</title>
     <link rel="icon" href="{% static 'images/favicon_new-32x32.png' %}">
-    <link rel="stylesheet" href="{% static 'css_v013_001/main.css' %}">
-    <link rel="stylesheet" href="{% static 'css_v013_001/buttons.css' %}">
-    <link rel="stylesheet" href="{% static 'css_v013_001/tooltip.css' %}">
-    <link rel="stylesheet" href="{% static 'css_v013_001/intro.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v021_000/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v021_000/buttons.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v021_000/tooltip.css' %}">
+    <link rel="stylesheet" href="{% static 'css_v021_000/intro.css' %}">
     <link rel="stylesheet" href="https://cdn.auth0.com/js/auth0-samples-theme/1.0/css/auth0-theme.min.css"/>
     <meta xmlns="http://www.w3.org/1999/xhtml">
     <meta name="title" property="og:title" content="Learney Prototype" />
@@ -25,6 +25,7 @@
     {{ userdata|json_script:"userdata" }}
     {{ map_uuid|json_script:"map_uuid" }}
     {{ map_version|json_script:"map_version" }}
+    {{ allow_suggestions|json_script:"allow_suggestions" }}
 
     <!-- STAGING - Google Analytics -->
 <!--    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4F72V4175C"></script>-->
@@ -94,6 +95,7 @@
     <div class="top-button-toolbar disable-touch-actions">
         <div class="intro-button-container">
             <button class="large" id="introButton" >Intro</button>
+            <button class="suggestion-button" id="makeSuggestion" >Make Suggestion</button>
         </div>
         <label id="concept-search-bar-label">
             <select id="concept-search-bar" name="concept" style="width: 100%;"></select>
@@ -126,6 +128,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/cytoscape-popper@1.0.2/cytoscape-popper.js"></script>
-    <script type="module" src="{% static 'js_v020_003/main.js' %}"></script>
+    <script type="module" src="{% static 'js_v021_000/main.js' %}"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-import { isEditEndpoint, LightenDarkenColorByFactor } from "./utils.js"
+import { LightenDarkenColorByFactor, editMapEnabled } from "./utils.js"
 import { makeTippy, removeTippy } from "./tooltips.js"
 import {
     initialiseGoalsAndLearned,
@@ -11,7 +11,6 @@ import {
 import { setupSearch } from "./search.js";
 
 export const isMobile = screen.width < 768;
-export const editMapEnabled = isEditEndpoint();
 
 const fieldOpacity = 0.7;
 const lowestConceptOpacity = 0.4;

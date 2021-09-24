@@ -11,7 +11,9 @@ if (userdata !== ""){
 } else {
     userId = defaultUserId;
 }
+export const editMapEnabled = isEditEndpoint();
 
+export const allowSuggestions = JSON.parse(document.getElementById('allow_suggestions').textContent);
 export const localStorage = window.localStorage;
 var alreadyQuestionAnswerUser = localStorage.getItem("questionAnswerUser") === "true"
 
@@ -21,6 +23,12 @@ export function isEditEndpoint() {
 }
 
 export function createTipElement(tag, attrs, children){
+    /** Creates a html element to be used in a tooltip
+     *
+     * tag: string of html tag to use (e.g. div, button)
+     * attrs: object of {attribute: value} for html
+     * children: an array of child html divs, a string to put inside the element or null if empty
+     **/
     let el = document.createElement(tag);
     if(attrs != null && typeof attrs === typeof {}){
         Object.keys(attrs).forEach(function(key){

@@ -16,5 +16,8 @@ class KnowledgeMapModel(models.Model):
         help_text="Name of the S3 bucket that the knowledge map json is stored in"
     )
     s3_key = models.TextField(help_text="Key of the knowledge map json in S3")
+    allow_suggestions = models.BooleanField(
+        help_text="Whether to allow suggestions on this map", default=True
+    )
 
     last_updated = models.DateTimeField(auto_now=True)
