@@ -43,6 +43,7 @@ def view_map(request, map_name: str = ORIG_MAP_NAME):
             "userdata": get_user_data(auth0user, user) if user.is_authenticated else "",
             "map_uuid": map_object.unique_id,
             "map_version": map_object.version,
+            "allow_suggestions": map_object.allow_suggestions,
         },
     )
 
@@ -64,6 +65,7 @@ def edit_map(request, map_name: str):
                 "userdata": get_user_data(auth0user, user) if user.is_authenticated else "",
                 "map_uuid": map_object.unique_id,
                 "map_version": map_object.version,
+                "allow_suggestions": False,
             },
         )
     else:

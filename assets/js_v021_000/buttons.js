@@ -1,10 +1,10 @@
 import {initialiseGraphState, resetProgress} from "./learningAndPlanning.js";
-import { handleFetchResponses, LightenDarkenColorByFactor, mapUUID } from "./utils.js";
+import { handleFetchResponses, LightenDarkenColorByFactor, editMapEnabled, mapUUID, userId, allowSuggestions } from "./utils.js";
+import { goToFormFunction } from "./suggestions.js";
 import { jsonHeaders } from "./csrf.js";
 import {
     fitCytoTo,
     dagreLayout,
-    editMapEnabled,
     darkenFactor,
     unhighlightNodes,
     dagreOnSubjects,
@@ -14,6 +14,13 @@ import {
 
 var resetProgressButtonClicked = false;
 var cKeyPressed = false;
+
+// MAKE SUGGESTION BUTTON
+if (allowSuggestions) {
+    document.getElementById("makeSuggestion").onclick = goToFormFunction(userId, "concept");
+} else {
+    document.getElementById("makeSuggestion").style.display = "none";
+}
 
 // RESET PROGRESS BUTTON
 if (editMapEnabled) {
