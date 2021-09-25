@@ -1,0 +1,3 @@
+[report]
+omit = **/__init__.py, **/migrations/*, manage.py
+skip_empty = True
