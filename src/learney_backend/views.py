@@ -5,6 +5,7 @@ from uuid import UUID
 import requests
 import yaml
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.datastructures import MultiValueDictKeyError
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -72,36 +73,44 @@ class ContentLinkPreviewView(APIView):
 class ContentVoteView(APIView):
     def get(self, request: Request, format=None) -> Response:
         try:
-            entries = ContentVote.objects.filter(user_id=request.GET["user_id"])
+            entries = ContentVote.objects.filter(
+                user_id=request.GET["user_id"], map_uuid=request.GET["map_uuid"]
+            )
             url_dicts = entries.values("url").distinct()
             data = {
                 url_dict["url"]: entries.filter(url=url_dict["url"]).latest("vote_time").vote
                 for url_dict in url_dicts
             }
-            return Response(data, status=status.HTTP_200_OK)
-        except ObjectDoesNotExist as error:
-            return Response(error, status=status.HTTP_204_NO_CONTENT)
+            return Response(
+                data, status=status.HTTP_200_OK if len(data) > 0 else status.HTTP_204_NO_CONTENT
+            )
+        except MultiValueDictKeyError as error:
+            return Response(str(error), status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request: Request, format=None) -> Response:
-        content_links = ContentLinkPreview.objects.filter(
-            map_uuid=request.data["map_uuid"], url=request.data["url"]
-        )
-        data = {
-            "map_uuid": UUID(request.data["map_uuid"]),
-            "user_id": request.data["user_id"],
-            "concept": request.data.get(
-                "concept",
-                content_links.latest("preview_last_updated").concept
-                if content_links.count() > 0
-                else "",
-            ),
-            "url": request.data["url"],
-            "vote": request.data["vote"] == "true",
-        }
-        print(f"ContentVoteView request data: {data}")
-        serializer = VoteSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            content_links = ContentLinkPreview.objects.filter(
+                map_uuid=request.data["map_uuid"], url=request.data["url"]
+            )
+            data = {
+                "map_uuid": UUID(request.data["map_uuid"]),
+                "user_id": request.data["user_id"],
+                "concept": request.data.get(
+                    "concept",
+                    content_links.latest("preview_last_updated").concept
+                    if content_links.count() > 0
+                    else "",
+                ),
+                "url": request.data["url"],
+                "vote": request.data["vote"],
+            }
+            print(f"ContentVoteView request data: {data}")
+            print(f"Vote type: {type(data['vote'])}")
+            serializer = VoteSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except KeyError as error:
+            return Response(str(error), status=status.HTTP_400_BAD_REQUEST)
