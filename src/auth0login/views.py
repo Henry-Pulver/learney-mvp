@@ -1,3 +1,4 @@
+import datetime
 from typing import Dict
 from urllib.parse import urlencode
 
@@ -8,6 +9,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
 
 from knowledge_maps.models import KnowledgeMapModel
+from learney_web.settings import DT_STR
 
 INDEX_HTML = f"{settings.BASE_DIR}/learney_backend/templates/learney_backend/index.html"
 ORIG_MAP_NAME = "original_map"
@@ -27,11 +29,22 @@ def redirect_to_map(request):
     return redirect(f"/maps/{prev_map}")
 
 
+def cycle_session_key_if_old(request):
+    now = datetime.datetime.utcnow()
+    last_action_time = datetime.datetime.strptime(
+        request.session.get("last_action", now.strftime(DT_STR)), DT_STR
+    )
+    time_since_last_action = now - last_action_time
+    if time_since_last_action.total_seconds() > 3600:
+        request.session.cycle_key()
+
+
 def view_map(request, map_name: str = ORIG_MAP_NAME):
     user = request.user
     auth0user = user.social_auth.get(provider="auth0") if user.is_authenticated else ""
 
     # Update the session
+    cycle_session_key_if_old(request)
     request.session["previous_map"] = map_name
     map_object = KnowledgeMapModel.objects.get(url_extension=map_name)
 
@@ -53,6 +66,7 @@ def edit_map(request, map_name: str):
     user = request.user
     auth0user = user.social_auth.get(provider="auth0")
 
+    cycle_session_key_if_old(request)
     request.session["previous_map"] = map_name
     map_object = KnowledgeMapModel.objects.get(url_extension=map_name)
 
