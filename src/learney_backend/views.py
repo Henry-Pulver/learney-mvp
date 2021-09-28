@@ -55,6 +55,8 @@ class ContentLinkPreviewView(APIView):
             else:
                 print("Not found in linkpreview.net!")
                 return Response(None, status=status.HTTP_204_NO_CONTENT)
+        except KeyError as e:
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request: Request, format=None) -> Response:
         return self._serialize_and_respond(request)
