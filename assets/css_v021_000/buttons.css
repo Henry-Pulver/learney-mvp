@@ -3,7 +3,6 @@
 }
 
 button {
-    border: 2px solid white;
     background-color: #001fab;
     color: #fff;
     cursor: pointer;
@@ -71,6 +70,7 @@ button.circle {
     -webkit-border-radius: 50%;
     -moz-border-radius: 50%;
     border-radius: 50%;
+    border: 2px solid white;
 }
 
 #shiprightButton:hover {
@@ -79,13 +79,13 @@ button.circle {
     animation: none;
 }
 
-#clearMap {
+#resetProgress {
     background-color: #bf0000;
     font-weight: 600;
 }
 
-#clearMap:hover {
-    background-color: #fa0505;
+#resetProgress:hover {
+    background-color: #dc0000;
 }
 
 #feedbackIcon {
@@ -123,6 +123,21 @@ button.large {
     font-size: 1.5em;
 }
 
+.suggestion-button:hover{
+    transform: scale(1.05);
+}
+
+.suggestion-button{
+    background-image: linear-gradient(40deg, #ff0080, #008ef2);
+    font-size: 1em;
+    font-weight: bold;
+    margin: 0.5em 1em;
+    padding: 0.5em 2em;
+    border-radius: 0.5em;
+    border-width: 0;
+    transition: all .2s ease-in-out;
+}
+
 /*MOBILE*/
 @media only screen and (max-device-width: 768px) {
     button {
@@ -135,7 +150,7 @@ button.large {
     .select2-search__field{
         height: auto !important;
     }
-    #clearMap {
+    #resetProgress {
       width: 50%;
     }
     #resetPan {
@@ -154,7 +169,10 @@ button.large {
     .top-button-toolbar {
       right: 0;
       width: 100%;
-  }
+    }
+    .suggestion-button {
+        display: none;
+    }
 }
 
 /*DESKTOP*/
@@ -166,7 +184,7 @@ button.large {
       max-width: 16rem;
       margin-right: 10px;
     }
-    #clearMap {
+    #resetProgress {
       width: 100%;
       max-width: 8rem;
     }

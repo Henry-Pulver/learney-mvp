@@ -1,5 +1,6 @@
 import {onLearnedSliderClick, learnedNodes, onSetGoalSliderClick, goalNodes} from "./learningAndPlanning.js";
 import {removeIntroTippy} from "./intro.js";
+import { goToFormFunction } from "./suggestions.js"
 import {
     getValidURLs,
     createTipElement,
@@ -7,9 +8,10 @@ import {
     logContentClick,
     userId,
     mapUUID,
-    handleFetchResponses
+    handleFetchResponses,
+    allowSuggestions
 } from "./utils.js";
-import {jsonHeaders} from "./csrf.js";
+import { jsonHeaders } from "./csrf.js";
 
 export var shownTippy;
 
@@ -35,10 +37,9 @@ var cachedLinkPreviews = {};
 export function makeTippy(node){
     removeTippy();
     selectedNode = node;
-    let html = createTooltipHTML(node);
 
     shownTippy = tippy(node.popperRef(), {
-      html: html,
+      html: createTooltipHTML(node),
       allowHTML: true,
       trigger: 'manual',
       arrow: true,
@@ -254,6 +255,11 @@ function createTooltipHTML(node) {
     if (urls.length > 0) {
         let linkList = createTipElement("ol", {"class": "tooltip-link"}, createLinkPreviewArray(node.data().name, urls));
         marginTipArray.push(linkList);
+    }
+    if (allowSuggestions){
+        let suggestionButton = createTipElement("button", {"class": "suggestion-button"}, "Suggest Content!");
+        suggestionButton.onclick = goToFormFunction(userId, "content", node.data().name)
+        marginTipArray.push(createTipElement("div", {"class": "suggestion-button-container"}, [suggestionButton]));
     }
 
     return createTipElement("div", {"class": "tooltip-contents disable-touch-actions"}, marginTipArray);

@@ -55,13 +55,13 @@ export function initialiseGoalsAndLearned(learned, goals) {
 }
 
 
-export function clearMap() {
+export function resetProgress() {
     for (const goalId in goalNodes){
         unsetGoal(cy.getElementById(goalId));
     }
     for (const learnedId in learnedNodes) {
         if (learnedNodes[learnedId] === true) {
-            onLearnedSliderClick(cy.getElementById(learnedId));
+            onLearnedSliderClick(cy.getElementById(learnedId))();
         }
     }
     learnedNodes = {};

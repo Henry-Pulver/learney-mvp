@@ -11,6 +11,7 @@ python-jose>=3.2.0
 python-dotenv>=0.17.1
 pytest-django
 pytest-xdist
+pytest-cov
 PyYAML
 requests>=2.25.1
 slack_sdk

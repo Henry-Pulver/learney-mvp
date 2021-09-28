@@ -1,4 +1,4 @@
-import { handleFetchResponses, isEditEndpoint, LightenDarkenColorByFactor, mapUUID } from "./utils.js"
+import { LightenDarkenColorByFactor, editMapEnabled } from "./utils.js"
 import { makeTippy, removeTippy } from "./tooltips.js"
 import {
     initialiseGoalsAndLearned,
@@ -6,43 +6,38 @@ import {
     goalNodes,
     pathNodes,
     learnedNodes,
-    clearMap,
     onSetGoalSliderClick, learnedNodesPromise, goalNodesPromise
 } from "./learningAndPlanning.js";
 import { setupSearch } from "./search.js";
-import { jsonHeaders } from "./csrf.js";
 
 export const isMobile = screen.width < 768;
-var resetProgressButtonClicked = false;
-const editMapEnabled = isEditEndpoint();
 
 const fieldOpacity = 0.7;
 const lowestConceptOpacity = 0.4;
-var cKeyPressed = false;
 
 var selectedNodeID = Infinity;
-var darkenFactor = 0.25;
+export var darkenFactor = 0.25;
+export var originalMapJSON;
+
+export const presetLayout = {name: "preset"};
+export const dagreLayout = {name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 300};
 
 export function initCy(then) {
     /** Initialise Cytoscape graph.*/
-    let elements = JSON.parse(then[1]);
-    elements.nodes.forEach(function(node){
+    originalMapJSON = JSON.parse(then[1]);
+    originalMapJSON.nodes.forEach(function(node){
         if (node.data.colour !== undefined){
             node.data.colour = LightenDarkenColorByFactor(node.data.colour, darkenFactor);
         }
     });
 
-    let positionsDefined = elements.nodes[0].position !== undefined;
+    let positionsDefined = originalMapJSON.nodes[0].position !== undefined;
     let layout;
-    if (positionsDefined) {
-        layout = {name: "preset"};
-    } else {
-        layout = {name: "dagre", rankDir: "BT", nodeSep: 100, rankSep: 300};
-    }
+    if (positionsDefined) {layout = presetLayout;} else {layout = dagreLayout;}
 
-    // Initialise cytoscape!
+    // Initialise cytoscape
     window.cy = window.cytoscape({
-        elements: elements,
+        elements: JSON.parse(JSON.stringify(originalMapJSON)),
         container: document.getElementById("cy"),
         layout: layout,
         style: then[0],
@@ -74,11 +69,11 @@ export function initCy(then) {
     })
 
     bindRouters();
-    setupSearch(elements);
+    setupSearch(originalMapJSON);
 }
 
 
-function dagreOnSubjects() {
+export function dagreOnSubjects() {
     /** Run Dagre algorithm on each subject individually **/
     let subjects = [];
     cy.nodes("[nodetype= \"field\"]").forEach(field => subjects.push(field.name));
@@ -93,39 +88,7 @@ function dagreOnSubjects() {
     })
 }
 
-
-// BUTTONS
-if (editMapEnabled) {
-    document.getElementById("clearMap").style.display = "none";
-}else {
-    document.getElementById("clearMap").onclick = clearMapButton;
-}
-function clearMapButton() {
-    if (resetProgressButtonClicked){
-        clearMap();
-        unhighlightNodes(cy.nodes());
-        resetProgressButtonClicked = false;
-        document.getElementById("clearMap").innerHTML = "Reset Progress";
-    } else {
-        document.getElementById("clearMap").innerHTML = "Are you sure?";
-        resetProgressButtonClicked = true;
-        setTimeout(function(){
-            resetProgressButtonClicked = false;
-            document.getElementById("clearMap").innerHTML = "Reset Progress";
-        }, 3000);
-    }
-}
-
-document.getElementById("resetPan").onclick = function () {fitCytoTo({eles: cy.nodes(), padding: 50})};
-document.onkeypress = function(e) {
-    if (document.activeElement !== document.getElementsByClassName("select2-search__field")[0]){
-        if (e.code === "KeyC" && !cKeyPressed){
-            fitCytoTo({eles: cy.nodes(), padding: 50}, function () {cKeyPressed = false;});
-            cKeyPressed = true;
-        }
-    }
-};
-function fitCytoTo(fitParams, onComplete = function () {}) {
+export function fitCytoTo(fitParams, onComplete = function () {}) {
     if (isMobile) {
         cy.fit(fitParams.eles, fitParams.padding);
         onComplete();
@@ -144,40 +107,6 @@ export function panByAndZoom(xPan, yPan, zoomFactor, onComplete) {
         cy.animate({ panBy: {x: xPan, y: yPan}, zoom: cy.zoom() * zoomFactor, duration: 1200, easing: "ease-in-out", complete: onComplete
         });
     }
-}
-
-if (editMapEnabled) {
-    document.getElementById("captureLayout").onclick = captureLayout;
-}else {
-    document.getElementById("captureLayout").style.display = "none";
-}
-function captureLayout() {
-    let mapJson = {nodes: [], edges: []};
-    cy.nodes().forEach(function(node) {
-        let nodeData = {data: node.data(), position: node.position()};
-        if (nodeData.data.colour !== undefined){
-            nodeData.data.colour = LightenDarkenColorByFactor(nodeData.data.colour, 1 / darkenFactor);
-        }
-        mapJson.nodes.push(nodeData);
-    });
-    cy.edges().forEach(function(edge) {
-        mapJson.edges.push({data: edge.data()});
-    });
-    fetch("/api/v0/knowledge_maps",
-        {
-            method : "PUT",
-            headers: jsonHeaders,
-            body: JSON.stringify({
-                map_uuid: mapUUID,
-                map_data: mapJson,
-            })
-        }
-    ).then(response => handleFetchResponses(response));
-    cy.nodes().forEach(function(node) {
-        if (node.data().colour !== undefined){
-            node.data().colour = LightenDarkenColorByFactor(node.data().colour, darkenFactor);
-        }
-    });
 }
 
 function getConceptNodeOpacity(node, normalOpacity) {
@@ -250,7 +179,7 @@ function highlightNodes(nodes, resize) {
     }
 }
 
-function unhighlightNodes(nodes) {
+export function unhighlightNodes(nodes) {
     setGraphOpacity(nodes, 1);
     resizeNodes(nodes, 48);
 }
