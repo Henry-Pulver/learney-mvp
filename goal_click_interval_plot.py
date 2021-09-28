@@ -8,9 +8,10 @@ from datetime import datetime, timedelta
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 import os
 
-def create_table(linkClickModel,goalModel):
+def create_table():
 
     # clicks : url,user_id,click_time
     # goals :user_id,goal_concepts,last_updated
@@ -23,7 +24,10 @@ def create_table(linkClickModel,goalModel):
     for goal in goals:
     # finding the time intevel between goal and the time click
 
-        intervals.append(find_intervel(goal.last_updated,linkClickModel))
+        intervals.append (
+                        find_intervel (goal.last_updated,LinkClickModel)
+                         )
+
         set_goal.append(goal.last_updated.month)
 
     # seaborn syncs best with Pandas this is why we would like to consolidate the lists into one data frame
@@ -58,7 +62,10 @@ def plot_interval(df, plt=plt):
     file_name = 'intervel_plot'
 
     # 0 Value mean that no interval is found in the window we set for it so we drop all 0 values
-    df = df[df['Intervals'] > 0]
+    non_zero_df = df[df['Intervals'] > 0]
+
+    drop_percentage = (len(df)-len(non_zero_df) )/len(df) * 100
+    print(f'{np.round(drop_percentage,2)}% of users did not stand in the time window and dropped from the plot')
 
     plt.figure(figsize=(15, 9))
 
@@ -66,7 +73,7 @@ def plot_interval(df, plt=plt):
     plt.ylim(1,12)
 
     plt.title('Set goal / Link Click intervals distribution over months')
-    sns.scatterplot(x='Intervals', y='Month setting goal', data=df)
+    sns.scatterplot(x='Intervals', y='Month setting goal', data=non_zero_df)
     plt.savefig(f'{path}{file_name}.png')
 
     # checks if the file exists
@@ -76,6 +83,6 @@ def plot_interval(df, plt=plt):
     else:
         print('File is not saved')
 
-create_table(LinkClickModel,GoalModel)
+create_table()
 
 
