@@ -49,6 +49,7 @@ ALLOWED_HOSTS = [
     # localhost
     "127.0.0.1",
     "0.0.0.0",
+    "localhost",
 ]
 
 # Log output to a log file stored in the container
