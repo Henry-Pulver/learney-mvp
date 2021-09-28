@@ -23,6 +23,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 with open("dev_env.yaml", "r") as env_file:
     dev_secrets_dict = yaml.load(env_file, Loader=yaml.Loader)
 
+DT_STR = "%d/%m/%Y, %H:%M:%S"
+
 SECRET_KEY = dev_secrets_dict["SECRET_KEY"]
 
 SLACK_TOKEN = dev_secrets_dict["SLACK_TOKEN"]

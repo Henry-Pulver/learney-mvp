@@ -310,7 +310,7 @@ export function logContentClick(url) {
         {
             method: "POST",
             headers: jsonHeaders,
-            body: JSON.stringify({user_id: userId, url: url}),
+            body: JSON.stringify({map_uuid: mapUUID, user_id: userId, url: url}),
         }).then(response => handleFetchResponses(response));
 }
 

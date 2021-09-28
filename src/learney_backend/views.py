@@ -1,3 +1,4 @@
+import datetime
 import json
 from typing import Dict, Union
 from uuid import UUID
@@ -13,6 +14,7 @@ from rest_framework.views import APIView
 
 from learney_backend.models import ContentLinkPreview, ContentVote
 from learney_backend.serializers import LinkPreviewSerializer, VoteSerializer
+from learney_web.settings import DT_STR
 
 with open("link_preview_api_key.yaml", "r") as secrets_file:
     LINK_PREVIEW_API_KEY = yaml.load(secrets_file, Loader=yaml.Loader)["API_KEY"]
@@ -61,7 +63,6 @@ class ContentLinkPreviewView(APIView):
     def _serialize_and_respond(request: Union[Request, Dict[str, str]]) -> Response:
         data = request if isinstance(request, dict) else request.data
         serializer = LinkPreviewSerializer(data=data)
-        print(f"Serializer: {serializer}")
         if serializer.is_valid():
             serializer.save()
             print(f"{serializer.data} saved in DB!")
@@ -89,11 +90,13 @@ class ContentVoteView(APIView):
 
     def post(self, request: Request, format=None) -> Response:
         try:
+            request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
             content_links = ContentLinkPreview.objects.filter(
                 map_uuid=request.data["map_uuid"], url=request.data["url"]
             )
             data = {
                 "map_uuid": UUID(request.data["map_uuid"]),
+                "session_id": request.session.session_key,
                 "user_id": request.data["user_id"],
                 "concept": request.data.get(
                     "concept",
@@ -104,8 +107,6 @@ class ContentVoteView(APIView):
                 "url": request.data["url"],
                 "vote": request.data["vote"],
             }
-            print(f"ContentVoteView request data: {data}")
-            print(f"Vote type: {type(data['vote'])}")
             serializer = VoteSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
