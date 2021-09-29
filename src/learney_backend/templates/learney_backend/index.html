@@ -72,17 +72,17 @@
 
         <div class="profile-image-container">
             <div id="profile-image-button">
-                {% if auth0User != "" %}
-                <img class="profile-image" src="{{ auth0User.extra_data.picture }}" style="background-color:transparent;" alt="Profile Picture"/>
+                {% if userdata.name != "" %}
+                <img class="profile-image" src="{{ userdata.picture }}" style="background-color:transparent;" alt="Profile Picture"/>
                 {% else %}
                 <img class="profile-image" src="{% static 'images/user.svg' %}" alt="Profile Picture"/>
                 {% endif %}
             </div>
         </div>
         <div id="profile-div">
-            {% if auth0User != "" %}
+            {% if userdata.name != "" %}
             <h2>Welcome, {{ userdata.name }}!</h2>
-            <h5 class="profile-email" >{{ auth0User.extra_data.email }}</h5>
+            <h5 class="profile-email" >{{ userdata.email }}</h5>
             <button onclick="location.href='/logout'">Logout</button>
             {% else %}
             <h2>Welcome!</h2>
