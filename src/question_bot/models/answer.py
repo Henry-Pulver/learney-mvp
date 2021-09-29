@@ -3,7 +3,7 @@ from django.db import models
 
 class AnswerModel(models.Model):
     # Add when asking a question
-    user_id = models.CharField(max_length=128)
+    user_email = models.CharField(max_length=128)
     question_id = models.CharField(max_length=16)
     question_type = models.CharField(max_length=16)
     question_text = models.TextField(max_length=1024)

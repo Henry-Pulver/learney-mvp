@@ -4,13 +4,8 @@ import { headers, jsonHeaders } from "./csrf.js"
 export const mapUUID = JSON.parse(document.getElementById('map_uuid').textContent);
 export const mapVersion = JSON.parse(document.getElementById('map_version').textContent);
 const userdata = JSON.parse(document.getElementById('userdata').textContent);
-export var userId;
-export const defaultUserId = "default_user_id";
-if (userdata !== ""){
-    userId = userdata.email;
-} else {
-    userId = defaultUserId;
-}
+export const userId = userdata.user_id;
+export const userEmail = userdata.email;
 export const editMapEnabled = isEditEndpoint();
 
 export const allowSuggestions = JSON.parse(document.getElementById('allow_suggestions').textContent);
@@ -18,8 +13,12 @@ export const localStorage = window.localStorage;
 var alreadyQuestionAnswerUser = localStorage.getItem("questionAnswerUser") === "true"
 
 
+export function isAnonymousUser(userId){
+    return userId.startsWith("anonymous-user|");
+}
+
 export function isEditEndpoint() {
-    return location.pathname.slice(0, 11) === "/maps/edit/";
+    return location.pathname.startsWith("/maps/edit/");
 }
 
 export function createTipElement(tag, attrs, children){
@@ -172,7 +171,6 @@ export function getValidURLs(urls){
     return url_array;
 }
 
-
 function getAPIEndpoint(name) {
     let extension;
     if (name === "learnedNodes") {
@@ -209,7 +207,6 @@ function getPostRequestData(name, objectToStore) {
     return payload;
 }
 
-
 function ajaxSuccess (json) {
     console.log(`Success!\n${JSON.stringify(json)}`);
 }
@@ -223,7 +220,7 @@ export function initialiseFromStorage(name) {
     let apiEndpoint = getAPIEndpoint(name);
 
     if (storedItem !== null) {
-        if (userId !== defaultUserId) {
+        if (!isAnonymousUser(userId)) {
             // If stored locally, check DB and add it if it's not there!
             fetch(
                 `${apiEndpoint}?` + new URLSearchParams({user_id: userId, map_uuid: mapUUID}),
@@ -237,7 +234,7 @@ export function initialiseFromStorage(name) {
         }
         return Promise.resolve(JSON.parse(storedItem));
     } else {
-        if (userId !== defaultUserId) {
+        if (!isAnonymousUser(userId)) {
             // Not stored locally, try DB
             return fetch(`${apiEndpoint}?` + new URLSearchParams({user_id: userId, map_uuid: mapUUID}),
                 {
@@ -262,7 +259,6 @@ export function initialiseFromStorage(name) {
         }
     }
 }
-
 
 export function saveToDB(name, object) {
     if (name !== "votes") {
@@ -292,7 +288,6 @@ export function saveToDB(name, object) {
     }
 }
 
-
 export function logPageView() {
     fetch("/api/v0/page_visit",
         {
@@ -315,7 +310,7 @@ export function logContentClick(url) {
 }
 
 export function updateQuestionAnswerUsers() {
-    if (userId !== defaultUserId && !alreadyQuestionAnswerUser) {
+    if (!isAnonymousUser(userId) && !alreadyQuestionAnswerUser) {
       // TODO: Swap out below once you've added tests for this view!
         // fetch("/api/v0/add_user",
       //     {

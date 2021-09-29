@@ -7,11 +7,10 @@ import "./buttons.js"
 import {
     logPageView,
     updateQuestionAnswerUsers,
-    defaultUserId,
     userId,
     localStorage,
     mapUUID,
-    mapVersion
+    mapVersion, isAnonymousUser
 } from "./utils.js";
 import {cacheHeaders} from "./csrf.js";
 
@@ -59,7 +58,7 @@ function introSequence() {
         function (slides) {
             let introSlides = slides;
             function showIntroIfNew() {
-                if (userId === defaultUserId && localStorage.getItem("viewed_before") !== null && !isMobile) {
+                if (isAnonymousUser(userId) && localStorage.getItem("viewed_before") !== null && !isMobile) {
                     showIntroTippy(introSlides);
                 }
             }

@@ -258,7 +258,7 @@ function createTooltipHTML(node) {
     }
     if (allowSuggestions){
         let suggestionButton = createTipElement("button", {"class": "suggestion-button"}, "Suggest Content!");
-        suggestionButton.onclick = goToFormFunction(userId, "content", node.data().name)
+        suggestionButton.onclick = goToFormFunction("content", node.data().name)
         marginTipArray.push(createTipElement("div", {"class": "suggestion-button-container"}, [suggestionButton]));
     }
 

@@ -2,7 +2,7 @@ from typing import Dict, List, Set
 
 
 def get_predecessor_dict(edges: List[Dict[str, Dict[str, str]]]) -> Dict[str, Set[str]]:
-    predecessor_dict: Dict[str, Set] = {}
+    predecessor_dict: Dict[str, Set[str]] = {}
     for edge in edges:
         if edge["data"]["target"] in predecessor_dict:
             predecessor_dict[edge["data"]["target"]].add(edge["data"]["source"])

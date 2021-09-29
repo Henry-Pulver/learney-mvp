@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from collections import Counter
 from copy import copy
 from pathlib import Path
-from typing import Any, Dict, List, Set, Union
+from typing import Any, Dict, List, Set
 from warnings import warn
 
 import matplotlib.cm as cm
