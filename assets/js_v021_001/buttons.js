@@ -1,5 +1,12 @@
 import {initialiseGraphState, resetProgress} from "./learningAndPlanning.js";
-import { handleFetchResponses, LightenDarkenColorByFactor, editMapEnabled, mapUUID, userId, allowSuggestions } from "./utils.js";
+import {
+    handleFetchResponses,
+    LightenDarkenColorByFactor,
+    editMapEnabled,
+    mapUUID,
+    allowSuggestions,
+    userEmail
+} from "./utils.js";
 import { goToFormFunction } from "./suggestions.js";
 import { jsonHeaders } from "./csrf.js";
 import {
@@ -17,7 +24,7 @@ var cKeyPressed = false;
 
 // MAKE SUGGESTION BUTTON
 if (allowSuggestions) {
-    document.getElementById("makeSuggestion").onclick = goToFormFunction(userId, "concept");
+    document.getElementById("makeSuggestion").onclick = goToFormFunction("concept");
 } else {
     document.getElementById("makeSuggestion").style.display = "none";
 }

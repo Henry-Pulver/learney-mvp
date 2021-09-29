@@ -1,4 +1,4 @@
-import {defaultUserId} from "./utils.js";
+import {userEmail} from "./utils.js";
 
 const URLToMapSuggestion = {
     original_map: "Machine+Learning+map",
@@ -12,7 +12,7 @@ const suggestionToFormEntry = {
     dependency: "Dependency+(connection)",
 };
 
-export function getSuggestionURL(userEmail, suggestionType, relevantConcept = "") {
+export function getSuggestionURL(suggestionType, relevantConcept = "") {
     if (!(suggestionType in suggestionToFormEntry)) {
         console.error(`${suggestionType} is not a valid suggestion type!`);
     }
@@ -23,9 +23,6 @@ export function getSuggestionURL(userEmail, suggestionType, relevantConcept = ""
     if (!(urlEnding in URLToMapSuggestion)) {
         console.error(`${urlEnding} is not a valid URL ending!`);
     }
-    if (userEmail === defaultUserId) {
-        userEmail = "";
-    }
     if (relevantConcept !== "") {
         relevantConcept = `&entry.453705070=${relevantConcept.replace(/ /g, "+")}`;
     }
@@ -33,9 +30,8 @@ export function getSuggestionURL(userEmail, suggestionType, relevantConcept = ""
     return `https://docs.google.com/forms/d/e/1FAIpQLScH8oOtd8sIcXtTRd6cs6gomR3ixvm2Nv8L3TcsErFtBsf4uA/viewform?usp=pp_url&entry.758676511=${URLToMapSuggestion[urlEnding]}&entry.1956489231=${suggestionToFormEntry[suggestionType]}${relevantConcept}&entry.1943732201=${userEmail}`
 }
 
-export function goToFormFunction(userEmail, suggestionType, relevantConcept = "") {
-    console.log(relevantConcept);
+export function goToFormFunction(suggestionType, relevantConcept = "") {
     return function () {
-        window.open(getSuggestionURL(userEmail, suggestionType, relevantConcept), '_blank')
+        window.open(getSuggestionURL(suggestionType, relevantConcept), '_blank')
     }
 }

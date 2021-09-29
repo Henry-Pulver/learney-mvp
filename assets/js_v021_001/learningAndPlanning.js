@@ -1,7 +1,6 @@
 import {
     createTipElement,
-    defaultUserId,
-    initialiseFromStorage, localStorage, saveToDB,
+    initialiseFromStorage, isAnonymousUser, localStorage, saveToDB,
     updateQuestionAnswerUsers,
     userId
 } from "./utils.js";
@@ -15,7 +14,7 @@ const deleteStoredProgress = "deleteStoredProgress";
 const transferredToProfileOnce = "transferredToProfileOnce";
 export var signInTooltip = null;
 // Deals with old users
-if (userId === defaultUserId){
+if (isAnonymousUser(userId)){
     // Doesn't delete progress of prev users. Deletes user progress when they've visited multiple times!
     if (localStorage.getItem(deleteStoredProgress) === "true") {
         localStorage.removeItem(learnedNodesString);
@@ -107,7 +106,7 @@ export function onLearnedSliderClick(node) {
             });
         }
         saveToDB(learnedNodesString, learnedNodes);
-        if (userId === defaultUserId){
+        if (isAnonymousUser(userId)){
             // promptSignInTooltip("To keep what you know across sessions, sign in here!")
             signInTooltip.show();
         }
@@ -139,7 +138,7 @@ function promptSignInTooltip(text) {
 
 function setGoalIfSignedIn(node) {
     setGoal(node);
-    if (userId === defaultUserId) {
+    if (isAnonymousUser(userId)) {
         // Prompt sign in
         // promptSignInTooltip("To keep your goals across sessions, sign in here!");
         signInTooltip.show();
