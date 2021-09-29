@@ -20,6 +20,7 @@ from question_bot.slack_message_text import Messages
 from question_bot.utils import (
     AnswerOutcome,
     check_answer,
+    email_to_user_id,
     get_first_name,
     get_nearest_half_hour,
     get_utc_time_to_send,
@@ -43,11 +44,12 @@ class QuestionUserView(APIView):
         print(f"request.data: {request.POST}")
 
         user_email = request.POST["email"]
+        user_id = email_to_user_id(user_email)
         slack_client = WebClient(settings.SLACK_TOKEN)
 
         # Check this person hasn't already signed up!
         try:
-            user = SlackBotUserModel.objects.get(user_id=user_email)
+            user = SlackBotUserModel.objects.get(user_email=user_email)
             slack_client.chat_postMessage(
                 channel=user.slack_user_id, text=Messages.already_signed_up()
             )
@@ -79,8 +81,9 @@ class QuestionUserView(APIView):
         on_learney = is_on_learney(user_email)
         if on_learney:
             print("On Learney!")
+
             goals_set = (
-                GoalModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_email).count() > 0
+                GoalModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_id).count() > 0
             )
             if not goals_set:
                 slack_client.chat_postMessage(
@@ -107,7 +110,7 @@ class QuestionUserView(APIView):
         # Make an entry!
         serializer = SlackBotUserSerializer(
             data=dict(
-                user_id=user_email,
+                user_email=user_email,
                 relative_question_time=request.data["relative_time_to_receive_questions"],
                 timezone=request.data["timezone"],
                 utc_time_to_send=get_utc_time_to_send(
@@ -125,12 +128,12 @@ class QuestionUserView(APIView):
         )
         if serializer.is_valid():
             serializer.save()
-            user = SlackBotUserModel.objects.get(user_id=user_email)
+            user = SlackBotUserModel.objects.get(user_email=user_email)
             if has_just_run(user):
-                print(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
-                logging.debug(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+                print(f"{user.user_email} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+                logging.debug(f"{user.user_email} HAS JUST RECEIVED QUESTIONS - CANCELLING")
             else:
-                logging.debug(f"Sending to {user.user_id}")
+                logging.debug(f"Sending to {user.user_email}")
                 send_questions([user])
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
@@ -142,14 +145,16 @@ class QuestionUserView(APIView):
 
         # Check this person has already signed up
         try:
-            user = SlackBotUserModel.objects.get(user_id=user_email)
+            user = SlackBotUserModel.objects.get(user_email=user_email)
             print("DB ENTRY EXISTS!")
             slack_client = WebClient(settings.SLACK_TOKEN)
             if user.on_learney:
                 print("On Learney!")
                 if not user.goal_set:
                     goal_set = (
-                        GoalModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_email).count()
+                        GoalModel.objects.filter(
+                            map_uuid=ORIG_MAP_UUID, user_id=email_to_user_id(user_email)
+                        ).count()
                         > 0
                     )
                     print("Goal now set!")
@@ -160,12 +165,12 @@ class QuestionUserView(APIView):
                                 text=Messages.signup_complete(user.relative_question_time),
                             )
                             if has_just_run(user):
-                                print(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+                                print(f"{user.user_email} HAS JUST RECEIVED QUESTIONS - CANCELLING")
                                 logging.debug(
-                                    f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING"
+                                    f"{user.user_email} HAS JUST RECEIVED QUESTIONS - CANCELLING"
                                 )
                             else:
-                                logging.debug(f"Sending to {user.user_id}")
+                                logging.debug(f"Sending to {user.user_email}")
                                 send_questions([user])
                         user.goal_set = True
                         user.active = user.on_slack
@@ -192,10 +197,10 @@ class QuestionUserView(APIView):
             )
 
     def delete(self, request: Request, format=None) -> Response:
-        user_id = request.data["email"]
-        SlackBotUserModel.objects.filter(user_id=user_id).delete()
+        user_email = request.data["email"]
+        SlackBotUserModel.objects.filter(user_email=user_email).delete()
         return Response(
-            f"Entry with user_email={user_id} deleted",
+            f"Entry with user_email={user_email} deleted",
             status=status.HTTP_204_NO_CONTENT,
         )
 
@@ -213,10 +218,10 @@ class QuestionsView(APIView):
         for user in users_to_maybe_send_to:
             # Check it hasn't just run (hack to block multiple requests causing problems)
             if has_just_run(user):
-                print(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
-                logging.debug(f"{user.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+                print(f"{user.user_email} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+                logging.debug(f"{user.user_email} HAS JUST RECEIVED QUESTIONS - CANCELLING")
             else:
-                logging.debug(f"{user.user_id} A USER TO SEND TO")
+                logging.debug(f"{user.user_email} A USER TO SEND TO")
                 # Should this user still be active?
                 if get_days_until_end(user, 7) <= 0 and not user.paid:
                     deactivate_user(user)
@@ -268,7 +273,7 @@ class FeedbackView(APIView):
             print(f'NEW MEMBER WITH EMAIL {event_data["user"]["profile"]["email"]} JOINED')
             try:
                 user_model = SlackBotUserModel.objects.get(
-                    user_id=event_data["user"]["profile"]["email"]
+                    user_email=event_data["user"]["profile"]["email"]
                 )
                 print("SLACK USER DB EXISTS")
                 # if no ObjectDoesNotExist error, we should update the entry
@@ -287,7 +292,8 @@ class FeedbackView(APIView):
                 on_learney = any(
                     [
                         PageVisitModel.objects.filter(
-                            page_extension=ext, user_id=event_data["user"]["profile"]["email"]
+                            page_extension=ext,
+                            user_id=email_to_user_id(event_data["user"]["profile"]["email"]),
                         ).count()
                         > 0
                         for ext in ["/maps/original_map", "/", ""]
@@ -306,12 +312,12 @@ class FeedbackView(APIView):
                         text=Messages.signup_complete(user_model.relative_question_time),
                     )
                     if has_just_run(user_model):
-                        print(f"{user_model.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING")
+                        print(f"{user_model.user_email} HAS JUST RECEIVED QUESTIONS - CANCELLING")
                         logging.debug(
-                            f"{user_model.user_id} HAS JUST RECEIVED QUESTIONS - CANCELLING"
+                            f"{user_model.user_email} HAS JUST RECEIVED QUESTIONS - CANCELLING"
                         )
                     else:
-                        logging.debug(f"Sending to {user_model.user_id}")
+                        logging.debug(f"Sending to {user_model.user_email}")
                         send_questions([user_model])
             except ObjectDoesNotExist:
                 print(f'NO SLACK USER WITH EMAIL {event_data["user"]["profile"]["email"]} EXISTS')

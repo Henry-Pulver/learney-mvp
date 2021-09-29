@@ -2,9 +2,8 @@ from django.db import models
 
 
 class SlackBotUserModel(models.Model):
-    # At present, this is their email address so we can see their Slack.
-    # Long term it will be a unique string
-    user_id = models.CharField(primary_key=True, max_length=128)
+    # Not an EmailField for legacy reasons
+    user_email = models.CharField(primary_key=True, max_length=128)
 
     num_questions_per_day = models.IntegerField(default=5)
     relative_question_time = models.TimeField()

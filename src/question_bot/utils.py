@@ -5,6 +5,7 @@ from datetime import datetime, time
 from typing import Dict, List, Set, Tuple
 
 import numpy as np
+from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 
 from goals.models import GoalModel
@@ -19,6 +20,17 @@ class AnswerOutcome(enum.Enum):
     passed = -1
     incorrect = 0
     correct = 1
+
+
+def is_on_learney(user_email: str) -> bool:
+    return User.objects.filter(email=user_email).count > 0
+
+
+def email_to_user_id(email: str) -> str:
+    if is_on_learney(email):
+        return User.objects.get(email=email).social_auth.get(provider="auth0").uid
+    else:
+        return ""
 
 
 def get_first_name(slack_response: Dict) -> str:
@@ -167,16 +179,3 @@ def get_concepts_asked_about(last_set_of_questions: QuerySet) -> List[Tuple[str,
         else:
             concept_counter[question_dict["question_id"].split("_")[0]] = 1
     return sorted([(q_id, count) for q_id, count in concept_counter.items()], key=lambda x: -x[1])
-
-
-def is_on_learney(user_email: str) -> bool:
-    page_visit_logged = (
-        PageVisitModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_email).count() > 0
-    )
-    if not page_visit_logged:
-        goal_set = GoalModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_email).count() > 0
-        if not goal_set:
-            return (
-                LearnedModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_email).count() > 0
-            )
-    return True

@@ -8,7 +8,7 @@ from question_bot.models import AnswerModel, SlackBotUserModel
 
 
 class SlackBotUserModelTests(TestCase):
-    TEST_USER_ID = "henrypulver@hotmail.co.uk"
+    TEST_USER_EMAIL = "henrypulver@hotmail.co.uk"
     TEST_TIMEZONE = "GMT + 4"
     RELATIVE_QUESTION_TIME = time(8, 0)
     TEST_UTC_TIME = time(hour=12, minute=30)
@@ -16,7 +16,7 @@ class SlackBotUserModelTests(TestCase):
     def test_failed_set_up__time_wrong(self):
         with pytest.raises(Exception):
             SlackBotUserModel.objects.create(
-                user_id=self.TEST_USER_ID,
+                user_email=self.TEST_USER_EMAIL,
                 timezone=self.TEST_TIMEZONE,
                 utc_time_to_send="27:77",
                 relative_question_time=self.RELATIVE_QUESTION_TIME,
@@ -27,7 +27,7 @@ class SlackBotUserModelTests(TestCase):
     def test_failed_set_up__missing_time_to_send(self):
         with pytest.raises(Exception) as e:
             SlackBotUserModel.objects.create(
-                user_id=self.TEST_USER_ID,
+                user_email=self.TEST_USER_EMAIL,
                 timezone=self.TEST_TIMEZONE,
                 relative_question_time=self.RELATIVE_QUESTION_TIME,
                 on_slack=True,
@@ -37,7 +37,7 @@ class SlackBotUserModelTests(TestCase):
     def test_failed_set_up__missing_on_slack(self):
         with pytest.raises(Exception) as e:
             SlackBotUserModel.objects.create(
-                user_id=self.TEST_USER_ID,
+                user_email=self.TEST_USER_EMAIL,
                 timezone=self.TEST_TIMEZONE,
                 relative_question_time=self.RELATIVE_QUESTION_TIME,
                 utc_time_to_send=self.TEST_UTC_TIME,
@@ -47,7 +47,7 @@ class SlackBotUserModelTests(TestCase):
     def test_failed_set_up__missing_timezone(self):
         with pytest.raises(Exception) as e:
             SlackBotUserModel.objects.create(
-                user_id=self.TEST_USER_ID,
+                user_email=self.TEST_USER_EMAIL,
                 relative_question_time=self.RELATIVE_QUESTION_TIME,
                 utc_time_to_send=self.TEST_UTC_TIME,
                 on_learney=True,
@@ -57,7 +57,7 @@ class SlackBotUserModelTests(TestCase):
     def test_failed_set_up__missing_relative_question_time(self):
         with pytest.raises(Exception) as e:
             SlackBotUserModel.objects.create(
-                user_id=self.TEST_USER_ID,
+                user_email=self.TEST_USER_EMAIL,
                 timezone=self.TEST_TIMEZONE,
                 utc_time_to_send=self.TEST_UTC_TIME,
                 on_learney=True,
@@ -67,7 +67,7 @@ class SlackBotUserModelTests(TestCase):
     @pytest.fixture(scope="class", autouse=True)
     def set_up(self):
         created_object = SlackBotUserModel.objects.create(
-            user_id=self.TEST_USER_ID,
+            user_email=self.TEST_USER_EMAIL,
             timezone=self.TEST_TIMEZONE,
             relative_question_time=self.RELATIVE_QUESTION_TIME,
             utc_time_to_send=self.TEST_UTC_TIME,
@@ -77,8 +77,8 @@ class SlackBotUserModelTests(TestCase):
         assert created_object
 
     def test_get_from_db(self):
-        user = SlackBotUserModel.objects.get(user_id=self.TEST_USER_ID)
-        assert user.user_id == self.TEST_USER_ID
+        user = SlackBotUserModel.objects.get(user_email=self.TEST_USER_EMAIL)
+        assert user.user_email == self.TEST_USER_EMAIL
         assert user.relative_question_time == self.RELATIVE_QUESTION_TIME
         assert user.timezone == self.TEST_TIMEZONE
         assert user.utc_time_to_send == self.TEST_UTC_TIME
@@ -91,24 +91,24 @@ class SlackBotUserModelTests(TestCase):
         assert user.paid is False
 
     def test_update_db_entry(self):
-        user = SlackBotUserModel.objects.get(user_id=self.TEST_USER_ID)
+        user = SlackBotUserModel.objects.get(user_email=self.TEST_USER_EMAIL)
         user.active = False
         user.save()
 
         # Check start date isn't updated
-        deactivated_user = SlackBotUserModel.objects.get(user_id=self.TEST_USER_ID)
+        deactivated_user = SlackBotUserModel.objects.get(user_email=self.TEST_USER_EMAIL)
         assert deactivated_user.active is False
 
 
 class AnswerModelTests(TestCase):
-    TEST_USER_ID = "henrypulver@hotmail.co.uk"
+    TEST_USER_EMAIL = "henrypulver@hotmail.co.uk"
     TEST_Q_ID = "10_1a"
     TEST_ANSWER_GIVEN = "This is an answer... A what?"
 
     @pytest.fixture(scope="class", autouse=True)
     def set_up(self):
         created_object = AnswerModel.objects.create(
-            user_id=self.TEST_USER_ID,
+            user_email=self.TEST_USER_EMAIL,
             question_id=self.TEST_Q_ID,
             time_asked="1624463906.000300",
             time_answered=None,
@@ -116,8 +116,8 @@ class AnswerModelTests(TestCase):
         assert created_object
 
     def test_get_from_db(self):
-        question_answer = AnswerModel.objects.get(user_id="henrypulver@hotmail.co.uk")
-        assert question_answer.user_id == self.TEST_USER_ID
+        question_answer = AnswerModel.objects.get(user_email="henrypulver@hotmail.co.uk")
+        assert question_answer.user_email == self.TEST_USER_EMAIL
         assert question_answer.question_id == self.TEST_Q_ID
         assert question_answer.time_asked
         assert not question_answer.answered
@@ -125,14 +125,14 @@ class AnswerModelTests(TestCase):
         assert question_answer.correct is None
 
     def test_update_db_entry(self):
-        question_answer = AnswerModel.objects.get(user_id="henrypulver@hotmail.co.uk")
+        question_answer = AnswerModel.objects.get(user_email="henrypulver@hotmail.co.uk")
         orig_time_asked = copy(question_answer.time_asked)
         question_answer.answered = True
         question_answer.answer_given = self.TEST_ANSWER_GIVEN
         question_answer.correct = True
         question_answer.save()
 
-        updated_answer = AnswerModel.objects.get(user_id="henrypulver@hotmail.co.uk")
+        updated_answer = AnswerModel.objects.get(user_email="henrypulver@hotmail.co.uk")
         assert updated_answer.answered is True
         assert updated_answer.answer_given == self.TEST_ANSWER_GIVEN
         assert orig_time_asked == updated_answer.time_asked

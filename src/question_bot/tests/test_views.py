@@ -1,23 +1,21 @@
-import random
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, time
 
 from django.test import TestCase
-from mock import Mock, patch
+from mock import patch
 
 from question_bot.models import SlackBotUserModel
-from question_bot.slack_message_text import Messages
 from question_bot.utils import get_nearest_half_hour
 
 
 class QuestionBotViewTests(TestCase):
-    TEST_USER_ID = "henrypulver13@gmail.com"
+    TEST_USER_EMAIL = "henrypulver13@gmail.com"
     TEST_TIMEZONE = "GMT + 4"
     RELATIVE_QUESTION_TIME = time(8, 0)
     TEST_UTC_TIME = time(hour=12, minute=30)
 
     def test_send_questions(self):
         user = SlackBotUserModel.objects.create(
-            user_id=self.TEST_USER_ID,
+            user_email=self.TEST_USER_EMAIL,
             timezone=self.TEST_TIMEZONE,
             relative_question_time=self.RELATIVE_QUESTION_TIME,
             utc_time_to_send=get_nearest_half_hour(datetime.utcnow().time()),
