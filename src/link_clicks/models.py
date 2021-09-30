@@ -9,5 +9,5 @@ class LinkClickModel(models.Model):
     session_id = models.TextField(
         blank=True, editable=False, help_text="session_key of the session the link was clicked in"
     )
-    url = models.URLField()
-    click_time = models.DateTimeField(auto_now=True)
+    url = models.URLField(help_text="URL of link that was clicked")
+    timestamp = models.DateTimeField(auto_now=True)

@@ -12,4 +12,4 @@ class LearnedModel(models.Model):
         help_text="session_key of the session that the concept was learned in",
     )
     learned_concepts = models.JSONField()
-    last_updated = models.DateTimeField(auto_now=True)
+    timestamp = models.DateTimeField(auto_now=True)
