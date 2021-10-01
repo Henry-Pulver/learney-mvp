@@ -5,7 +5,7 @@ import {
     editMapEnabled,
     mapUUID,
     allowSuggestions,
-    userEmail
+    buttonPress, isAnonymousUser, userId
 } from "./utils.js";
 import { goToFormFunction } from "./suggestions.js";
 import { jsonHeaders } from "./csrf.js";
@@ -22,37 +22,47 @@ import {
 var resetProgressButtonClicked = false;
 var cKeyPressed = false;
 
+// SIMPLE BUTTONS
+if (!isAnonymousUser(userId)){
+    document.getElementById("log-out").onclick = buttonPress(function () {location.href='/logout'}, "log-out");
+} else {
+    document.getElementById("log-in").onclick = buttonPress(function () {location.href='/login/auth0'}, "log-in");
+}
+document.getElementById("feedback-button").onclick = buttonPress(function () {window.open('https://docs.google.com/forms/d/e/1FAIpQLSeWyrpKy0r4LbQuuHt5FIL9PYU7KFfLSxFnnuBDs3-zaofW7A/viewform', '_blank')}, "feedback-button");
+document.getElementById("slack-button").onclick = buttonPress(function () {window.open('https://join.slack.com/t/learneyalphatesters/shared_invite/zt-tf37n610-x8rIwDk6eeVctTVZqQkp7Q','_blank')}, "slack-button");
+
+
 // MAKE SUGGESTION BUTTON
 if (allowSuggestions) {
-    document.getElementById("makeSuggestion").onclick = goToFormFunction("concept");
+    document.getElementById("make-suggestion").onclick = buttonPress(goToFormFunction("concept"), "make-suggestion");
 } else {
-    document.getElementById("makeSuggestion").style.display = "none";
+    document.getElementById("make-suggestion").style.display = "none";
 }
 
 // RESET PROGRESS BUTTON
 if (editMapEnabled) {
-    document.getElementById("resetProgress").style.display = "none";
+    document.getElementById("reset-progress").style.display = "none";
 }else {
-    document.getElementById("resetProgress").onclick = resetProgressButton;
+    document.getElementById("reset-progress").onclick = buttonPress(resetProgressButton, "reset-progress");
 }
 function resetProgressButton() {
     if (resetProgressButtonClicked){
         resetProgress();
         unhighlightNodes(cy.nodes());
         resetProgressButtonClicked = false;
-        document.getElementById("resetProgress").innerHTML = "Reset Progress";
+        document.getElementById("reset-progress").innerHTML = "Reset Progress";
     } else {
-        document.getElementById("resetProgress").innerHTML = "Are you sure?";
+        document.getElementById("reset-progress").innerHTML = "Are you sure?";
         resetProgressButtonClicked = true;
         setTimeout(function(){
             resetProgressButtonClicked = false;
-            document.getElementById("resetProgress").innerHTML = "Reset Progress";
+            document.getElementById("reset-progress").innerHTML = "Reset Progress";
         }, 3000);
     }
 }
 
 // RESET PAN BUTTON
-document.getElementById("resetPan").onclick = function () {fitCytoTo({eles: cy.nodes(), padding: 50})};
+document.getElementById("reset-pan").onclick = buttonPress(function () {fitCytoTo({eles: cy.nodes(), padding: 50})}, "reset-pan");
 document.onkeypress = function(e) {
     if (document.activeElement !== document.getElementsByClassName("select2-search__field")[0]){
         if (e.code === "KeyC" && !cKeyPressed){
@@ -64,9 +74,9 @@ document.onkeypress = function(e) {
 
 // SAVE MAP BUTTON
 if (editMapEnabled) {
-    document.getElementById("saveLayout").onclick = saveMap;
+    document.getElementById("save-layout").onclick = buttonPress(saveMap, "save-layout");
 }else {
-    document.getElementById("saveLayout").style.display = "none";
+    document.getElementById("save-layout").style.display = "none";
 }
 function saveMap() {
     let mapJson = {nodes: [], edges: []};
@@ -99,9 +109,9 @@ function saveMap() {
 
 // AUTO-GENERATE LAYOUT
 if (editMapEnabled) {
-    document.getElementById("runDagre").onclick = autoGenerateLayout;
+    document.getElementById("run-dagre").onclick = buttonPress(autoGenerateLayout, "run-dagre");
 }else {
-    document.getElementById("runDagre").style.display = "none";
+    document.getElementById("run-dagre").style.display = "none";
 }
 function autoGenerateLayout() {
     cy.layout(dagreLayout).run();
@@ -110,9 +120,9 @@ function autoGenerateLayout() {
 
 // RESET TO START
 if (editMapEnabled) {
-    document.getElementById("resetLayout").onclick = resetLayout;
+    document.getElementById("reset-layout").onclick = buttonPress(resetLayout, "reset-layout");
 }else {
-    document.getElementById("resetLayout").style.display = "none";
+    document.getElementById("reset-layout").style.display = "none";
 }
 function resetLayout() {
     cy.remove(cy.elements());

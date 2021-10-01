@@ -27,4 +27,4 @@ class LearnedModelTests(TestCase):
         assert user.map_uuid == self.TEST_MAP_UUID
         assert user.user_id == self.TEST_USER_ID
         assert user.learned_concepts == self.TEST_LEARNED
-        assert user.last_updated
+        assert user.timestamp

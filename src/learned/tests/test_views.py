@@ -12,7 +12,7 @@ def assert_response_valid(response, map_uuid: str, user_id: str) -> None:
     assert "id" in response_dict
     assert response_dict["user_id"] == user_id
     assert response_dict["map_uuid"] == map_uuid
-    assert "last_updated" in response_dict
+    assert "timestamp" in response_dict
 
 
 class LearnedViewTests(TestCase):
@@ -58,7 +58,7 @@ class LearnedViewTests(TestCase):
         assert response_dict["user_id"] == self.TEST_USER_ID
         assert response_dict["map_uuid"] == str(self.TEST_MAP_UUID)
         assert response_dict["learned_concepts"] == self.TEST_LEARNED
-        assert "last_updated" in response_dict
+        assert "timestamp" in response_dict
 
     def test_post_invalid_no_user_id(self):
         response = self.client.post(
@@ -126,7 +126,7 @@ class LearnedViewTests(TestCase):
         assert_response_valid(response, str(self.TEST_MAP_UUID), new_user_id)
         assert (
             LearnedModel.objects.filter(user_id=new_user_id, map_uuid=self.TEST_MAP_UUID)
-            .latest("last_updated")
+            .latest("timestamp")
             .learned_concepts
             == self.TEST_LEARNED
         )

@@ -97,6 +97,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "social_django",
     "auth0login",
+    "button_presses",
     "learney_backend",
     "goals",
     "knowledge_maps",

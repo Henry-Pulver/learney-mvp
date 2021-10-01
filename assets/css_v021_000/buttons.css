@@ -73,18 +73,18 @@ button.circle {
     border: 2px solid white;
 }
 
-#shiprightButton:hover {
+#feedback-button:hover {
     background-color: #accaff;
     box-shadow: 0 0 10px #accaff;
     animation: none;
 }
 
-#resetProgress {
+#reset-progress {
     background-color: #bf0000;
     font-weight: 600;
 }
 
-#resetProgress:hover {
+#reset-progress:hover {
     background-color: #dc0000;
 }
 
@@ -94,12 +94,12 @@ button.circle {
     margin: 10% 0;
 }
 
-#slackButton {
+#slack-button {
     background-color: #ffffff;
     padding: 0;
 }
 
-#slackButton:hover {
+#slack-button:hover {
     background-color: #dfdfdf;
 }
 
@@ -150,10 +150,10 @@ button.large {
     .select2-search__field{
         height: auto !important;
     }
-    #resetProgress {
+    #reset-progress {
       width: 50%;
     }
-    #resetPan {
+    #reset-pan {
       width: 50%;
     }
     button.circle {
@@ -163,7 +163,7 @@ button.large {
     #concept-search-bar-label {
       margin: 0 5px;
     }
-    #shiprightButton {
+    #feedback-button {
         display: none;
     }
     .top-button-toolbar {
@@ -184,11 +184,11 @@ button.large {
       max-width: 16rem;
       margin-right: 10px;
     }
-    #resetProgress {
+    #reset-progress {
       width: 100%;
       max-width: 8rem;
     }
-    #slackButton {
+    #slack-button {
       margin-bottom: 5px;
     }
     button.circle {

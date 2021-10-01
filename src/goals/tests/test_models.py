@@ -25,4 +25,4 @@ class GoalModelTests(TestCase):
         assert user.map_uuid == self.TEST_MAP_UUID
         assert user.user_id == self.TEST_USER_ID
         assert user.goal_concepts == self.TEST_GOALS
-        assert user.last_updated
+        assert user.timestamp
