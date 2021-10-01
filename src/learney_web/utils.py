@@ -2,6 +2,16 @@ from typing import Dict, List, Set
 
 
 def get_predecessor_dict(edges: List[Dict[str, Dict[str, str]]]) -> Dict[str, Set[str]]:
+    """From a list of edges as defined in the map json, outputs a dictionary mapping all
+    concept_id's to sets of their dependencies.
+
+    Args:
+        edges (List[Dict[str, Dict[str, str]]]): the list of edges defined in the map json file
+
+    Returns:
+        Dict[str, Set[str]]: Dictionary of {concept_id: {set of concept_id's of dependencies of
+         this concept}}
+    """
     predecessor_dict: Dict[str, Set[str]] = {}
     for edge in edges:
         if edge["data"]["target"] in predecessor_dict:

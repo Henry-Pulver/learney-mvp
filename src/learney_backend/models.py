@@ -30,4 +30,4 @@ class ContentVote(models.Model):
 
     vote = models.BooleanField()
 
-    vote_time = models.DateTimeField(auto_now=True)
+    timestamp = models.DateTimeField(auto_now=True)

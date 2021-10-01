@@ -10,4 +10,4 @@ class GoalModel(models.Model):
         blank=True, editable=False, help_text="session_key of the session the goal was set in"
     )
     goal_concepts = models.JSONField()
-    last_updated = models.DateTimeField(auto_now=True)
+    timestamp = models.DateTimeField(auto_now=True)

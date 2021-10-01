@@ -7,4 +7,4 @@ class PageVisitModel(models.Model):
         blank=True, editable=False, help_text="session_key of the session"
     )
     page_extension = models.TextField(default="", help_text="URL extension of the page visited")
-    visit_time = models.DateTimeField(auto_now=True)
+    timestamp = models.DateTimeField(auto_now=True)
