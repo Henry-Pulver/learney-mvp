@@ -9,7 +9,7 @@ import {
     userId,
     mapUUID,
     handleFetchResponses,
-    allowSuggestions
+    allowSuggestions, buttonPress
 } from "./utils.js";
 import { jsonHeaders } from "./csrf.js";
 
@@ -231,7 +231,7 @@ function createTooltipHTML(node) {
     let heading = createTipElement("h4", {"class": "tooltip-heading"}, node.data().name);
     let description = createTipElement("div", {"class": "tooltip-description"}, node.data().description);
     let closeButton = createTipElement("button", {"class": "close"}, "X")
-    closeButton.onclick = removeTippy;
+    closeButton.onclick = buttonPress(removeTippy, "close-concept");
 
     if (node.data().id in learnedNodes) {
         var learned = learnedNodes[node.data().id];
@@ -257,8 +257,8 @@ function createTooltipHTML(node) {
         marginTipArray.push(linkList);
     }
     if (allowSuggestions){
-        let suggestionButton = createTipElement("button", {"class": "suggestion-button"}, "Suggest Content!");
-        suggestionButton.onclick = goToFormFunction("content", node.data().name)
+        let suggestionButton = createTipElement("button", {"class": "suggestion-button", "id": "content-suggestion"}, "Suggest Content!");
+        suggestionButton.onclick = buttonPress(goToFormFunction("content", node.data().name), "content-suggestion");
         marginTipArray.push(createTipElement("div", {"class": "suggestion-button-container"}, [suggestionButton]));
     }
 

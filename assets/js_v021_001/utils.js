@@ -309,6 +309,20 @@ export function logContentClick(url) {
         }).then(response => handleFetchResponses(response));
 }
 
+
+export function buttonPress(runFirst, buttonName) {
+    return function() {
+        runFirst();
+        fetch(
+        "/api/v0/button_press",
+        {
+            method: "POST",
+            headers: jsonHeaders,
+            body: JSON.stringify({user_id: userId, page_extension: location.pathname, button_name: buttonName}),
+        }).then(response => handleFetchResponses(response));
+    }
+}
+
 export function updateQuestionAnswerUsers() {
     if (!isAnonymousUser(userId) && !alreadyQuestionAnswerUser) {
       // TODO: Swap out below once you've added tests for this view!

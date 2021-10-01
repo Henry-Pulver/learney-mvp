@@ -1,4 +1,4 @@
-import {createTipElement} from "./utils.js";
+import {buttonPress, createTipElement} from "./utils.js";
 
 var introSlideNumber = 0;
 var shownIntroTippy;
@@ -35,27 +35,27 @@ function createIntroHTML(introSlides) {
     if (introSlideNumber === 0){
         prevSlide.className += "disabled";
     } else {
-        prevSlide.onclick = changeSlideFunction(false, introSlides);
+        prevSlide.onclick = buttonPress(changeSlideFunction(false, introSlides), "prev-intro");
     }
 
     let nextSlide = createTipElement("div", {"class": "triangle right"}, [])
     if (introSlideNumber + 1 === numSlides){
         nextSlide.className += "disabled";
     } else {
-        nextSlide.onclick = changeSlideFunction(true, introSlides);
+        nextSlide.onclick = buttonPress(changeSlideFunction(true, introSlides), "next-intro");
     }
     let slideNumDiv = createTipElement("div", {"class": "intro-slide-num-div"}, (introSlideNumber + 1).toString() + "/" + numSlides.toString());
 
     let slideDiv = createTipElement("div", {"class": "intro-slide-change-div"}, [prevSlide, slideNumDiv, nextSlide]);
-    let closeButton = createTipElement("button", {"class": "close"}, "X");
-    closeButton.onclick = removeIntroTippy;
+    let closeButton = createTipElement("button", {"class": "close", "id": "close-intro"}, "X");
+    closeButton.onclick = buttonPress(removeIntroTippy, "close-intro");
 
     let introContainer = createTipElement("div", {"class": "intro-container"}, [title, gifDiv, textDiv, slideDiv]);
     return createTipElement("div", {"class": "intro-content-container"}, [introContainer, closeButton]);
 }
 
 export function showIntroTippy(introSlides) {
-    shownIntroTippy = tippy("#introButton", {
+    shownIntroTippy = tippy("#open-intro", {
         html: createIntroHTML(introSlides),
         allowHTML: true,
         trigger: 'manual',

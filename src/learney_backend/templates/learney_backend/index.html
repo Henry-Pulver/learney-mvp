@@ -83,10 +83,10 @@
             {% if userdata.name != "" %}
             <h2>Welcome, {{ userdata.name }}!</h2>
             <h5 class="profile-email" >{{ userdata.email }}</h5>
-            <button onclick="location.href='/logout'">Logout</button>
+            <button id="log-out">Logout</button>
             {% else %}
             <h2>Welcome!</h2>
-            <button class="large flashing" onclick="location.href='/login/auth0'">Log In</button>
+            <button id="log-in" class="large flashing">Log In</button>
             {% endif %}
         </div>
     </div>
@@ -94,27 +94,27 @@
 
     <div class="top-button-toolbar disable-touch-actions">
         <div class="intro-button-container">
-            <button class="large" id="introButton" >Intro</button>
-            <button class="suggestion-button" id="makeSuggestion" >Make Suggestion</button>
+            <button class="large" id="open-intro" >Intro</button>
+            <button class="suggestion-button" id="make-suggestion" >Make Suggestion</button>
         </div>
         <label id="concept-search-bar-label">
             <select id="concept-search-bar" name="concept" style="width: 100%;"></select>
         </label>
         <div class="button-toolbar-div">
-            <button id="saveLayout" >Save Map</button>
-            <button id="resetLayout" >Reset Layout</button>
-            <button id="runDagre" >Auto-generate Layout</button>
-            <button id="resetProgress" >Reset Progress</button>
-            <button id="resetPan" >Centre View</button>
+            <button id="save-layout" >Save Map</button>
+            <button id="reset-layout" >Reset Layout</button>
+            <button id="run-dagre" >Auto-generate Layout</button>
+            <button id="reset-progress" >Reset Progress</button>
+            <button id="reset-pan" >Centre View</button>
         </div>
     </div>
 
 
     <div class="feedback-buttons disable-touch-actions">
-        <button class="circle flashing" id="shiprightButton" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSeWyrpKy0r4LbQuuHt5FIL9PYU7KFfLSxFnnuBDs3-zaofW7A/viewform', '_blank')">
+        <button class="circle flashing" id="feedback-button">
             <img src="{% static 'images/feedback_icon.png' %}" id="feedbackIcon" alt="Feedback icon">
         </button>
-        <button class="circle" id="slackButton" onclick="window.open('https://join.slack.com/t/learneyalphatesters/shared_invite/zt-tf37n610-x8rIwDk6eeVctTVZqQkp7Q','_blank')">
+        <button class="circle" id="slack-button">
             <img src="{% static 'images/slack_logo.png' %}" id="slackLogo" alt="Slack logo">
         </button>
 <!--        <button class="circle feedback" id="feedbackButton" onclick="window.open('mailto:henrypulver13@gmail.com?subject=Feedback about Learney&cc=matthewphillips5320@googlemail.com','_blank')">?</button>-->

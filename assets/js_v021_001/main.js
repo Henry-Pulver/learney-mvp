@@ -10,7 +10,7 @@ import {
     userId,
     localStorage,
     mapUUID,
-    mapVersion, isAnonymousUser
+    mapVersion, isAnonymousUser, buttonPress
 } from "./utils.js";
 import {cacheHeaders} from "./csrf.js";
 
@@ -26,14 +26,14 @@ const graphPromise = fetch(
 const stylePromise = fetch(`${staticFileLocation}knowledge_graph.cycss`).then(file => file.text());
 const introPromise = fetch(`${staticFileLocation}introSlides_v021.json`).then(file => file.json())
 
-makeMouseoverTippy("#shiprightButton", "Play your part in the future of Learney! We want your feedback and suggestions!");
-makeMouseoverTippy("#slackButton", "Want to join our thriving community of contributors and learners? Join our Slack!");
-// document.getElementById("shiprightButton").addEventListener("mouseover", makeMouseoverTippy("#shiprightButton", "Play your part in the future of Learney! We want to hear your thoughts and suggestions!"));
-// document.getElementById("slackButton").addEventListener("mouseover", makeMouseoverTippy("#slackButton", "Want to join the community or chat to us? Join our Slack and tell us!"));
+makeMouseoverTippy("#feedback-button", "Play your part in the future of Learney! We want your feedback and suggestions!");
+makeMouseoverTippy("#slack-button", "Want to join our thriving community of contributors and learners? Join our Slack!");
+// document.getElementById("feedback-button").addEventListener("mouseover", makeMouseoverTippy("#feedback-button", "Play your part in the future of Learney! We want to hear your thoughts and suggestions!"));
+// document.getElementById("slack-button").addEventListener("mouseover", makeMouseoverTippy("#slack-button", "Want to join the community or chat to us? Join our Slack and tell us!"));
 // document.getElementById("feedbackButton").addEventListener("mouseover", makeMouseoverTippy("#feedbackButton", "Not a fan of Slack? Email us your feedback!"));
 
 // Show profile div if hidden
-document.getElementsByClassName("profile-image")[0].onclick = function () {
+document.getElementsByClassName("profile-image")[0].onclick = buttonPress(function () {
     let profileDiv = document.getElementById("profile-div");
     if (profileDiv.style.display === "block") {
         profileDiv.style.display = "none";
@@ -47,7 +47,7 @@ document.getElementsByClassName("profile-image")[0].onclick = function () {
             signInTooltip.disable();
         }
     }
-};
+}, "profile-image-button");
 
 Promise.all([stylePromise, graphPromise]).then(initCy).then(introSequence);
 
@@ -65,7 +65,7 @@ function introSequence() {
             // TODO: if goal is set, zoom there instead of to the bottom?
             panByAndZoom(-cy.width() / 6, -cy.height() * 4 / 9, 1.5, showIntroIfNew);
 
-            document.getElementById("introButton").onclick = toggleIntro(introSlides);
+            document.getElementById("open-intro").onclick = buttonPress(toggleIntro(introSlides), "open-intro");
         }
 );
 }
