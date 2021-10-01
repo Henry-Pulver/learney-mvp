@@ -47,7 +47,7 @@ class GoalViewTests(TestCase):
         assert response_dict["user_id"] == self.TEST_USER_ID
         assert response_dict["map_uuid"] == str(self.TEST_MAP_UUID)
         assert response_dict["goal_concepts"] == self.TEST_GOALS
-        assert "last_updated" in response_dict
+        assert "timestamp" in response_dict
 
     def test_post_invalid_id(self):
         response = self.client.post(
@@ -88,7 +88,7 @@ class GoalViewTests(TestCase):
         assert response_dict["user_id"] == new_user_id
         assert response_dict["map_uuid"] == str(self.TEST_MAP_UUID)
         # assert response_dict["goal_concepts"] == self.TEST_GOALS
-        assert "last_updated" in response_dict
+        assert "timestamp" in response_dict
         assert GoalModel.objects.get(
             user_id=new_user_id, map_uuid=self.TEST_MAP_UUID
         ).goal_concepts == str(self.TEST_GOALS)

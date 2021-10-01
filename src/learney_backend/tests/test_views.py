@@ -123,7 +123,7 @@ class ContentVoteViewTests(TestCase):
         assert response_dict["concept"] == self.TEST_CONCEPT
         assert response_dict["url"] == self.TEST_URL
         assert response_dict["vote"] == self.TEST_VOTE
-        assert "vote_time" in response_dict
+        assert "timestamp" in response_dict
         assert (
             ContentVote.objects.get(user_id=new_user_id, map_uuid=self.TEST_MAP_UUID).vote
             == self.TEST_VOTE

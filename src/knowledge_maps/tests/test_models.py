@@ -6,7 +6,7 @@ from django.test import TestCase
 from knowledge_maps.models import KnowledgeMapModel
 
 
-class SlackBotUserModelTests(TestCase):
+class KnowledgeMapModelTests(TestCase):
     TEST_USER_ID = "henrypulver@hotmail.co.uk"
     TEST_UUID = uuid4()
     TEST_URL_EXTENSION1 = "test_map1"

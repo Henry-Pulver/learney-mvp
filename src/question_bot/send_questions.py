@@ -64,7 +64,7 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
         ):
             # Get the current state of this user's Knowledge Map(TM)
             user_goals = GoalModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_id).latest(
-                "last_updated"
+                "timestamp"
             )
             if len(user_goals.goal_concepts) == 0:
                 slack_client.chat_postMessage(
@@ -74,7 +74,7 @@ def send_questions(users_to_send_to: List[SlackBotUserModel], force: bool = Fals
                 return
             user_learned_data = LearnedModel.objects.filter(map_uuid=ORIG_MAP_UUID, user_id=user_id)
             learned_concepts = (
-                user_learned_data.latest("last_updated").learned_concepts
+                user_learned_data.latest("timestamp").learned_concepts
                 if user_learned_data.count() > 0
                 else {}
             )

@@ -81,7 +81,7 @@ class ContentVoteView(APIView):
             )
             url_dicts = entries.values("url").distinct()
             data = {
-                url_dict["url"]: entries.filter(url=url_dict["url"]).latest("vote_time").vote
+                url_dict["url"]: entries.filter(url=url_dict["url"]).latest("timestamp").vote
                 for url_dict in url_dicts
             }
             return Response(
