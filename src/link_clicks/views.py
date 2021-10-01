@@ -1,5 +1,5 @@
 import datetime
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from rest_framework import status
 from rest_framework.request import Request
@@ -14,10 +14,10 @@ class LinkClickView(APIView):
     def post(self, request: Request, format=None):
         request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
         data = {
-            "map_uuid": UUID(request.data["map_uuid"]),
-            "user_id": request.data["user_id"],
+            "map_uuid": UUID(request.data.get("map_uuid", None)),
+            "user_id": request.data.get("user_id", None),
             "session_id": request.session.session_key,
-            "url": request.data["url"],
+            "url": request.data.get("url", None),
         }
         serializer = LinkClickSerializer(data=data)
         if serializer.is_valid():
