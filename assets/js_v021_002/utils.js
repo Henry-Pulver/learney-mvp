@@ -299,13 +299,13 @@ export function logPageView() {
 }
 
 
-export function logContentClick(url) {
+export function logContentClick(url, concept_id) {
     fetch(
         "/api/v0/link_click",
         {
             method: "POST",
             headers: jsonHeaders,
-            body: JSON.stringify({map_uuid: mapUUID, user_id: userId, url: url}),
+            body: JSON.stringify({map_uuid: mapUUID, user_id: userId, url: url, concept_id: concept_id}),
         }).then(response => handleFetchResponses(response));
 }
 

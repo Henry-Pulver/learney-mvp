@@ -148,7 +148,8 @@ function createContentVotingHTML(url) {
     return createTipElement("div", {"class": "voting"}, [upArrow, downArrow])
 }
 
-function createLinkPreviewArray (nodeName, urls) {
+function createLinkPreviewArray (nodeData, urls) {
+    let nodeName = nodeData.name;
     let linkArray = []
     for (let i = 0; i < urls.length; i++) {
         let linkTitle = createTipElement("h4", {"class": "link-preview-title"}, "Loading...");
@@ -165,7 +166,7 @@ function createLinkPreviewArray (nodeName, urls) {
             "class": "link-preview",
             "target": "_blank"
         }, [linkImageContainer, linkTextContainer]);
-        link.onclick = function(){logContentClick(urls[i])};
+        link.onclick = function(){logContentClick(urls[i], nodeData.id)};
         let linkElement = createTipElement("li", {"class": "link-preview-list-element"}, [link, createContentVotingHTML(urls[i])]);
 
         linkArray.push(linkElement);
@@ -181,7 +182,7 @@ function createLinkPreviewArray (nodeName, urls) {
             $.ajax({
                 url: "api/v0/link_previews",
                 type: "GET",
-                data: {map_uuid: mapUUID, concept: nodeName, url: urls[i]},
+                data: {map_uuid: mapUUID, concept: nodeName, concept_id: nodeData.id, url: urls[i]},
                 success: function (data) {
                     // If successful, show data in link preview, filling gaps with default values
                     if (data === undefined) {
@@ -253,7 +254,7 @@ function createTooltipHTML(node) {
 
     // List of pretty link previews for all content for this node
     if (urls.length > 0) {
-        let linkList = createTipElement("ol", {"class": "tooltip-link"}, createLinkPreviewArray(node.data().name, urls));
+        let linkList = createTipElement("ol", {"class": "tooltip-link"}, createLinkPreviewArray(node.data(), urls));
         marginTipArray.push(linkList);
     }
     if (allowSuggestions){
