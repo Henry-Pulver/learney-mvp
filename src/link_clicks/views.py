@@ -30,9 +30,7 @@ class LinkClickView(APIView):
                 "concept_id": concept_id,
                 "url": url,
             }
-            print(data)
             serializer = LinkClickSerializer(data=data)
-            print(serializer)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
