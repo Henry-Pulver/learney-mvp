@@ -1,10 +1,15 @@
+import datetime
 import json
 from uuid import UUID
 
 import pytest
 from django.test import TestCase
+from mock import patch
+from rest_framework import status
+from rest_framework.response import Response
 
 from learney_backend.models import ContentLinkPreview, ContentVote
+from learney_backend.views import UTC
 
 
 class ContentVoteViewTests(TestCase):
@@ -133,34 +138,52 @@ class ContentVoteViewTests(TestCase):
 class ContentLinkPreviewViewTests(TestCase):
     TEST_MAP_UUID = UUID("015a52d3-1e58-47d6-abf4-35a60c0928ab")
     TEST_CONCEPT = "Matrix Multiplication"
-    TEST_URL_1 = "https://app.learney.me"
-    TEST_URL_2 = "https://www.khanacademy.org/math/algebra-home/alg-matrices/alg-multiplying-matrices-by-matrices/v/matrix-multiplication-intro"
+    TEST_CONCEPT_ID = "2"
+    TEST_URL_ADDED_NOW = "https://app.learney.me"
+    TEST_URL_NOT_ADDED = "https://www.khanacademy.org/math/algebra-home"
+    TEST_URL_ADDED_WEEK_AGO = "https://www.khanacademy.org/math/algebra-home/alg-matrices/alg-multiplying-matrices-by-matrices/v/matrix-multiplication-intro"
     TEST_TITLE = "Learney | Multiply Two Matrices!"
     TEST_DESCRIPTION = "Henry describes how to multiply matrices! Honestly the most riveting piece of film to be recorded in human history."
     TEST_IMAGE_URL = "https://app.learney.me/static/images/2021/05/19/learney_background.png"
 
     @pytest.fixture(scope="class", autouse=True)
     def set_up(self):
-        created_object = ContentLinkPreview.objects.create(
+        created_object_now = ContentLinkPreview.objects.create(
             map_uuid=self.TEST_MAP_UUID,
             concept=self.TEST_CONCEPT,
-            url=self.TEST_URL_1,
+            concept_id=self.TEST_CONCEPT_ID,
+            url=self.TEST_URL_ADDED_NOW,
             title=self.TEST_TITLE,
             description=self.TEST_DESCRIPTION,
             image_url=self.TEST_IMAGE_URL,
         )
-        assert created_object
+        assert created_object_now
+        created_object_week_ago = ContentLinkPreview.objects.create(
+            map_uuid=self.TEST_MAP_UUID,
+            concept=self.TEST_CONCEPT,
+            concept_id=self.TEST_CONCEPT_ID,
+            url=self.TEST_URL_ADDED_WEEK_AGO,
+            title="",
+            description="",
+            image_url="",
+            preview_last_updated=UTC.localize(
+                datetime.datetime.utcnow() - datetime.timedelta(weeks=1)
+            ),
+        )
+        assert created_object_week_ago
 
     def test_get_fail_no_map_id(self):
         response = self.client.get(
             "/api/v0/link_previews",
-            data={"concept": f"{self.TEST_CONCEPT}", "url": self.TEST_URL_1},
+            content_type="application/json",
+            data={"concept": f"{self.TEST_CONCEPT}", "url": self.TEST_URL_ADDED_NOW},
         )
         assert response.status_code == 400
 
     def test_get_fail_no_url(self):
         response = self.client.get(
             "/api/v0/link_previews",
+            content_type="application/json",
             data={"concept": f"{self.TEST_CONCEPT}", "map_uuid": self.TEST_MAP_UUID},
         )
         assert response.status_code == 400
@@ -168,44 +191,67 @@ class ContentLinkPreviewViewTests(TestCase):
     def test_get_fail_no_concept(self):
         response = self.client.get(
             "/api/v0/link_previews",
-            data={"url": f"{self.TEST_URL_1}", "map_uuid": self.TEST_MAP_UUID},
+            content_type="application/json",
+            data={"url": f"{self.TEST_URL_ADDED_NOW}", "map_uuid": self.TEST_MAP_UUID},
         )
         assert response.status_code == 400
 
     def test_get_success(self):
         response = self.client.get(
             "/api/v0/link_previews",
+            content_type="application/json",
             data={
-                "concept": f"{self.TEST_CONCEPT}",
+                "concept": self.TEST_CONCEPT,
+                "concept_id": self.TEST_CONCEPT_ID,
                 "map_uuid": self.TEST_MAP_UUID,
-                "url": self.TEST_URL_1,
+                "url": self.TEST_URL_ADDED_NOW,
             },
         )
         assert response.status_code == 200
         response_dict = json.loads(response.content.decode("utf-8"))
         assert response_dict["map_uuid"] == str(self.TEST_MAP_UUID)
         assert response_dict["concept"] == self.TEST_CONCEPT
-        assert response_dict["url"] == self.TEST_URL_1
+        assert response_dict["url"] == self.TEST_URL_ADDED_NOW
         assert response_dict["description"] == self.TEST_DESCRIPTION
         assert response_dict["title"] == self.TEST_TITLE
         assert response_dict["image_url"] == self.TEST_IMAGE_URL
 
-    def test_get_success_use_linkpreview_net(self):
+    def test_get_success_no_entry(self):
+        with patch(
+            "learney_backend.views.ContentLinkPreviewView.get_from_linkpreview_net"
+        ) as mock_get_link_preview:
+            mock_get_link_preview.return_value = Response("", status=status.HTTP_400_BAD_REQUEST)
+            self.client.get(
+                "/api/v0/link_previews",
+                content_type="application/json",
+                data={
+                    "concept": self.TEST_CONCEPT,
+                    "concept_id": self.TEST_CONCEPT_ID,
+                    "map_uuid": self.TEST_MAP_UUID,
+                    "url": self.TEST_URL_NOT_ADDED,
+                },
+            )
+            assert mock_get_link_preview.called
+
+    def test_get_success_old_entry(self):
         response = self.client.get(
             "/api/v0/link_previews",
+            content_type="application/json",
             data={
-                "concept": f"{self.TEST_CONCEPT}",
+                "concept": self.TEST_CONCEPT,
+                "concept_id": self.TEST_CONCEPT_ID,
                 "map_uuid": self.TEST_MAP_UUID,
-                "url": self.TEST_URL_2,
+                "url": self.TEST_URL_NOT_ADDED,
             },
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         response_dict = json.loads(response.content.decode("utf-8"))
         assert response_dict["map_uuid"] == str(self.TEST_MAP_UUID)
         assert response_dict["concept"] == self.TEST_CONCEPT
-        assert response_dict["url"] == self.TEST_URL_2
+        assert response_dict["concept_id"] == self.TEST_CONCEPT_ID
+        assert response_dict["url"] == self.TEST_URL_NOT_ADDED
         assert response_dict["description"]
         assert response_dict["title"]
         assert response_dict["image_url"]
         # Check added to database
-        assert ContentLinkPreview.objects.get(url=self.TEST_URL_2)
+        assert ContentLinkPreview.objects.get(url=self.TEST_URL_NOT_ADDED)
