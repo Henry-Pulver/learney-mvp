@@ -12,8 +12,7 @@ import boto3
 from knowledge_maps.models import KnowledgeMapModel
 from knowledge_maps.serializers import KnowledgeMapSerializer
 from learney_web.settings import AWS_CREDENTIALS
-
-S3_CACHE_DIR = Path("S3_cache_dir")
+from learney_web.utils import S3_CACHE_DIR, retrieve_map_from_s3
 
 
 def get_cache_file_location(knowledge_map_model: KnowledgeMapModel) -> Path:
@@ -31,15 +30,9 @@ def retrieve_map(knowledge_map_db_entry: KnowledgeMapModel) -> bytes:
             read_cache_file = cache_file.read()
         return bytes(read_cache_file, "utf-8")
     else:
-        s3 = boto3.resource(
-            "s3",
-            aws_access_key_id=AWS_CREDENTIALS["ACCESS_ID"],
-            aws_secret_access_key=AWS_CREDENTIALS["SECRET_KEY"],
+        map_byte_str = retrieve_map_from_s3(
+            knowledge_map_db_entry.s3_bucket_name, knowledge_map_db_entry.s3_key, AWS_CREDENTIALS
         )
-        response = s3.Object(
-            knowledge_map_db_entry.s3_bucket_name, knowledge_map_db_entry.s3_key
-        ).get()
-        map_byte_str = response["Body"].read()
         cache_file_location.parent.mkdir(exist_ok=True, parents=True)
         with cache_file_location.open("w") as cache_file:
             cache_file.write(map_byte_str.decode("utf-8"))

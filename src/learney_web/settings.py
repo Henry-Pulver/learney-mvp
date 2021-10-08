@@ -15,7 +15,8 @@ from pathlib import Path
 
 import yaml
 
-from learney_web.utils import get_concept_names, get_predecessor_dict
+from knowledge_maps.orig_map_info import *
+from learney_web.utils import get_concept_names, get_predecessor_dict, retrieve_map_from_s3
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,13 +37,13 @@ DEBUG = PYTHON_ENV not in ["production", "staging"]
 
 ALLOWED_HOSTS = [
     # prod url
-    "app.learney.me",
+    "backend.learney.me",
     # prod aws
     "learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
     "172.31.8.139",
     "172.31.13.26",
     # staging url
-    "staging.learney.me",
+    "staging_backend.learney.me",
     # staging aws
     "staging-learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
     "172.31.39.124",
@@ -94,7 +95,6 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "django.contrib.staticfiles",
     "social_django",
     "auth0login",
     "button_presses",
@@ -199,16 +199,14 @@ if PYTHON_ENV in ["production", "staging"]:
     SECURE_HSTS_PRELOAD = True
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.2/howto/static-files/
-STATIC_URL = "/static/"
-STATICFILES_DIRS = [str(BASE_DIR.parent / "assets")]
-STATIC_ROOT = str(BASE_DIR / "static")
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
 # Load content json in once
-with open(f"{STATICFILES_DIRS[0]}/positions_map_v013.json", "r") as content_json_file:
-    CONTENT_JSON = json.load(content_json_file)
+CONTENT_JSON = json.loads(
+    retrieve_map_from_s3(
+        s3_bucket_name=ORIG_MAP_S3_BUCKET,
+        s3_key=ORIG_MAP_S3_KEY,
+        aws_credentials=AWS_CREDENTIALS,
+    ).decode("utf-8")
+)
 
 ORIG_MAP_PREDECESSOR_DICT = get_predecessor_dict(CONTENT_JSON["edges"])
 ORIG_MAP_CONCEPT_NAMES = get_concept_names(CONTENT_JSON)

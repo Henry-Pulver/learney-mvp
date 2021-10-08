@@ -1,4 +1,9 @@
+from pathlib import Path
 from typing import Dict, List, Set
+
+import boto3
+
+S3_CACHE_DIR = Path("S3_cache_dir")
 
 
 def get_predecessor_dict(edges: List[Dict[str, Dict[str, str]]]) -> Dict[str, Set[str]]:
@@ -23,3 +28,17 @@ def get_predecessor_dict(edges: List[Dict[str, Dict[str, str]]]) -> Dict[str, Se
 
 def get_concept_names(content_json: Dict[str, Dict]) -> Dict[str, str]:
     return {node["data"]["id"]: node["data"]["name"] for node in content_json["nodes"]}
+
+
+def retrieve_map_from_s3(
+    s3_bucket_name: str,
+    s3_key: str,
+    aws_credentials: Dict[str, str],
+) -> bytes:
+    s3 = boto3.resource(
+        "s3",
+        aws_access_key_id=aws_credentials["ACCESS_ID"],
+        aws_secret_access_key=aws_credentials["SECRET_KEY"],
+    )
+    response = s3.Object(s3_bucket_name, s3_key).get()
+    return response["Body"].read()
