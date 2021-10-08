@@ -7,7 +7,7 @@ import numpy as np
 from slack_sdk import WebClient as SlackWebClient
 
 from goals.models import GoalModel
-from knowledge_maps.orig_map_uuid import ORIG_MAP_UUID
+from knowledge_maps.orig_map_info import ORIG_MAP_UUID
 from learned.models import LearnedModel
 from learney_web import settings
 from notion_client import Client as NotionClient

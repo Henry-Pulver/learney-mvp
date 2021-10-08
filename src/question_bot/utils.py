@@ -8,11 +8,7 @@ import numpy as np
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 
-from goals.models import GoalModel
-from knowledge_maps.orig_map_uuid import ORIG_MAP_UUID
-from learned.models import LearnedModel
 from learney_web import settings
-from page_visits.models import PageVisitModel
 
 
 class AnswerOutcome(enum.Enum):

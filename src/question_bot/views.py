@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from slack_sdk import WebClient
 
 from goals.models import GoalModel
-from knowledge_maps.orig_map_uuid import ORIG_MAP_UUID
+from knowledge_maps.orig_map_info import ORIG_MAP_UUID
 from learney_web import settings
 from page_visits.models import PageVisitModel
 from question_bot.models import AnswerModel, SlackBotUserModel
