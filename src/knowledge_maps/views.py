@@ -42,9 +42,14 @@ def retrieve_map(knowledge_map_db_entry: KnowledgeMapModel) -> bytes:
 class KnowledgeMapView(APIView):
     def get(self, request: Request, format=None):
         try:
-            entry = KnowledgeMapModel.objects.filter(
-                unique_id=request.GET["map_uuid"], version=int(request.GET["version"])
-            ).latest("last_updated")
+            if "url_extension" in request.GET:
+                entry = KnowledgeMapModel.objects.filter(
+                    url_extension=request.GET["url_extension"]
+                ).latest("last_updated")
+            else:
+                entry = KnowledgeMapModel.objects.filter(
+                    unique_id=request.GET["map_uuid"], version=int(request.GET["version"])
+                ).latest("last_updated")
             return Response(retrieve_map(entry), status=status.HTTP_200_OK)
         except ObjectDoesNotExist as error:
             return Response(str(error), status=status.HTTP_204_NO_CONTENT)
