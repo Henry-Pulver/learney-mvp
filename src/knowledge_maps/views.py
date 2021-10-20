@@ -46,11 +46,35 @@ class KnowledgeMapView(APIView):
                 entry = KnowledgeMapModel.objects.filter(
                     url_extension=request.GET["url_extension"]
                 ).latest("last_updated")
-            else:
+                return Response(
+                    {
+                        "map_json": retrieve_map(entry),
+                        "map_uuid": entry.unique_id,
+                        "allow_suggestions": entry.allow_suggestions,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            elif "map_uuid" in request.GET and "version" in request.GET:
                 entry = KnowledgeMapModel.objects.filter(
                     unique_id=request.GET["map_uuid"], version=int(request.GET["version"])
                 ).latest("last_updated")
-            return Response(retrieve_map(entry), status=status.HTTP_200_OK)
+                return Response(
+                    {
+                        "map_json": retrieve_map(entry),
+                        "map_uuid": entry.unique_id,
+                        "allow_suggestions": entry.allow_suggestions,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            else:
+                return Response(
+                    [
+                        entry["url_extension"]
+                        for entry in KnowledgeMapModel.objects.all().values("url_extension")
+                    ],
+                    status=status.HTTP_200_OK,
+                )
+
         except ObjectDoesNotExist as error:
             return Response(str(error), status=status.HTTP_204_NO_CONTENT)
         except MultiValueDictKeyError as e:
@@ -69,6 +93,7 @@ class KnowledgeMapView(APIView):
     def put(self, request: Request, format=None):
         # TODO: Write test for this view!
         # TODO: Enable adding maps through this view
+        request_body = json.loads(request.body.decode("utf-8"))
         try:
             # {
             #     map_uuid: ,
@@ -76,7 +101,6 @@ class KnowledgeMapView(APIView):
             #     s3_key: , (optional)
             #     s3_bucket_name: , (optional)
             # }
-            request_body = json.loads(request.body.decode("utf-8"))
             entry = KnowledgeMapModel.objects.filter(unique_id=request_body["map_uuid"]).latest(
                 "last_updated"
             )

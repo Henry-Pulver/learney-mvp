@@ -16,6 +16,7 @@ class KnowledgeMapViewTests(TestCase):
     TEST_S3_BUCKET = "learney-test"
     TEST_S3_KEY = "TEST_positions_map_v013.json"
     TEST_ALTERNATIVE_S3_KEY = "TEST_alternative.json"
+    TEST_SUGGESTIONS = True
 
     @pytest.fixture(scope="class", autouse=True)
     def set_up(self):
@@ -25,18 +26,19 @@ class KnowledgeMapViewTests(TestCase):
             url_extension=self.TEST_URL_EXT,
             s3_bucket_name=self.TEST_S3_BUCKET,
             s3_key=self.TEST_S3_KEY,
+            allow_suggestions=self.TEST_SUGGESTIONS,
         )
         self.version = created_object.version
         self.map_jsons = [get_map_json(map_json_path) for map_json_path in TEST_FILE_PATHS]
         assert created_object
 
-    def test_get_error_no_map_id(self):
-        response = self.client.get("/api/v0/knowledge_maps", data={"version": self.version})
-        assert response.status_code == 400
-
-    def test_get_error_no_version(self):
-        response = self.client.get("/api/v0/knowledge_maps", data={"map_uuid": self.TEST_MAP_UUID})
-        assert response.status_code == 400
+    # def test_get_error_no_map_id(self):
+    #     response = self.client.get("/api/v0/knowledge_maps", data={"version": self.version})
+    #     assert response.status_code == 400
+    #
+    # def test_get_error_no_version(self):
+    #     response = self.client.get("/api/v0/knowledge_maps", data={"map_uuid": self.TEST_MAP_UUID})
+    #     assert response.status_code == 400
 
     def test_get_doesnt_exist(self):
         response = self.client.get(
@@ -49,8 +51,10 @@ class KnowledgeMapViewTests(TestCase):
             "/api/v0/knowledge_maps", data={"map_uuid": self.TEST_MAP_UUID, "version": self.version}
         )
         assert response.status_code == 200
-        map_json = json.loads(json.loads(response.content.decode("utf-8")))
-        validate_map_json(map_json)
+        response_dict = json.loads(response.content.decode("utf-8"))
+        validate_map_json(json.loads(response_dict["map_json"]))
+        assert response_dict["allow_suggestions"] == self.TEST_SUGGESTIONS
+        assert response_dict["map_uuid"] == str(self.TEST_MAP_UUID)
 
     def test_put_invalid_no_map_data(self):
         response = self.client.put(
