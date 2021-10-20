@@ -30,14 +30,12 @@ class LinkClickViewTests(TestCase):
         assert created_object
 
     def check_missing_argument_fails(self, argument_to_remove: str) -> None:
-        session = self.client.session
-        session["session_key"] = self.TEST_SESSION_ID
-        session.save()
         data = {
             "user_id": self.TEST_USER_ID,
             "url": self.TEST_URL,
             "map_uuid": self.TEST_MAP_UUID,
             "concept_id": self.TEST_CONCEPT_ID,
+            "session_id": self.TEST_SESSION_ID,
         }
         data.pop(argument_to_remove)
         response = self.client.post(
@@ -47,22 +45,22 @@ class LinkClickViewTests(TestCase):
         )
         assert response.status_code == 400
 
-    def test_post_invalid_button_name_1(self):
+    def test_post_invalid_no_user_id(self):
         self.check_missing_argument_fails("user_id")
 
-    def test_post_invalid_button_name_2(self):
+    def test_post_invalid_no_url(self):
         self.check_missing_argument_fails("url")
 
-    def test_post_invalid_button_name_3(self):
+    def test_post_invalid_no_map_uuid(self):
         self.check_missing_argument_fails("map_uuid")
 
-    def test_post_invalid_button_name_4(self):
+    def test_post_invalid_no_concept_id(self):
         self.check_missing_argument_fails("concept_id")
 
+    def test_post_invalid_no_session_id(self):
+        self.check_missing_argument_fails("session_id")
+
     def test_post_no_content_link_preview(self):
-        session = self.client.session
-        session["session_key"] = self.TEST_SESSION_ID
-        session.save()
         response = self.client.post(
             "/api/v0/link_click",
             content_type="application/json",
@@ -71,14 +69,12 @@ class LinkClickViewTests(TestCase):
                 "url": self.TEST_URL,
                 "map_uuid": self.TEST_MAP_UUID,
                 "concept_id": "3",
+                "session_id": self.TEST_SESSION_ID,
             },
         )
         assert response.status_code == 400
 
     def test_post_valid(self):
-        session = self.client.session
-        session["session_key"] = self.TEST_SESSION_ID
-        session.save()
         new_user_id = f"89{self.TEST_USER_ID}"
 
         response = self.client.post(
@@ -89,6 +85,7 @@ class LinkClickViewTests(TestCase):
                 "url": self.TEST_URL,
                 "map_uuid": self.TEST_MAP_UUID,
                 "concept_id": self.TEST_CONCEPT_ID,
+                "session_id": self.TEST_SESSION_ID,
             },
         )
 

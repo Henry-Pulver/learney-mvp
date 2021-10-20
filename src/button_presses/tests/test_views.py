@@ -1,7 +1,5 @@
 import json
-from uuid import UUID
 
-import pytest
 from django.test import TestCase
 
 from button_presses.models import ALL_BUTTONS, ButtonPressModel
@@ -14,9 +12,6 @@ class ButtonPressViewTests(TestCase):
     TEST_BUTTON_NAME = "open-intro"
 
     def check_invalid_button_name_invalid(self, invalid_button_name: str):
-        session = self.client.session
-        session["session_key"] = self.TEST_SESSION_ID
-        session.save()
         response = self.client.post(
             "/api/v0/button_press",
             content_type="application/json",
@@ -24,6 +19,7 @@ class ButtonPressViewTests(TestCase):
                 "user_id": self.TEST_USER_ID,
                 "page_extension": self.TEST_PAGE_EXTENSION,
                 "button_name": invalid_button_name,
+                "session_id": self.TEST_SESSION_ID,
             },
         )
         assert response.status_code == 400
@@ -50,9 +46,6 @@ class ButtonPressViewTests(TestCase):
     #     assert response.status_code == 400
 
     def test_post_valid_all_buttons(self):
-        session = self.client.session
-        session["session_key"] = self.TEST_SESSION_ID
-        session.save()
         for (valid_button_name, _) in ALL_BUTTONS:
             response = self.client.post(
                 "/api/v0/button_press",
@@ -61,6 +54,7 @@ class ButtonPressViewTests(TestCase):
                     "user_id": self.TEST_USER_ID,
                     "page_extension": self.TEST_PAGE_EXTENSION,
                     "button_name": valid_button_name,
+                    "session_id": self.TEST_SESSION_ID,
                 },
             )
             print(f"Response received: {response.content}")
@@ -68,7 +62,7 @@ class ButtonPressViewTests(TestCase):
             response_dict = json.loads(response.content.decode("utf-8"))
             print(response_dict)
             assert response_dict["user_id"] == self.TEST_USER_ID
-            assert response_dict["session_id"]
+            assert response_dict["session_id"] == self.TEST_SESSION_ID
             assert response_dict["page_extension"] == self.TEST_PAGE_EXTENSION
             assert response_dict["button_name"] == valid_button_name
             assert "timestamp" in response_dict
