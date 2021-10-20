@@ -22,10 +22,11 @@ class LinkClickView(APIView):
             retrieved_entry = ContentLinkPreview.objects.filter(
                 map_uuid=map_uuid, concept_id=concept_id, url=url
             ).latest("preview_last_updated")
+            print(request.data)
             data = {
                 "map_uuid": map_uuid,
                 "user_id": request.data.get("user_id", None),
-                "session_id": request.session.session_key,
+                "session_id": request.data.get("session_id", None),
                 "content_link_preview_id": retrieved_entry.pk,
                 "concept_id": concept_id,
                 "url": url,
