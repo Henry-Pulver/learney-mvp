@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.urls import path, re_path
+from django.urls import re_path
 
 from learney_backend.views import ContentLinkPreviewView, ContentVoteView
 from learney_web import settings
