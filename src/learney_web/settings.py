@@ -31,25 +31,26 @@ SECRET_KEY = dev_secrets_dict["SECRET_KEY"]
 SLACK_TOKEN = dev_secrets_dict["SLACK_TOKEN"]
 NOTION_KEY = dev_secrets_dict["NOTION_KEY"]
 AWS_CREDENTIALS = dev_secrets_dict["AWS_CREDENTIALS"]
-
 PYTHON_ENV = os.environ.get("PYTHON_ENV", "dev")
+assert PYTHON_ENV in ["dev", "staging", "production"]
+
+FRONTEND_URL = dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV]
 DEBUG = PYTHON_ENV not in ["production", "staging"]
 
 ALLOWED_HOSTS = [
-    # prod url
-    "backend.learney.me",
-    # prod aws
+    # prod
+    "api.learney.me",
     "learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
     "172.31.8.139",
     "172.31.13.26",
-    # staging url
-    "staging_backend.learney.me",
-    # staging aws
+    # staging
+    "staging-api.learney.me",
     "staging-learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
     "172.31.39.124",
     "172.31.18.129",
     "44.233.38.189",
-    # localhost
+    # dev
+    "localhost",
     "127.0.0.1",
     "0.0.0.0",
 ]
@@ -90,13 +91,13 @@ DEBUG_PROPAGATE_EXCEPTIONS = True
 # Application definition
 
 INSTALLED_APPS = [
+    "corsheaders",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "social_django",
-    "auth0login",
     "button_presses",
     "learney_backend",
     "goals",
@@ -117,6 +118,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = "learney_web.urls"
@@ -139,6 +141,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "learney_web.wsgi.application"
 
+CORS_ORIGIN_WHITELIST = (FRONTEND_URL,)
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "cache-control",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -219,19 +233,3 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # For auth0
 with open("auth0_conf.yaml", "r") as auth0_conf_file:
     auth0_conf = yaml.load(auth0_conf_file, Loader=yaml.Loader)
-
-
-SOCIAL_AUTH_TRAILING_SLASH = False  # Remove trailing slash from routes
-SOCIAL_AUTH_AUTH0_DOMAIN = auth0_conf["SOCIAL_AUTH_AUTH0_DOMAIN"]
-SOCIAL_AUTH_AUTH0_KEY = auth0_conf[PYTHON_ENV]["SOCIAL_AUTH_AUTH0_KEY"]
-SOCIAL_AUTH_AUTH0_SECRET = auth0_conf[PYTHON_ENV]["SOCIAL_AUTH_AUTH0_SECRET"]
-
-SOCIAL_AUTH_AUTH0_SCOPE = ["openid", "profile", "email"]
-
-AUTHENTICATION_BACKENDS = {
-    "auth0login.auth0backend.Auth0",
-    "django.contrib.auth.backends.ModelBackend",
-}
-
-LOGIN_URL = "/login/auth0"
-LOGIN_REDIRECT_URL = "/dashboard"
