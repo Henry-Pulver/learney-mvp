@@ -43,6 +43,9 @@ class ContentVote(models.Model):
     concept = models.TextField()
     url = models.URLField()
 
-    vote = models.BooleanField()
+    vote = models.BooleanField(
+        null=True,
+        help_text="The direction of the vote on the link - None is invalid (broken data), True is upvote and False is downvote",
+    )
 
     timestamp = models.DateTimeField(auto_now=True)
