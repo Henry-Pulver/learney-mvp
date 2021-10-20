@@ -19,7 +19,7 @@ class AnswerOutcome(enum.Enum):
 
 
 def is_on_learney(user_email: str) -> bool:
-    return User.objects.filter(email=user_email).count > 0
+    return User.objects.filter(email=user_email).count() > 0
 
 
 def email_to_user_id(email: str) -> str:
