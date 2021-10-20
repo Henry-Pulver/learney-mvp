@@ -3,6 +3,7 @@ local_files/
 pgadmin4/
 *.tsv
 assets/*.json
+maps/
 
 !assets/positions_map_v013.json
 !assets/introSlides*
