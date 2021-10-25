@@ -38,7 +38,6 @@ class ContentVote(models.Model):
     user_id = models.TextField(default="")
     session_id = models.TextField(
         blank=True,
-        editable=False,
         help_text="session_key of the session in which the vote was made",
     )
     concept = models.TextField()

@@ -1,2 +1,2 @@
-docker build . -t learney
-docker run -p 8000:8000 -e PYTHONUNBUFFERED=1 learney
+docker build . -t learney-backend
+docker run -p 8000:8000 -v `pwd`:/app -e PYTHONUNBUFFERED=1 learney

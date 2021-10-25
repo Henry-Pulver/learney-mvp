@@ -7,7 +7,7 @@ class GoalModel(models.Model):
     )
     user_id = models.TextField()
     session_id = models.TextField(
-        blank=True, editable=False, help_text="session_key of the session the goal was set in"
+        blank=True, help_text="session_key of the session the goal was set in"
     )
     goal_concepts = models.JSONField()
     timestamp = models.DateTimeField(auto_now=True)

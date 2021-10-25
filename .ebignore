@@ -1,6 +1,4 @@
 *.tsv
-assets/NodePositions.json
-assets/knowledge_graph.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

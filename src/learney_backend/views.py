@@ -114,16 +114,16 @@ class ContentVoteView(APIView):
             )
             data = {
                 "map_uuid": UUID(request.data["map_uuid"]),
-                "session_id": request.session.session_key,
-                "user_id": request.data["user_id"],
+                "session_id": request.data.get("session_id"),
+                "user_id": request.data.get("user_id"),
                 "concept": request.data.get(
                     "concept",
                     content_links.latest("preview_last_updated").concept
                     if content_links.count() > 0
                     else "",
                 ),
-                "url": request.data["url"],
-                "vote": request.data["vote"],
+                "url": request.data.get("url"),
+                "vote": request.data.get("vote"),
             }
             serializer = VoteSerializer(data=data)
             if serializer.is_valid():

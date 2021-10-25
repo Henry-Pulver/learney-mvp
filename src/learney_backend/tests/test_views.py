@@ -17,6 +17,7 @@ class ContentVoteViewTests(TestCase):
     TEST_CONCEPT = "Matrix Multiplication"
     TEST_URL = "https://www.khanacademy.org/math/algebra-home/alg-matrices/alg-multiplying-matrices-by-matrices/v/matrix-multiplication-intro"
     TEST_USER_ID = "henrypulver13@gmail.com"
+    TEST_SESSION_ID = "qrg8eas3afqekibzpvcev5hnvnc0dqrm"
     TEST_VOTE = True
 
     @pytest.fixture(scope="class", autouse=True)
@@ -27,6 +28,7 @@ class ContentVoteViewTests(TestCase):
             url=self.TEST_URL,
             user_id=self.TEST_USER_ID,
             vote=self.TEST_VOTE,
+            session_id=self.TEST_SESSION_ID,
         )
         assert created_object
 
@@ -54,57 +56,37 @@ class ContentVoteViewTests(TestCase):
         assert response_dict[self.TEST_URL] == self.TEST_VOTE
         assert len(response_dict) == 1
 
-    def test_post_bad_request_no_map_uuid(self):
+    def check_missing_argument_fails(self, argument_to_remove: str) -> None:
+        data = {
+            "user_id": self.TEST_USER_ID,
+            "map_uuid": self.TEST_MAP_UUID,
+            "concept": self.TEST_CONCEPT,
+            "url": self.TEST_URL,
+            "vote": self.TEST_VOTE,
+            "session_id": self.TEST_SESSION_ID,
+        }
+        data.pop(argument_to_remove)
         response = self.client.post(
             "/api/v0/votes",
             content_type="application/json",
-            data={
-                "user_id": self.TEST_USER_ID,
-                "concept": self.TEST_CONCEPT,
-                "url": self.TEST_URL,
-                "vote": self.TEST_VOTE,
-            },
+            data=data,
         )
         assert response.status_code == 400
+
+    def test_post_bad_request_no_map_uuid(self):
+        self.check_missing_argument_fails("map_uuid")
 
     def test_post_bad_request_no_user_id(self):
-        response = self.client.post(
-            "/api/v0/votes",
-            content_type="application/json",
-            data={
-                "map_uuid": self.TEST_MAP_UUID,
-                "concept": self.TEST_CONCEPT,
-                "url": self.TEST_URL,
-                "vote": self.TEST_VOTE,
-            },
-        )
-        assert response.status_code == 400
+        self.check_missing_argument_fails("user_id")
 
     def test_post_bad_request_no_url(self):
-        response = self.client.post(
-            "/api/v0/votes",
-            content_type="application/json",
-            data={
-                "map_uuid": self.TEST_MAP_UUID,
-                "user_id": self.TEST_USER_ID,
-                "concept": self.TEST_CONCEPT,
-                "vote": self.TEST_VOTE,
-            },
-        )
-        assert response.status_code == 400
+        self.check_missing_argument_fails("url")
 
     def test_post_bad_request_no_vote(self):
-        response = self.client.post(
-            "/api/v0/votes",
-            content_type="application/json",
-            data={
-                "map_uuid": self.TEST_MAP_UUID,
-                "user_id": self.TEST_USER_ID,
-                "concept": self.TEST_CONCEPT,
-                "url": self.TEST_URL,
-            },
-        )
-        assert response.status_code == 400
+        self.check_missing_argument_fails("vote")
+
+    def test_post_bad_request_no_session_id(self):
+        self.check_missing_argument_fails("session_id")
 
     def test_post_valid(self):
         new_user_id = f"22{self.TEST_USER_ID}"
@@ -117,6 +99,7 @@ class ContentVoteViewTests(TestCase):
                 "concept": self.TEST_CONCEPT,
                 "url": self.TEST_URL,
                 "vote": self.TEST_VOTE,
+                "session_id": self.TEST_SESSION_ID,
             },
         )
         print(f"Response received: {response.content}")

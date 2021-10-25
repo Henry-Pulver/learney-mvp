@@ -8,7 +8,6 @@ class LearnedModel(models.Model):
     user_id = models.TextField()
     session_id = models.TextField(
         blank=True,
-        editable=False,
         help_text="session_key of the session that the concept was learned in",
     )
     learned_concepts = models.JSONField()

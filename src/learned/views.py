@@ -27,14 +27,7 @@ class LearnedView(APIView):
 
     def post(self, request: Request, format=None):
         request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
-        serializer = LearnedSerializer(
-            data={
-                "map_uuid": request.data.get("map_uuid", None),
-                "user_id": request.data.get("user_id", None),
-                "session_id": request.session.session_key,
-                "learned_concepts": request.data.get("learned_concepts", None),
-            }
-        )
+        serializer = LearnedSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
