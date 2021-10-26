@@ -45,7 +45,7 @@ ALLOWED_HOSTS = [
     "172.31.13.26",
     # staging
     "staging-api.learney.me",
-    "staging-learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
+    "staging-learneybackend-env.us-west-2.elasticbeanstalk.com",
     "172.31.39.124",
     "172.31.18.129",
     "44.233.38.189",
