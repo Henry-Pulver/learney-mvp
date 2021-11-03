@@ -98,24 +98,19 @@ class TotalVoteCountView(APIView):
         # TODO: Doesn't account for not-voted-on urls - left to frontend to deal with
         data = {
             url_dict["url"]: sum(
-                [
-                    2
-                    * int(
-                        entries.filter(url=url_dict["url"], user_id=user_dict["user_id"])
-                        .latest("timestamp")
-                        .vote
-                    )
-                    - 1
-                    for user_dict in entries.filter(url=url_dict["url"])
-                    .values("user_id")
-                    .distinct()
-                ]
+                2
+                * int(
+                    entries.filter(url=url_dict["url"], user_id=user_dict["user_id"])
+                    .latest("timestamp")
+                    .vote
+                )
+                - 1
+                for user_dict in entries.filter(url=url_dict["url"]).values("user_id").distinct()
             )
             for url_dict in entries.values("url").distinct()
         }
-        return Response(
-            data, status=status.HTTP_200_OK if len(data) > 0 else status.HTTP_204_NO_CONTENT
-        )
+
+        return Response(data, status=status.HTTP_200_OK if data else status.HTTP_204_NO_CONTENT)
 
 
 class ContentVoteView(APIView):
@@ -131,8 +126,10 @@ class ContentVoteView(APIView):
                 for url_dict in url_dicts
             }
             return Response(
-                data, status=status.HTTP_200_OK if len(data) > 0 else status.HTTP_204_NO_CONTENT
+                data,
+                status=status.HTTP_200_OK if data else status.HTTP_204_NO_CONTENT,
             )
+
         except MultiValueDictKeyError as error:
             return Response(str(error), status=status.HTTP_400_BAD_REQUEST)
 
@@ -153,13 +150,12 @@ class ContentVoteView(APIView):
                     else "",
                 ),
                 "url": request.data.get("url"),
-                "vote": request.data.get("vote"),
+                "vote": request.data["vote"],
             }
             serializer = VoteSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            else:
+            if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         except KeyError as error:
             return Response(str(error), status=status.HTTP_400_BAD_REQUEST)
