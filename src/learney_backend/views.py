@@ -100,7 +100,11 @@ class ContentVoteView(APIView):
                 url_dict["url"]: entries.filter(url=url_dict["url"]).latest("timestamp").vote
                 for url_dict in url_dicts
             }
-            return Response(data, status=status.HTTP_200_OK if data else status.HTTP_204_NO_CONTENT)
+            return Response(
+                data,
+                status=status.HTTP_200_OK if data else status.HTTP_204_NO_CONTENT,
+            )
+
         except MultiValueDictKeyError as error:
             return Response(str(error), status=status.HTTP_400_BAD_REQUEST)
 
@@ -125,7 +129,7 @@ class ContentVoteView(APIView):
                 if content_link_exists
                 else None,
                 "url": request.data.get("url"),
-                "vote": request.data.get("vote"),
+                "vote": request.data["vote"],
             }
             serializer = VoteSerializer(data=data)
             if serializer.is_valid():
@@ -147,5 +151,7 @@ class ContentVoteView(APIView):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         except KeyError as error:
             return Response(str(error), status=status.HTTP_400_BAD_REQUEST)
