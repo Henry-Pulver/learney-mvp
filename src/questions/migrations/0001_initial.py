@@ -4,6 +4,8 @@ import uuid
 
 from django.db import migrations, models
 
+import questions.validators
+
 
 class Migration(migrations.Migration):
 
@@ -52,14 +54,29 @@ class Migration(migrations.Migration):
                         serialize=False,
                     ),
                 ),
-                ("question_text", models.TextField(help_text="Text for question")),
+                (
+                    "question_text",
+                    models.TextField(
+                        help_text="Text for question", validators=[questions.validators.not_null]
+                    ),
+                ),
                 (
                     "answer_text",
                     models.JSONField(
-                        help_text="JSON list containing answers - first is correct, all after are incorrect."
+                        help_text="JSON list containing answers - first is correct, all after are incorrect.",
+                        validators=[
+                            questions.validators.not_null,
+                            questions.validators.ensure_list,
+                        ],
                     ),
                 ),
-                ("feedback_text", models.TextField(help_text="Text containing feedback")),
+                (
+                    "feedback_text",
+                    models.TextField(
+                        help_text="Text containing feedback",
+                        validators=[questions.validators.not_null],
+                    ),
+                ),
                 (
                     "author_user_id",
                     models.CharField(
@@ -75,7 +92,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "time_written",
+                    "timestamp",
                     models.DateTimeField(
                         auto_now_add=True, help_text="Time that the question was written"
                     ),
