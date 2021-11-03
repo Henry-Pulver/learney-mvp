@@ -105,6 +105,7 @@ INSTALLED_APPS = [
     "learned",
     "link_clicks",
     "page_visits",
+    "questions",
     "question_bot",
     "rest_framework",
 ]
@@ -229,7 +230,3 @@ ORIG_MAP_CONCEPT_NAMES = get_concept_names(CONTENT_JSON)
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# For auth0
-with open("auth0_conf.yaml", "r") as auth0_conf_file:
-    auth0_conf = yaml.load(auth0_conf_file, Loader=yaml.Loader)
