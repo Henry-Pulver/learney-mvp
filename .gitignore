@@ -4,7 +4,7 @@ pgadmin4/
 *.tsv
 assets/*.json
 maps/
-src/S3_cache_dir
+src/S3_cache_dir/
 
 !assets/positions_map_v013.json
 !assets/introSlides*
