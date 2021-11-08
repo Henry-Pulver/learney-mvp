@@ -56,23 +56,26 @@ class Question:
         self.answers = [answer_dict[self.correct_answer]] + wrong_answers
 
     def get_text_from_question_blocks(self, question_block_list: List):
-        answer_dict = {}
+        answer_dict: Dict[str, str] = {}
         is_feedback = False
         for question_block in question_block_list:
             if question_block["type"] == "paragraph":
-                is_feedback = says_feedback(question_block) or is_feedback
-                is_answer_option = is_answer(question_block) and not is_feedback
-                for block in question_block["paragraph"]["text"]:
+                is_feedback = is_feedback or says_feedback(question_block)
+                is_answer_option = not is_feedback and is_answer(question_block)
+                for index, block in enumerate(question_block["paragraph"]["text"]):
                     content = get_content(block)
                     if is_answer_option:
-                        answer_text = remove_starting_spaces(content)
-                        answer_dict[answer_text[0]] = remove_starting_spaces(answer_text[2:])
+                        if index == 0:
+                            answer_text = remove_starting_spaces(content)
+                            answer_option = answer_text[0]
+                            content = remove_starting_spaces(answer_text[2:])
+                        answer_dict[answer_option] = answer_dict.get(answer_option, "") + content
                     elif not is_feedback:
                         self.question_text += content
                     # Below skips the word 'feedback'
                     elif content.lower() != "feedback":
                         self.feedback += content
-                if is_feedback:
+                if is_feedback and self.feedback != "":  # Don't start feedback with a newline
                     self.feedback += "\n"
                 elif not is_answer_option:
                     self.question_text += "\n"
@@ -88,28 +91,32 @@ class Question:
 
 
 def says_feedback(block_dict: Dict) -> bool:
-    if len(block_dict["paragraph"]["text"]) > 0:
-        return block_dict["paragraph"]["text"][0]["text"]["content"].lower() == "feedback"
-    else:
+    if len(block_dict["paragraph"]["text"]) <= 0:
         return False
+    block_type = block_dict["paragraph"]["text"][0]["type"]
+    return (
+        block_dict["paragraph"]["text"][0][block_type][BLOCK_CONTENTS_NAME[block_type]].lower()
+        == "feedback"
+    )
 
 
 def is_answer(block_dict: Dict) -> bool:
-    if len(block_dict["paragraph"]["text"]) > 0:
-        lowercase_content = remove_starting_spaces(
-            block_dict["paragraph"]["text"][0]["text"]["content"].lower()
-        )
-        if len(lowercase_content) < 2:
-            return False
-        return lowercase_content[0] in ["a", "b", "c", "d"] and lowercase_content[1] in [".", ")"]
-    else:
+    if len(block_dict["paragraph"]["text"]) <= 0:
         return False
+    lowercase_content = remove_starting_spaces(
+        block_dict["paragraph"]["text"][0]["text"]["content"].lower()
+    )
+    if len(lowercase_content) < 2:
+        return False
+    return lowercase_content[0] in ["a", "b", "c", "d"] and lowercase_content[1] in [".", ")"]
 
 
 def migrate_questions_from_notion(apps, schema_editor):
     QuestionModel = apps.get_model("questions", "QuestionModel")
-    QuestionConceptTagModel = apps.get_model("questions", "QuestionConceptTagModel")
+    QuestionTagModel = apps.get_model("questions", "QuestionTagModel")
+    KnowledgeMapModel = apps.get_model("knowledge_maps", "KnowledgeMapModel")
     notion_client = NotionClient(auth=settings.NOTION_KEY)
+    orig_map = KnowledgeMapModel.objects.get(unique_id=settings.ORIG_MAP_UUID)
     for concept_id in settings.ORIG_MAP_CONCEPT_NAMES.keys():
         if not concept_id.isnumeric():
             continue
@@ -153,26 +160,20 @@ def migrate_questions_from_notion(apps, schema_editor):
                         answer_text={question.answers},\n\
                         feedback_text={question.feedback}"
                     )
-                    QuestionConceptTagModel.objects.create(
-                        question_id=q_entry.id,
-                        map_uuid=settings.ORIG_MAP_UUID,
+                    QuestionTagModel.objects.create(
+                        question=q_entry,
+                        map=orig_map,
                         concept_id=concept_id,
                     )
-                    print(
-                        f"QuestionConceptTagModel\nquestion_id={q_entry.id},\nconcept_id={concept_id}"
-                    )
+                    print(f"QuestionTagModel\nquestion={q_entry.id},\nconcept_id={concept_id}")
 
 
 def reverse_add_notion_questions(apps, schema_editor):
     QuestionModel = apps.get_model("questions", "QuestionModel")
-    QuestionConceptTagModel = apps.get_model("questions", "QuestionConceptTagModel")
     for question_entry in QuestionModel.objects.filter(
         author_user_id=LEARNEY_USER_ID, session_id=MIGRATION_SESSION_ID
-    ):
-        for question_tag_entry in QuestionConceptTagModel.objects.filter(
-            question_id=question_entry.id
-        ):
-            question_tag_entry.delete()
+    ).prefetch_related("tags"):
+        [tag.delete() for tag in question_entry.tags.all()]
         question_entry.delete()
 
 
