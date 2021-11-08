@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from questions.models import QuestionConceptTagModel, QuestionModel, QuestionResponseModel
+from questions.models import QuestionModel, QuestionResponseModel
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -15,4 +15,4 @@ class QuestionResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionResponseModel
         fields = "__all__"
-        read_only_fields = ("id", "time_asked")
+        read_only_fields = ("id",)
