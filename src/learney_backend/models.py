@@ -14,7 +14,7 @@ class ContentLinkPreview(models.Model):
         help_text="ID of the concept the link corresponds to (defined in the map json)",
         null=True,  # Remove once all null fields are removed from DB's!
     )
-    url = models.URLField(help_text="The URL of the link clicked")
+    url = models.URLField(max_length=1024, help_text="The resource URL")
 
     title = models.TextField(
         blank=True,
