@@ -105,7 +105,6 @@ INSTALLED_APPS = [
     "learned",
     "link_clicks",
     "page_visits",
-    "question_bot",
     "rest_framework",
 ]
 
@@ -212,18 +211,6 @@ if PYTHON_ENV in ["production", "staging"]:
     SECURE_HSTS_SECONDS = 518400
     SECURE_HSTS_PRELOAD = True
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-
-# Load content json in once
-CONTENT_JSON = json.loads(
-    retrieve_map_from_s3(
-        s3_bucket_name=ORIG_MAP_S3_BUCKET,
-        s3_key=ORIG_MAP_S3_KEY,
-        aws_credentials=AWS_CREDENTIALS,
-    ).decode("utf-8")
-)
-
-ORIG_MAP_PREDECESSOR_DICT = get_predecessor_dict(CONTENT_JSON["edges"])
-ORIG_MAP_CONCEPT_NAMES = get_concept_names(CONTENT_JSON)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

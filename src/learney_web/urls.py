@@ -17,7 +17,6 @@ from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
-    path("", include("question_bot.urls")),
     path("", include("learney_backend.urls")),
     path("", include("goals.urls")),
     path("", include("learned.urls")),
