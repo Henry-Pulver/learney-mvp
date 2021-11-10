@@ -46,14 +46,9 @@ class KnowledgeMapView(APIView):
                 entry = KnowledgeMapModel.objects.filter(
                     url_extension=request.GET["url_extension"]
                 ).latest("last_updated")
-                return Response(
-                    {
-                        "map_json": retrieve_map(entry),
-                        "map_uuid": entry.unique_id,
-                        "allow_suggestions": entry.allow_suggestions,
-                    },
-                    status=status.HTTP_200_OK,
-                )
+                serializer = KnowledgeMapSerializer(entry)
+                data = {**serializer.data, "map_json": retrieve_map(entry)}
+                return Response(data, status=status.HTTP_200_OK)
             elif "map_uuid" in request.GET and "version" in request.GET:
                 entry = KnowledgeMapModel.objects.filter(
                     unique_id=request.GET["map_uuid"], version=int(request.GET["version"])
