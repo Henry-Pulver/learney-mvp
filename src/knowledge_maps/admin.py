@@ -1,3 +1,8 @@
-# from django.contrib import admin
+from django.contrib import admin
 
-# Register your models here.
+from knowledge_maps.models import KnowledgeMapModel
+
+
+@admin.register(KnowledgeMapModel)
+class QuestionModelAdmin(admin.ModelAdmin):
+    pass
