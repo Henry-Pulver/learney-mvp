@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from learney_backend.models import ContentLinkPreview, ContentVote
 from learney_backend.serializers import LinkPreviewSerializer, VoteSerializer
-from learney_web.settings import DT_STR
+from learney_web.settings import DT_STR, IS_PROD, mixpanel
 
 UTC = timezone("UTC")
 
@@ -130,9 +130,7 @@ class ContentVoteView(APIView):
                 url_dict["url"]: entries.filter(url=url_dict["url"]).latest("timestamp").vote
                 for url_dict in url_dicts
             }
-            return Response(
-                data, status=status.HTTP_200_OK if len(data) > 0 else status.HTTP_204_NO_CONTENT
-            )
+            return Response(data, status=status.HTTP_200_OK if data else status.HTTP_204_NO_CONTENT)
         except MultiValueDictKeyError as error:
             return Response(str(error), status=status.HTTP_400_BAD_REQUEST)
 
@@ -143,7 +141,7 @@ class ContentVoteView(APIView):
                 map_uuid=request.data["map_uuid"], url=request.data["url"]
             )
             data = {
-                "map_uuid": UUID(request.data["map_uuid"]),
+                "map_uuid": request.data["map_uuid"],
                 "session_id": request.data.get("session_id"),
                 "user_id": request.data.get("user_id"),
                 "concept": request.data.get(
@@ -158,6 +156,18 @@ class ContentVoteView(APIView):
             serializer = VoteSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
+                if IS_PROD:
+                    mixpanel.track(
+                        data["user_id"],
+                        "Vote",
+                        {
+                            "url": data["url"],
+                            "vote_direction": data["vote"],
+                            "concept": data["concept"],
+                            "map_uuid": data["map_uuid"],
+                            "session_id": data["session_id"],
+                        },
+                    )
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

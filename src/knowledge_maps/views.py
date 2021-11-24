@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 import boto3
 from knowledge_maps.models import KnowledgeMapModel
 from knowledge_maps.serializers import KnowledgeMapSerializer
-from learney_web.settings import AWS_CREDENTIALS
+from learney_web.settings import AWS_CREDENTIALS, IS_PROD, mixpanel
 from learney_web.utils import S3_CACHE_DIR, retrieve_map_from_s3
 
 
@@ -93,6 +93,7 @@ class KnowledgeMapView(APIView):
             # {
             #     map_uuid: ,
             #     map_data: ,
+            #     user_id: ,
             #     s3_key: , (optional)
             #     s3_bucket_name: , (optional)
             # }
@@ -113,11 +114,22 @@ class KnowledgeMapView(APIView):
             # Increment the version
             entry.version += 1
             entry.save()
+            if IS_PROD:
+                mixpanel.track(
+                    request_body["user_id"],
+                    "Map Save",
+                    {
+                        "url_extension": entry.url_extension,
+                        "map_uuid": request_body["map_uuid"],
+                        "s3_bucket_name": entry.s3_bucket_name,
+                        "new_map_version": entry.version,
+                    },
+                )
 
             return Response(KnowledgeMapSerializer(entry).data, status=status.HTTP_201_CREATED)
         except ObjectDoesNotExist as error:
             return Response(str(error), status=status.HTTP_204_NO_CONTENT)
         except KeyError as e:
             return Response(
-                f"Invalid request: {request_body}\n\n{e}", status=status.HTTP_400_BAD_REQUEST
+                f"Error: {e}\n\nInvalid request: {request_body}", status=status.HTTP_400_BAD_REQUEST
             )
