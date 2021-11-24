@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from learned.models import LearnedModel
 from learned.serializers import LearnedSerializer
-from learney_web.settings import DT_STR
+from learney_web.settings import DT_STR, IS_PROD, mixpanel
 
 
 class LearnedView(APIView):
@@ -28,8 +28,17 @@ class LearnedView(APIView):
     def post(self, request: Request, format=None):
         request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
         serializer = LearnedSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
+        if not serializer.is_valid():
             return Response(str(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        if IS_PROD:
+            mixpanel.track(
+                request.data["user_id"],
+                "Learned",
+                {
+                    "learned_state": request.data["learned_concepts"],
+                    "map_uuid": request.data["map_uuid"],
+                    "session_id": request.data["session_id"],
+                },
+            )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

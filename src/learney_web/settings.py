@@ -9,14 +9,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
-import json
 import os
 from pathlib import Path
 
 import yaml
 
-from knowledge_maps.orig_map_info import *
-from learney_web.utils import get_concept_names, get_predecessor_dict, retrieve_map_from_s3
+from mixpanel import Mixpanel
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,8 +32,10 @@ AWS_CREDENTIALS = dev_secrets_dict["AWS_CREDENTIALS"]
 PYTHON_ENV = os.environ.get("PYTHON_ENV", "dev")
 assert PYTHON_ENV in ["dev", "staging", "production"]
 
+mixpanel = Mixpanel(dev_secrets_dict["MIXPANEL_KEY"])
+
 FRONTEND_URL = dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV]
-DEBUG = PYTHON_ENV not in ["production", "staging"]
+IS_PROD = PYTHON_ENV == "production"
 
 ALLOWED_HOSTS = [
     # prod
