@@ -8,6 +8,7 @@ django-cors-headers
 easydev
 notion-client
 numpy
+mixpanel
 mock
 psycopg2>=2.7.7
 python-jose>=3.2.0
