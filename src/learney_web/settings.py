@@ -145,10 +145,11 @@ CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",
     "authorization",
+    "cache-control",
     "content-type",
     "dnt",
     "origin",
-    "cache-control",
+    "sentry-trace",
     "x-csrftoken",
     "x-requested-with",
 ]
