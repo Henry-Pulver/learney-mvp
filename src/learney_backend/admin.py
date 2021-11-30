@@ -1,3 +1,8 @@
-# from django.contrib import admin
+from django.contrib import admin
 
-# Register your models here.
+from learney_backend.models import ContentLinkPreview
+
+
+@admin.register(ContentLinkPreview)
+class QuestionModelAdmin(admin.ModelAdmin):
+    pass
