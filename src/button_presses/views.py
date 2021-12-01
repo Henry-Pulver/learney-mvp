@@ -5,17 +5,30 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from button_presses.serializers import ButtonPressSerializer
-from learney_web.settings import DT_STR
+from learney_web.settings import DT_STR, IS_PROD, mixpanel
 
 
 class ButtonPressView(APIView):
     def post(self, request: Request, format=None) -> Response:
         request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
-        serializer = ButtonPressSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        button_press_info = {
+            "Current URL": request.data["Current URL"],
+            "Button Name": request.data["Button Name"],
+        }
+        if IS_PROD:
+            mixpanel.track(
+                request.data["user_id"],
+                "Button Press",
+                button_press_info,
+            )
+            return Response("Success! Sent to mixpanel", status=status.HTTP_200_OK)
         else:
-            print(serializer.errors)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            mixpanel.track(
+                request.data["user_id"],
+                "Test Event",
+                button_press_info,
+            )
+        return Response(
+            "Success! Not sent to mixpanel because this isn't a production deployment",
+            status=status.HTTP_200_OK,
+        )

@@ -47,11 +47,12 @@ SECRET_KEY = dev_secrets_dict["SECRET_KEY"]
 
 SLACK_TOKEN = dev_secrets_dict["SLACK_TOKEN"]
 NOTION_KEY = dev_secrets_dict["NOTION_KEY"]
+MIXPANEL_KEY = dev_secrets_dict["MIXPANEL_KEY"]
 AWS_CREDENTIALS = dev_secrets_dict["AWS_CREDENTIALS"]
 PYTHON_ENV = os.environ.get("PYTHON_ENV", "dev")
 assert PYTHON_ENV in ["dev", "staging", "production"]
 
-mixpanel = Mixpanel(dev_secrets_dict["MIXPANEL_KEY"])
+mixpanel = Mixpanel(MIXPANEL_KEY)
 
 FRONTEND_URL = dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV]
 IS_PROD = PYTHON_ENV == "production"
@@ -116,7 +117,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "social_django",
+    # "social_django",
     "button_presses",
     "learney_backend",
     "goals",
