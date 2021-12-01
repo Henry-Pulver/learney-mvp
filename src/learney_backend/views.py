@@ -96,23 +96,24 @@ class TotalVoteCountView(APIView):
         # Below logic: for each url, find the most recent vote from each user who voted on
         #  that url and add them, with False -> -1 and True -> +1
         # TODO: Doesn't account for not-voted-on urls - left to frontend to deal with
-        data = {
-            url_dict["url"]: sum(
-                [
-                    2
-                    * int(
-                        entries.filter(url=url_dict["url"], user_id=user_dict["user_id"])
-                        .latest("timestamp")
-                        .vote
-                    )
-                    - 1
-                    for user_dict in entries.filter(url=url_dict["url"])
-                    .values("user_id")
-                    .distinct()
-                ]
-            )
-            for url_dict in entries.values("url").distinct()
-        }
+        # data = {
+        #     url_dict["url"]: sum(
+        #         [
+        #             2
+        #             * int(
+        #                 entries.filter(url=url_dict["url"], user_id=user_dict["user_id"])
+        #                 .latest("timestamp")
+        #                 .vote
+        #             )
+        #             - 1
+        #             for user_dict in entries.filter(url=url_dict["url"])
+        #             .values("user_id")
+        #             .distinct()
+        #         ]
+        #     )
+        #     for url_dict in entries.values("url").distinct()
+        # }
+        data = {url_dict["url"]: 0 for url_dict in entries.values("url").distinct()}
         return Response(
             data, status=status.HTTP_200_OK if len(data) > 0 else status.HTTP_204_NO_CONTENT
         )
