@@ -190,7 +190,7 @@ if "RDS_DB_NAME" in os.environ:
 else:
     DATABASES = {"default": dev_secrets_dict["DATABASES"]}
 
-
+CONN_MAX_AGE = None
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
