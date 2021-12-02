@@ -26,10 +26,6 @@ def cycle_session_key_if_old(request: Request) -> None:
         request.session.cycle_key()
 
 
-def get_anon_user_id(request: Request) -> str:
-    return request.session.get("anonymous_user_id", f"anonymous-user|{uuid4()}")
-
-
 def update_session(request: Request) -> None:
     cycle_session_key_if_old(request)
     if request.session.session_key is None:
@@ -39,11 +35,9 @@ def update_session(request: Request) -> None:
 
 def get_or_generate_user_id(request: Request) -> str:
     if request.data.get("user_id") is not None:
-        user_id = request.data["user_id"]
+        return request.data["user_id"]
     else:
-        request.session["anonymous_user_id"] = get_anon_user_id(request)
-        user_id = request.session["anonymous_user_id"]
-    return user_id
+        return f"anonymous-user|{uuid4()}"
 
 
 class PageVisitView(APIView):
