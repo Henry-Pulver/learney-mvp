@@ -7,7 +7,7 @@ from knowledge_maps.views import retrieve_map
 from learney_web.settings import AWS_CREDENTIALS
 
 
-def fix_map_colours(apps, schema_editor):
+def fix_topic_id_underscores(apps, schema_editor):
     KnowledgeMapModel = apps.get_model("knowledge_maps", "KnowledgeMapModel")
     s3 = boto3.resource(
         "s3",
@@ -17,9 +17,13 @@ def fix_map_colours(apps, schema_editor):
     for map in KnowledgeMapModel.objects.all():
         map_json = json.loads(retrieve_map(map).decode("utf-8"))
         print(f"\n{map.url_extension}")
+        invalid_indexes = []
         for count, node in enumerate(map_json["nodes"]):
             node_data = node["data"]
-            if node_data["nodetype"] == "field":
+            if node_data.get("nodetype") is None:
+                invalid_indexes.append(count)
+
+            if node_data.get("nodetype") == "field":
                 prev_topic_id = node_data["id"]
                 new_topic_name = node_data["name"].replace("_", " ")
                 print(
@@ -30,11 +34,13 @@ def fix_map_colours(apps, schema_editor):
 
                 for count_2, node_2 in enumerate(map_json["nodes"]):
                     if (
-                        node_2["data"]["nodetype"] == "concept"
+                        node_2["data"].get("nodetype") == "concept"
                         and node_2["data"].get("parent") == prev_topic_id
                     ):
                         # print(f'{node_2["data"]["name"]} | prev parent: {node_2["data"]["parent"]} | new id: {new_topic_name}')
                         map_json["nodes"][count_2]["data"]["parent"] = new_topic_name
+        for index in reversed(invalid_indexes):
+            map_json["nodes"].remove(map_json["nodes"][index])
         s3.Bucket(map.s3_bucket_name).put_object(Key=map.s3_key, Body=json.dumps(map_json))
         map.version += 1
         map.save()
@@ -46,4 +52,6 @@ class Migration(migrations.Migration):
         ("knowledge_maps", "0003_fix_map_colours"),
     ]
 
-    operations = [migrations.RunPython(fix_map_colours, reverse_code=migrations.RunPython.noop)]
+    operations = [
+        migrations.RunPython(fix_topic_id_underscores, reverse_code=migrations.RunPython.noop)
+    ]
