@@ -41,7 +41,9 @@ class LinkClickView(APIView):
                             "url": data["url"],
                             "map_uuid": str(data["map_uuid"]),
                             "concept_id": concept_id,
+                            "concept_name": retrieved_entry.concept,
                             "content_link_preview_id": retrieved_entry.pk,
+                            "content_link_preview_name": retrieved_entry.title,
                             "session_id": data["session_id"],
                         },
                     )
