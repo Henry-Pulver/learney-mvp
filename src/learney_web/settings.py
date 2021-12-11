@@ -165,7 +165,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "learney_web.wsgi.application"
 
-CORS_ORIGIN_WHITELIST = (dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV],)
+
+if dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV] != "*":
+    CORS_ORIGIN_WHITELIST = (dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV],)
+else:
+    CORS_ORIGIN_ALLOW_ALL = True
+
 CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",
