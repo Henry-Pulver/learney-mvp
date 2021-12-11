@@ -55,7 +55,6 @@ assert PYTHON_ENV in ["dev", "staging", "production"]
 
 mixpanel = Mixpanel(MIXPANEL_KEY)
 
-FRONTEND_URL = dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV]
 IS_PROD = PYTHON_ENV == "production"
 
 ALLOWED_HOSTS = [
@@ -166,7 +165,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "learney_web.wsgi.application"
 
-CORS_ORIGIN_WHITELIST = (FRONTEND_URL,)
+CORS_ORIGIN_WHITELIST = (dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV],)
 CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",
