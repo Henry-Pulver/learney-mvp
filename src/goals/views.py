@@ -16,7 +16,7 @@ class GoalView(APIView):
     def get(self, request: Request, format=None):
         try:
             entry = GoalModel.objects.filter(
-                user_id=request.GET["user_id"], map_uuid=request.GET["map_uuid"]
+                user_id=request.GET["user_id"], map__unique_id=request.GET["map"]
             ).latest("timestamp")
             serializer = GoalSerializer(entry)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -37,7 +37,7 @@ class GoalView(APIView):
                 "Set Goal",
                 {
                     "goal_state": request.data["goal_concepts"],
-                    "map_uuid": request.data["map_uuid"],
+                    "map_uuid": request.data["map"],
                     "session_id": request.data["session_id"],
                 },
             )
