@@ -40,8 +40,8 @@ class ContentVote(models.Model):
         blank=True,
         help_text="session_key of the session in which the vote was made",
     )
-    concept = models.TextField()
-    url = models.URLField()
+    concept = models.TextField(help_text="Name of the concept the content URL corresponds to")
+    url = models.URLField(help_text="Resource URL voted on")
 
     vote = models.BooleanField(
         null=True,
