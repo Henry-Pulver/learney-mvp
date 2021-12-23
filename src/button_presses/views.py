@@ -29,6 +29,7 @@ class ButtonPressView(APIView):
                 button_press_info,
             )
         return Response(
-            "Success! Not sent to mixpanel because this isn't a production deployment",
+            f"Success! Not sent to mixpanel because this isn't a production deployment.\n"
+            f"JSON sent: {[request.data['user_id'], button_press_info]}",
             status=status.HTTP_200_OK,
         )

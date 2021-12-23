@@ -17,16 +17,16 @@ class LinkClickView(APIView):
         try:
             request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
             url = request.data.get("url", None)
-            map_uuid = UUID(request.data["map_uuid"]) if "map_uuid" in request.data else None
+            map = UUID(request.data["map"]) if "map" in request.data else None
             concept_id = request.data.get("concept_id", None)
             retrieved_entry = ContentLinkPreview.objects.filter(
-                map_uuid=map_uuid, concept_id=concept_id, url=url
+                map__unique_id=map, concept_id=concept_id, url=url
             ).latest("preview_last_updated")
             data = {
-                "map_uuid": map_uuid,
+                "map": map,
                 "user_id": request.data.get("user_id", None),
                 "session_id": request.data.get("session_id", None),
-                "content_link_preview_id": retrieved_entry.pk,
+                "content_link_preview": retrieved_entry.pk,
                 "concept_id": concept_id,
                 "url": url,
             }
@@ -39,7 +39,7 @@ class LinkClickView(APIView):
                         "Content Link Click",
                         {
                             "url": data["url"],
-                            "map_uuid": str(data["map_uuid"]),
+                            "map_uuid": str(data["map"]),
                             "concept_id": concept_id,
                             "concept_name": retrieved_entry.concept,
                             "content_link_preview_id": retrieved_entry.pk,

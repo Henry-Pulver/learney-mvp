@@ -1,7 +1,6 @@
 import datetime
 from uuid import uuid4
 
-from django.http import HttpRequest
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
