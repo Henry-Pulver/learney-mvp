@@ -49,14 +49,14 @@ class KnowledgeMapView(APIView):
                 serializer = KnowledgeMapSerializer(entry)
                 data = {**serializer.data, "map_json": retrieve_map(entry)}
                 return Response(data, status=status.HTTP_200_OK)
-            elif "map_uuid" in request.GET and "version" in request.GET:
+            elif "map" in request.GET and "version" in request.GET:
                 entry = KnowledgeMapModel.objects.filter(
-                    unique_id=request.GET["map_uuid"], version=int(request.GET["version"])
+                    unique_id=request.GET["map"], version=int(request.GET["version"])
                 ).latest("last_updated")
                 return Response(
                     {
                         "map_json": retrieve_map(entry),
-                        "map_uuid": entry.unique_id,
+                        "map": entry.unique_id,
                         "allow_suggestions": entry.allow_suggestions,
                     },
                     status=status.HTTP_200_OK,
@@ -91,13 +91,13 @@ class KnowledgeMapView(APIView):
         request_body = json.loads(request.body.decode("utf-8"))
         try:
             # {
-            #     map_uuid: ,
+            #     map: ,
             #     map_data: ,
             #     user_id: ,
             #     s3_key: , (optional)
             #     s3_bucket_name: , (optional)
             # }
-            entry = KnowledgeMapModel.objects.filter(unique_id=request_body["map_uuid"]).latest(
+            entry = KnowledgeMapModel.objects.filter(unique_id=request_body["map"]).latest(
                 "last_updated"
             )
             entry.s3_bucket_name = request_body.get("s3_bucket_name", entry.s3_bucket_name)
@@ -120,7 +120,7 @@ class KnowledgeMapView(APIView):
                     "Map Save",
                     {
                         "url_extension": entry.url_extension,
-                        "map_uuid": request_body["map_uuid"],
+                        "map_uuid": request_body["map"],
                         "s3_bucket_name": entry.s3_bucket_name,
                         "new_map_version": entry.version,
                     },
