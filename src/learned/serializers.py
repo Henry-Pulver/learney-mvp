@@ -7,4 +7,3 @@ class LearnedSerializer(serializers.ModelSerializer):
     class Meta:
         model = LearnedModel
         fields = "__all__"
-        extra_kwargs = {"map_uuid": {"read_only": False}}
