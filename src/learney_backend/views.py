@@ -25,11 +25,10 @@ with open("link_preview_api_key.yaml", "r") as secrets_file:
 class ContentLinkPreviewView(APIView):
     def get(self, request: Request, format=None) -> Response:
         try:
-            map_uuid = UUID(request.GET["map_uuid"])
-            concept = request.GET["concept"]
-            url = request.GET["url"]
             retrieved_entries = ContentLinkPreview.objects.filter(
-                map_uuid=map_uuid, concept=concept, url=url
+                map__unique_id=request.GET["map"],
+                concept=request.GET["concept"],
+                url=request.GET["url"],
             )
             if retrieved_entries.count() == 0:
                 return self.get_from_linkpreview_net(request)
@@ -43,8 +42,13 @@ class ContentLinkPreviewView(APIView):
                 ):
                     return self.get_from_linkpreview_net(request)
                 else:
-                    serializer = LinkPreviewSerializer(retrieved_entry)
+                    serializer = LinkPreviewSerializer(
+                        retrieved_entry, context={"request": request}
+                    )
+                    # if serializer.is_valid():
                     return Response(serializer.data, status=status.HTTP_200_OK)
+                    # else:
+                    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except KeyError as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
@@ -54,7 +58,7 @@ class ContentLinkPreviewView(APIView):
     @staticmethod
     def _serialize_and_respond(request: Union[Request, Dict[str, str]]) -> Response:
         data = request if isinstance(request, dict) else request.data
-        serializer = LinkPreviewSerializer(data=data)
+        serializer = LinkPreviewSerializer(data=data, context={"request": request})
         if serializer.is_valid():
             serializer.save()
             print(f"{serializer.data} saved in DB!")
@@ -68,7 +72,7 @@ class ContentLinkPreviewView(APIView):
             params={"q": request.GET["url"], "key": LINK_PREVIEW_API_KEY},
         )
         db_dict = {
-            "map_uuid": UUID(request.GET["map_uuid"]),
+            "map": UUID(request.GET["map"]),
             "concept": request.GET["concept"],
             "concept_id": request.GET["concept_id"],
             "url": request.GET["url"],
@@ -92,7 +96,7 @@ class ContentLinkPreviewView(APIView):
 class TotalVoteCountView(APIView):
     def get(self, request: Request, format=None) -> Response:
         """Get the overall +/- vote count for each item of content."""
-        entries = ContentVote.objects.filter(map_uuid=request.GET["map_uuid"]).exclude(vote=None)
+        entries = ContentVote.objects.filter(map__unique_id=request.GET["map"]).exclude(vote=None)
         # Below logic: for each url, find the most recent vote from each user who voted on
         #  that url and add them, with False -> -1 and True -> +1
         # TODO: Doesn't account for not-voted-on urls - left to frontend to deal with
@@ -124,7 +128,7 @@ class ContentVoteView(APIView):
         """Get votes for an individual user."""
         try:
             entries = ContentVote.objects.filter(
-                user_id=request.GET["user_id"], map_uuid=request.GET["map_uuid"]
+                user_id=request.GET["user_id"], map__unique_id=request.GET["map"]
             )
             url_dicts = entries.values("url").distinct()
             data = {
@@ -139,10 +143,10 @@ class ContentVoteView(APIView):
         try:
             request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
             content_links = ContentLinkPreview.objects.filter(
-                map_uuid=request.data["map_uuid"], url=request.data["url"]
+                map__unique_id=request.data["map"], url=request.data["url"]
             )
             data = {
-                "map_uuid": request.data["map_uuid"],
+                "map": request.data["map"],
                 "session_id": request.data.get("session_id"),
                 "user_id": request.data.get("user_id"),
                 "concept": request.data.get(
@@ -165,7 +169,7 @@ class ContentVoteView(APIView):
                             "url": data["url"],
                             "vote_direction": data["vote"],
                             "concept": data["concept"],
-                            "map_uuid": data["map_uuid"],
+                            "map_uuid": data["map"],
                             "session_id": data["session_id"],
                         },
                     )
