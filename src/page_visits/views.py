@@ -5,19 +5,25 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.models import User
+from accounts.serializers import UserSerializer
+from accounts.utils import user_data_to_user_db_object
 from page_visits.serializers import PageVisitSerializer
 
 
 def get_or_generate_user_id(request: Request) -> str:
-    if request.data.get("user_id") is not None:
-        return request.data["user_id"]
-    else:
+    if request.data.get("user_id") is None:
         return f"anonymous-user|{uuid4()}"
+    user_id = request.data["user_id"]
+    # If user doesn't exist, add user!
+    if User.objects.filter(id=user_id).count() == 0:
+        serializer = UserSerializer(data=user_data_to_user_db_object(request.data["user_data"]))
+        if serializer.is_valid():
+            serializer.save()
+    return user_id
 
 
 class PageVisitView(APIView):
-    # TODO: Add GET to allow frontend to know if this is a new user or not then only show intro if new!
-
     def post(self, request: Request, format=None):
         serializer = PageVisitSerializer(
             data={
