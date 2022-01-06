@@ -3,7 +3,6 @@ import json
 from typing import Dict
 
 from django.db import migrations, models
-from tqdm import tqdm
 
 import boto3
 from learney_web.settings import AWS_CREDENTIALS, IS_PROD
@@ -38,7 +37,7 @@ def add_auth0_data(apps, schema_editor):
     User = apps.get_model("accounts", "User")
     users = get_users()
 
-    for user_data in tqdm(users):
+    for user_data in users:
         if IS_PROD:
             User.objects.create(**user_data_download_to_user_db_object(user_data))
 
@@ -47,7 +46,7 @@ def delete_auth0_data(apps, schema_editor):
     User = apps.get_model("accounts", "User")
     users = get_users()
 
-    for user_data in tqdm(users):
+    for user_data in users:
         if IS_PROD and User.objects.filter(id=user_data["Id"]).count() > 0:
             User.objects.get(id=user_data["Id"]).delete()
 
