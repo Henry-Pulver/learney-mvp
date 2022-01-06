@@ -26,7 +26,6 @@ class LearnedView(APIView):
             return Response(str(error), status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request: Request, format=None):
-        request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
         serializer = LearnedSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(str(serializer.errors), status=status.HTTP_400_BAD_REQUEST)

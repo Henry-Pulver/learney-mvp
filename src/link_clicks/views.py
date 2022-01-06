@@ -1,4 +1,3 @@
-import datetime
 from uuid import UUID
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -15,7 +14,6 @@ from link_clicks.serializers import LinkClickSerializer
 class LinkClickView(APIView):
     def post(self, request: Request, format=None):
         try:
-            request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
             url = request.data.get("url", None)
             map = UUID(request.data["map"]) if "map" in request.data else None
             concept_id = request.data.get("concept_id", None)

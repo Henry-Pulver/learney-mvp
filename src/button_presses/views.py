@@ -10,7 +10,6 @@ from learney_web.settings import DT_STR, IS_PROD, mixpanel
 
 class ButtonPressView(APIView):
     def post(self, request: Request, format=None) -> Response:
-        request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
         button_press_info = {
             "Current URL": request.data["Current URL"],
             "Button Name": request.data["Button Name"],
