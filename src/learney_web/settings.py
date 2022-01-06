@@ -123,6 +123,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     # "social_django",
+    "accounts",
     "button_presses",
     "learney_backend",
     "goals",

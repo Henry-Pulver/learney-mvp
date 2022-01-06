@@ -1,4 +1,3 @@
-import datetime
 from uuid import uuid4
 
 from rest_framework import status
@@ -6,45 +5,26 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from learney_web.settings import DT_STR
+from accounts.models import User
+from accounts.serializers import UserSerializer
+from accounts.utils import user_data_to_user_db_object
 from page_visits.serializers import PageVisitSerializer
-
-ORIG_MAP_NAME = "original_map"
-
-SESSION_KEY_CYCLE_TIME = 3600  # secs
-SESSION_EXPIRY_TIME = 4 * 7 * 24 * 60 * 60  # 4 weeks in seconds
-
-
-def cycle_session_key_if_old(request: Request) -> None:
-    now = datetime.datetime.utcnow()
-    last_action_time = datetime.datetime.strptime(
-        request.session.get("last_action", now.strftime(DT_STR)), DT_STR
-    )
-    time_since_last_action = now - last_action_time
-    if time_since_last_action.total_seconds() > SESSION_KEY_CYCLE_TIME:
-        request.session.cycle_key()
-
-
-def update_session(request: Request) -> None:
-    cycle_session_key_if_old(request)
-    if request.session.session_key is None:
-        request.session.cycle_key()
-    request.session.set_expiry(SESSION_EXPIRY_TIME)
 
 
 def get_or_generate_user_id(request: Request) -> str:
-    if request.data.get("user_id") is not None:
-        return request.data["user_id"]
-    else:
+    if request.data.get("user_id") is None:
         return f"anonymous-user|{uuid4()}"
+    user_id = request.data["user_id"]
+    # If user doesn't exist, add user!
+    if User.objects.filter(id=user_id).count() == 0:
+        serializer = UserSerializer(data=user_data_to_user_db_object(request.data["user_data"]))
+        if serializer.is_valid():
+            serializer.save()
+    return user_id
 
 
 class PageVisitView(APIView):
-    # TODO: Add GET to allow frontend to know if this is a new user or not then only show intro if new!
-
     def post(self, request: Request, format=None):
-        update_session(request)
-        request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
         serializer = PageVisitSerializer(
             data={
                 "user_id": get_or_generate_user_id(request),

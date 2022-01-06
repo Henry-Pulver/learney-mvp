@@ -129,7 +129,6 @@ class ContentVoteView(APIView):
 
     def post(self, request: Request, format=None) -> Response:
         try:
-            request.session["last_action"] = datetime.datetime.utcnow().strftime(DT_STR)
             content_links = ContentLinkPreview.objects.filter(
                 map__unique_id=request.data["map"], url=request.data["url"]
             )
