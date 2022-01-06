@@ -20,5 +20,5 @@ class User(models.Model):
     given_name = models.CharField(blank=True, max_length=255)
     family_name = models.CharField(blank=True, max_length=255)
 
-    picture = models.URLField()
+    picture = models.URLField(max_length=1000)
     locale = models.CharField(blank=True, max_length=8)
