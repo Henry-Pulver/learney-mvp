@@ -120,6 +120,7 @@ class KnowledgeMapView(APIView):
                     "Map Save",
                     {
                         "url_extension": entry.url_extension,
+                        "Map Name": entry.name,
                         "map_uuid": request_body["map"],
                         "s3_bucket_name": entry.s3_bucket_name,
                         "new_map_version": entry.version,

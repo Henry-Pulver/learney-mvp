@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from learney_backend.models import ContentLinkPreview, ContentVote
 from learney_backend.serializers import LinkPreviewSerializer, VoteSerializer
-from learney_web.settings import DT_STR, IS_PROD, mixpanel
+from learney_web.settings import IS_PROD, mixpanel
 
 UTC = timezone("UTC")
 
@@ -45,10 +45,7 @@ class ContentLinkPreviewView(APIView):
                     serializer = LinkPreviewSerializer(
                         retrieved_entry, context={"request": request}
                     )
-                    # if serializer.is_valid():
                     return Response(serializer.data, status=status.HTTP_200_OK)
-                    # else:
-                    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except KeyError as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
@@ -129,9 +126,10 @@ class ContentVoteView(APIView):
 
     def post(self, request: Request, format=None) -> Response:
         try:
-            content_links = ContentLinkPreview.objects.filter(
-                map__unique_id=request.data["map"], url=request.data["url"]
+            all_map_content_links = ContentLinkPreview.objects.filter(
+                map__unique_id=request.data["map"]
             )
+            content_links = all_map_content_links.filter(url=request.data["url"])
             data = {
                 "map": request.data["map"],
                 "session_id": request.data.get("session_id"),
@@ -156,6 +154,7 @@ class ContentVoteView(APIView):
                             "url": data["url"],
                             "vote_direction": data["vote"],
                             "concept": data["concept"],
+                            "Map Name": all_map_content_links[0].map.name,
                             "map_uuid": data["map"],
                             "session_id": data["session_id"],
                         },
