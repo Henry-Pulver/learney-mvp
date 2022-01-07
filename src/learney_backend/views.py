@@ -130,6 +130,7 @@ class ContentVoteView(APIView):
                 map__unique_id=request.data["map"]
             )
             content_links = all_map_content_links.filter(url=request.data["url"])
+            content_link_exists = content_links.count() > 0
             data = {
                 "map": request.data["map"],
                 "session_id": request.data.get("session_id"),
@@ -137,9 +138,12 @@ class ContentVoteView(APIView):
                 "concept": request.data.get(
                     "concept",
                     content_links.latest("preview_last_updated").concept
-                    if content_links.count() > 0
+                    if content_link_exists
                     else "",
                 ),
+                "content_link_preview": content_links.latest("preview_last_updated")
+                if content_link_exists
+                else None,
                 "url": request.data.get("url"),
                 "vote": request.data.get("vote"),
             }
