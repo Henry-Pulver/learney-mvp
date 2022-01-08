@@ -21,3 +21,7 @@ class KnowledgeMapModel(models.Model):
     )
 
     last_updated = models.DateTimeField(auto_now=True)
+
+    @property
+    def name(self):
+        return self.url_extension

@@ -1,5 +1,3 @@
-import datetime
-
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.datastructures import MultiValueDictKeyError
 from rest_framework import status
@@ -29,15 +27,40 @@ class LearnedView(APIView):
         serializer = LearnedSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(str(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
-        serializer.save()
+
+        # Find the learned concepts added or removed and whether they were added or removed
+        entry = LearnedModel.objects.filter(
+            user_id=request.data["user_id"], map__unique_id=request.data["map"]
+        ).latest("timestamp")
+        new_learned_set = set(request.data["learned_concepts"])
+        prev_learned_set = set(entry.learned_concepts)
+        learned_added = list(new_learned_set - prev_learned_set)
+        learned_removed = list(prev_learned_set - new_learned_set)
+
         if IS_PROD:
+            # Track with mixpanel
             mixpanel.track(
                 request.data["user_id"],
                 "Learned",
                 {
-                    "learned_state": request.data["learned_concepts"],
+                    "Learned set": learned_added or learned_removed,
+                    "Learned added or removed": "Added" if learned_added else "Removed",
+                    "Map": entry.map.name,
                     "map_uuid": request.data["map"],
                     "session_id": request.data["session_id"],
                 },
             )
+        else:
+            mixpanel.track(
+                request.data["user_id"],
+                "Test Event",
+                {
+                    "Learned set": learned_added or learned_removed,
+                    "Learned added or removed": "Added" if learned_added else "Removed",
+                    "Map": entry.map.name,
+                    "map_uuid": request.data["map"],
+                    "session_id": request.data["session_id"],
+                },
+            )
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
