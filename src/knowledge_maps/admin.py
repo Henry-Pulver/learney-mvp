@@ -5,5 +5,5 @@ from knowledge_maps.models import KnowledgeMapModel
 
 @admin.register(KnowledgeMapModel)
 class QuestionModelAdmin(admin.ModelAdmin):
-    list_display = ("url_extension", "author_user_id", "s3_key", "last_updated")
-    search_fields = ["url_extension", "author_user_id", "s3_key"]
+    list_display = ("url_extension", "title", "author_user_id", "s3_key", "last_updated")
+    search_fields = ["title", "description", "url_extension", "author_user_id", "s3_key"]
