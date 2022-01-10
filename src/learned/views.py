@@ -45,7 +45,8 @@ class LearnedView(APIView):
                 {
                     "Learned set": learned_added or learned_removed,
                     "Learned added or removed": "Added" if learned_added else "Removed",
-                    "Map": entry.map.name,
+                    "Map URL extension": entry.map.url_extension,
+                    "Map Title": entry.map.title,
                     "map_uuid": request.data["map"],
                     "session_id": request.data["session_id"],
                 },
@@ -57,7 +58,8 @@ class LearnedView(APIView):
                 {
                     "Learned set": learned_added or learned_removed,
                     "Learned added or removed": "Added" if learned_added else "Removed",
-                    "Map": entry.map.name,
+                    "Map URL extension": entry.map.url_extension,
+                    "Map Title": entry.map.title,
                     "map_uuid": request.data["map"],
                     "session_id": request.data["session_id"],
                 },

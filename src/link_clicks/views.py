@@ -37,7 +37,8 @@ class LinkClickView(APIView):
                         "Content Link Click",
                         {
                             "url": data["url"],
-                            "Map Name": retrieved_entry.map.name,
+                            "Map URL extension": retrieved_entry.map.url_extension,
+                            "Map Title": retrieved_entry.map.title,
                             "map_uuid": str(data["map"]),
                             "concept_id": concept_id,
                             "concept_name": retrieved_entry.concept,

@@ -46,7 +46,8 @@ class GoalView(APIView):
                 {
                     "Goal set": goal_added.pop() if goal_added else goal_removed.pop(),
                     "Goal added or removed": "Added" if goal_added else "Removed",
-                    "Map": entry.map.name,
+                    "Map URL extension": entry.map.url_extension,
+                    "Map Title": entry.map.title,
                     "map_uuid": request.data["map"],
                     "session_id": request.data["session_id"],
                 },
@@ -58,7 +59,8 @@ class GoalView(APIView):
                 {
                     "Goal set": goal_added.pop() if goal_added else goal_removed.pop(),
                     "Goal added or removed": "Added" if goal_added else "Removed",
-                    "Map": entry.map.name,
+                    "Map URL extension": entry.map.url_extension,
+                    "Map Title": entry.map.title,
                     "map_uuid": request.data["map"],
                     "session_id": request.data["session_id"],
                 },

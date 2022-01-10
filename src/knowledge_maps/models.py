@@ -7,6 +7,14 @@ class KnowledgeMapModel(models.Model):
     unique_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, help_text="Unique identifier for each knowledge map"
     )
+    title = models.CharField(
+        max_length=32, blank=True, help_text="Title of the knowledge map shown in top left corner"
+    )
+    description = models.TextField(
+        max_length=1024,
+        blank=True,
+        help_text="Description of the knowledge map shown in top left corner",
+    )
     version = models.IntegerField(help_text="Version number of the map", default=0)
 
     author_user_id = models.TextField(help_text="User ID of user who created this map")
@@ -21,7 +29,3 @@ class KnowledgeMapModel(models.Model):
     )
 
     last_updated = models.DateTimeField(auto_now=True)
-
-    @property
-    def name(self):
-        return self.url_extension
