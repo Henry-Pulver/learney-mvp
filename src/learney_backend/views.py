@@ -1,10 +1,6 @@
 import datetime
-import json
-from typing import Dict, Union
-from uuid import UUID
+from typing import Dict, Optional, Union
 
-import requests
-import yaml
 from django.utils.datastructures import MultiValueDictKeyError
 from pytz import timezone
 from rest_framework import status
@@ -14,12 +10,10 @@ from rest_framework.views import APIView
 
 from learney_backend.models import ContentLinkPreview, ContentVote
 from learney_backend.serializers import LinkPreviewSerializer, VoteSerializer
+from learney_backend.utils import get_from_linkpreview_net
 from learney_web.settings import IS_PROD, mixpanel
 
 UTC = timezone("UTC")
-
-with open("link_preview_api_key.yaml", "r") as secrets_file:
-    LINK_PREVIEW_API_KEY = yaml.load(secrets_file, Loader=yaml.Loader)["API_KEY"]
 
 
 class ContentLinkPreviewView(APIView):
@@ -31,21 +25,28 @@ class ContentLinkPreviewView(APIView):
                 url=request.GET["url"],
             )
             if retrieved_entries.count() == 0:
-                return self.get_from_linkpreview_net(request)
+                return self._serialize_and_respond(get_from_linkpreview_net(request.GET), False)
             else:
                 retrieved_entry = retrieved_entries.latest("preview_last_updated")
+                checked = (
+                    retrieved_entry.checked_by.all().filter(id=request.GET["user_id"]).count() > 0
+                )
 
                 # If no details found and old, try linkpreview.net
                 utc_now = UTC.localize(datetime.datetime.utcnow())
                 if retrieved_entry.description == "" and (
                     utc_now - retrieved_entry.preview_last_updated > datetime.timedelta(weeks=1)
                 ):
-                    return self.get_from_linkpreview_net(request)
+                    return self._serialize_and_respond(
+                        get_from_linkpreview_net(request.GET), checked
+                    )
                 else:
                     serializer = LinkPreviewSerializer(
                         retrieved_entry, context={"request": request}
                     )
-                    return Response(serializer.data, status=status.HTTP_200_OK)
+                    return Response(
+                        {**serializer.data, "checked": checked}, status=status.HTTP_200_OK
+                    )
         except KeyError as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
@@ -53,41 +54,20 @@ class ContentLinkPreviewView(APIView):
         return self._serialize_and_respond(request)
 
     @staticmethod
-    def _serialize_and_respond(request: Union[Request, Dict[str, str]]) -> Response:
+    def _serialize_and_respond(
+        request: Union[Request, Dict[str, str]], checked: Optional[bool] = None
+    ) -> Response:
         data = request if isinstance(request, dict) else request.data
         serializer = LinkPreviewSerializer(data=data, context={"request": request})
         if serializer.is_valid():
             serializer.save()
             print(f"{serializer.data} saved in DB!")
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(
+                {**serializer.data, "checked": checked} if checked is not None else serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
         print(f"ContentLinkPreviewSerializer errors: {serializer.errors}")
         return Response(str(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
-
-    def get_from_linkpreview_net(self, request):
-        preview_data = requests.get(
-            "http://api.linkpreview.net",
-            params={"q": request.GET["url"], "key": LINK_PREVIEW_API_KEY},
-        )
-        db_dict = {
-            "map": UUID(request.GET["map"]),
-            "concept": request.GET["concept"],
-            "concept_id": request.GET["concept_id"],
-            "url": request.GET["url"],
-        }
-        if preview_data.status_code == 200:
-            link_prev_dict: Dict[str, str] = json.loads(preview_data.text)
-            db_dict.update(
-                {
-                    "description": link_prev_dict["description"],
-                    "title": link_prev_dict["title"],
-                    "image_url": link_prev_dict["image"],
-                }
-            )
-            print(f"Found from linkpreview.net, contents: {db_dict}")
-        else:
-            print("Not found in linkpreview.net!")
-            db_dict.update({"description": "", "title": "", "image_url": ""})
-        return self._serialize_and_respond(db_dict)
 
 
 class TotalVoteCountView(APIView):
