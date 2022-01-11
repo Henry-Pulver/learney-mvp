@@ -111,8 +111,7 @@ class KnowledgeMapView(APIView):
                 Key=entry.s3_key, Body=json.dumps(request_body["map_data"])
             )
 
-            # Increment the version
-            entry.version += 1
+            entry.version += 1  # Increment the version
             entry.save()
             if IS_PROD:
                 mixpanel.track(
@@ -127,7 +126,6 @@ class KnowledgeMapView(APIView):
                         "new_map_version": entry.version,
                     },
                 )
-
             return Response(KnowledgeMapSerializer(entry).data, status=status.HTTP_201_CREATED)
         except ObjectDoesNotExist as error:
             return Response(str(error), status=status.HTTP_204_NO_CONTENT)
