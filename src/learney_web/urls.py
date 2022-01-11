@@ -24,5 +24,6 @@ urlpatterns = [
     path("", include("link_clicks.urls")),
     path("", include("page_visits.urls")),
     path("", include("button_presses.urls")),
+    path("", include("accounts.urls")),
     path("admin/", admin.site.urls),
 ]
