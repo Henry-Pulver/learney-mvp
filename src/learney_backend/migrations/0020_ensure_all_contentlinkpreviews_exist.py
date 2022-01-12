@@ -4,7 +4,7 @@ Even if linkpreview.net fails, we want an empty preview to exist.
 """
 import json
 
-from django.db import migrations
+from django.db import migrations, models
 
 from knowledge_maps.views import retrieve_map
 from learney_backend.utils import get_from_linkpreview_net
@@ -19,6 +19,7 @@ def add_content_link_previews(apps, schema_editor):
         for node in map_json["nodes"]:
             node_data = node["data"]
             for url in node_data.get("urls", []):
+                url = url.replace(" ", "")
                 url_matches = ContentLinkPreview.objects.filter(url=url)
                 # Check - does this exact link preview (link + map id) exist already?
                 exact_matches = url_matches.filter(map=map, concept_id=node_data["id"])
@@ -58,5 +59,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_content_link_previews, reverse_code=migrations.RunPython.noop)
+        migrations.AlterField(
+            model_name="contentlinkpreview",
+            name="url",
+            field=models.URLField(help_text="The resource URL", max_length=2048),
+        ),
+        migrations.RunPython(add_content_link_previews, reverse_code=migrations.RunPython.noop),
     ]
