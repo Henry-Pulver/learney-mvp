@@ -19,6 +19,7 @@ def add_content_link_previews(apps, schema_editor):
         for node in map_json["nodes"]:
             node_data = node["data"]
             for url in node_data.get("urls", []):
+                url = url.replace(" ", "")
                 url_matches = ContentLinkPreview.objects.filter(url=url)
                 # Check - does this exact link preview (link + map id) exist already?
                 exact_matches = url_matches.filter(map=map, concept_id=node_data["id"])
