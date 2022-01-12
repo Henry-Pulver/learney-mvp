@@ -1,5 +1,7 @@
 from django.db import models
 
+from learney_backend.models import ContentLinkPreview, ContentVote
+
 # email: "henrypulver13@gmail.com"
 # email_verified: true
 # family_name: "Pulver"
@@ -22,3 +24,9 @@ class User(models.Model):
 
     picture = models.URLField(max_length=1000)
     locale = models.CharField(blank=True, max_length=8)
+
+    checked_content_links = models.ManyToManyField(
+        ContentLinkPreview,
+        related_name="checked_by",
+        help_text="The content links that this user has checked",
+    )

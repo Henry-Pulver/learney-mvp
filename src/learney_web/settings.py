@@ -55,6 +55,9 @@ assert PYTHON_ENV in ["dev", "staging", "production"]
 
 mixpanel = Mixpanel(MIXPANEL_KEY)
 
+with open("link_preview_api_key.yaml", "r") as secrets_file:
+    LINK_PREVIEW_API_KEY = yaml.load(secrets_file, Loader=yaml.Loader)["API_KEY"]
+
 IS_PROD = PYTHON_ENV == "production"
 
 ALLOWED_HOSTS = [
