@@ -32,3 +32,21 @@ class ButtonPressView(APIView):
             f"JSON sent: {[request.data['user_id'], button_press_info]}",
             status=status.HTTP_200_OK,
         )
+
+
+class MapEventTrackingView(APIView):
+    def post(self, request: Request, format=None) -> Response:
+        user_id = request.data.pop("user_id")
+        event_type = request.data.pop("Event Type")
+        if IS_PROD:
+            mixpanel.track(
+                user_id,
+                event_type,
+                request.data,
+            )
+            return Response("Success! Sent to mixpanel", status=status.HTTP_200_OK)
+        return Response(
+            f"Success! Not sent to mixpanel because this isn't a production deployment.\n"
+            f"JSON sent: {[user_id, event_type, request.data]}",
+            status=status.HTTP_200_OK,
+        )
