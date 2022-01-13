@@ -78,6 +78,20 @@ ALLOWED_HOSTS = [
     "0.0.0.0",
 ]
 try:
+    EC2_TOKEN = requests.put(
+        "http://169.254.169.254/latest/api/token",
+        timeout=0.5,
+        headers={"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
+    ).text
+    EC2_IP = requests.get(
+        "http://169.254.169.254/latest/meta-data/local-ipv4",
+        headers={
+            "X-aws-ec2-metadata-token-ttl-seconds": "21600",
+            "X-aws-ec2-metadata-token": EC2_TOKEN,
+        },
+    ).text
+    ALLOWED_HOSTS.append(EC2_IP)
+except requests.exceptions.ReadTimeout:
     EC2_IP = requests.get("http://169.254.169.254/latest/meta-data/local-ipv4").text
     ALLOWED_HOSTS.append(EC2_IP)
 except requests.exceptions.RequestException:
