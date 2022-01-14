@@ -121,7 +121,7 @@ class ContentVoteView(APIView):
                     if content_link_exists
                     else "",
                 ),
-                "content_link_preview": content_links.latest("preview_last_updated")
+                "content_link_preview": content_links.latest("preview_last_updated").pk
                 if content_link_exists
                 else None,
                 "url": request.data.get("url"),
