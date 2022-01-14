@@ -1,5 +1,3 @@
-import datetime
-
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.datastructures import MultiValueDictKeyError
 from rest_framework import status
@@ -9,7 +7,8 @@ from rest_framework.views import APIView
 
 from goals.models import GoalModel
 from goals.serializers import GoalSerializer
-from learney_web.settings import DT_STR, IS_PROD, mixpanel
+from knowledge_maps.models import KnowledgeMapModel
+from learney_web.settings import IS_PROD, mixpanel
 
 
 class GoalView(APIView):
@@ -30,40 +29,36 @@ class GoalView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         # Find the goal added or removed and whether it was added or removed
-        entry = GoalModel.objects.filter(
-            user_id=request.data["user_id"], map__unique_id=request.data["map"]
-        ).latest("timestamp")
+        prev_entries = GoalModel.objects.filter(
+            user_id=request.data["user_id"], map=request.data["map"]
+        )
+        no_entries = prev_entries.count() == 0
+        if no_entries:
+            relevant_map = KnowledgeMapModel.objects.get(unique_id=request.data["map"])
+        else:
+            entry = prev_entries.latest("timestamp")
+
+        # Work out the difference between the previously set goals and new goals
         new_goals_set = set(request.data["goal_concepts"])
-        prev_goals_set = set(entry.goal_concepts)
+        prev_goals_set = set([]) if no_entries else set(entry.goal_concepts)
+
         goal_added = new_goals_set - prev_goals_set
         goal_removed = prev_goals_set - new_goals_set
 
-        if IS_PROD:
-            # Track with mixpanel
-            mixpanel.track(
-                request.data["user_id"],
-                "Set Goal",
-                {
-                    "Goal set": goal_added.pop() if goal_added else goal_removed.pop(),
-                    "Goal added or removed": "Added" if goal_added else "Removed",
-                    "Map URL extension": entry.map.url_extension,
-                    "Map Title": entry.map.title,
-                    "map_uuid": request.data["map"],
-                    "session_id": request.data["session_id"],
-                },
-            )
-        else:
-            mixpanel.track(
-                request.data["user_id"],
-                "Test Event",
-                {
-                    "Goal set": goal_added.pop() if goal_added else goal_removed.pop(),
-                    "Goal added or removed": "Added" if goal_added else "Removed",
-                    "Map URL extension": entry.map.url_extension,
-                    "Map Title": entry.map.title,
-                    "map_uuid": request.data["map"],
-                    "session_id": request.data["session_id"],
-                },
-            )
+        mixpanel_dict = {
+            "Goal set": goal_added.pop() if goal_added else goal_removed.pop(),
+            "Goal added or removed": "Added" if goal_added else "Removed",
+            "Map URL extension": relevant_map.url_extension
+            if no_entries
+            else entry.map.url_extension,
+            "Map Title": relevant_map.title if no_entries else entry.map.title,
+            "map_uuid": request.data["map"],
+            "session_id": request.data["session_id"],
+        }
+
+        # Track with mixpanel
+        mixpanel.track(
+            request.data["user_id"], "Set Goal" if IS_PROD else "Test Event", mixpanel_dict
+        )
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
