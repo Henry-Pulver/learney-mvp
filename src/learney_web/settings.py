@@ -61,7 +61,7 @@ with open("link_preview_api_key.yaml", "r") as secrets_file:
 IS_PROD = PYTHON_ENV == "production"
 
 ALLOWED_HOSTS = [
-    ".elb.amazonaws.com",
+    ".amazonaws.com",
     # prod
     "api.learney.me",
     "learneyapp-env.eba-ed9hpad3.us-west-2.elasticbeanstalk.com",
