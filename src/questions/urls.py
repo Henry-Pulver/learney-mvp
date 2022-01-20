@@ -15,9 +15,14 @@ Including another URLconf
 """
 from django.urls import path
 
-from questions.views import QuestionResponseView, QuestionView
+from questions.views import QuestionResponseView, QuestionView, ReportBrokenQuestionView
 
 urlpatterns = [
     path("api/v0/questions", QuestionView.as_view(), name="questions"),
     path("api/v0/question_response", QuestionResponseView.as_view(), name="question_responses"),
+    path(
+        "api/v0/report_broken_question",
+        ReportBrokenQuestionView.as_view(),
+        name="report_broken_questions",
+    ),
 ]
