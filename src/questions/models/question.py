@@ -2,12 +2,18 @@ from uuid import uuid4
 
 from django.db import models
 
-from questions.validators import ensure_list, not_null
+from learney_backend.models import UUIDModel
+from questions.models import QuestionTemplateModel
+from questions.validators import ensure_list, integer_is_positive, not_null
 
 
-class QuestionModel(models.Model):
-    id = models.UUIDField(
-        primary_key=True, default=uuid4, help_text="Unique id for question response"
+class QuestionModel(UUIDModel):
+    template_used = models.ForeignKey(
+        QuestionTemplateModel, on_delete=models.CASCADE, related_name="question_instances"
+    )
+    difficulty = models.FloatField(
+        help_text="Question difficulty for the concept. Initially set by an expert, but will subsequently be inferred from data. A relative scale, with 0 the lowest possible and as many difficulty levels as is deemed makes sense by the expert.",
+        validators=[integer_is_positive],
     )
 
     question_text = models.TextField(
@@ -20,14 +26,4 @@ class QuestionModel(models.Model):
     )
     feedback_text = models.TextField(
         help_text="Text containing feedback", blank=False, validators=[not_null]
-    )
-
-    author_user_id = models.CharField(
-        max_length=64, help_text="User ID of user who wrote this question"
-    )
-    session_id = models.TextField(
-        null=True, blank=True, help_text="session_id of the session the question was written in"
-    )
-    timestamp = models.DateTimeField(
-        auto_now_add=True, help_text="Time that the question was written"
     )

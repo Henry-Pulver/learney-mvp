@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 from django.test import TestCase
 
-from questions.models import QuestionConceptTagModel, QuestionModel, QuestionResponseModel
+from questions.models import QuestionModel, QuestionResponseModel
 
 
 class QuestionModelTests(TestCase):
