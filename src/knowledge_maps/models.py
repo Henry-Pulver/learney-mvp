@@ -2,6 +2,14 @@ import uuid
 
 from django.db import models
 
+from learney_backend.models import UUIDModel
+
+
+class Concept(UUIDModel):  # Currently only used in the questions trial.
+    name = models.CharField(
+        max_length=256, help_text="Description of the knowledge map shown in top left corner"
+    )
+
 
 class KnowledgeMapModel(models.Model):
     unique_id = models.UUIDField(

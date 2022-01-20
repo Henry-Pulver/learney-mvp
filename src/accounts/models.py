@@ -1,17 +1,7 @@
 from django.db import models
 
-from learney_backend.models import ContentLinkPreview, ContentVote
-
-# email: "henrypulver13@gmail.com"
-# email_verified: true
-# family_name: "Pulver"
-# given_name: "Henry"
-# locale: "en-GB"
-# name: "Henry Pulver"
-# nickname: "henrypulver13"
-# picture: "https://lh3.googleusercontent.com/a-/AOh14Gg82_yj2aTeve54l0gbNNaZTCtrbqwE3UFhi_NpDw=s96-c"
-# sub: "google-oauth2|107422942042952650102"
-# updated_at: "2022-01-05T14:50:01.592Z"
+from knowledge_maps.models import Concept
+from learney_backend.models import ContentLinkPreview
 
 
 class User(models.Model):
@@ -29,4 +19,10 @@ class User(models.Model):
         ContentLinkPreview,
         related_name="checked_by",
         help_text="The content links that this user has checked",
+    )
+    next_questions_concept = models.ForeignKey(
+        Concept,
+        on_delete=models.CASCADE,
+        related_name="next_step_users",
+        help_text="The concept next step for this user",
     )
