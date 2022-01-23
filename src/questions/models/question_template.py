@@ -1,9 +1,7 @@
-from uuid import uuid4
-
 from django.db import models
 
 from knowledge_maps.models import Concept
-from learney_backend.models import UUIDModel
+from learney_backend.base_models import UUIDModel
 from questions.validators import integer_is_positive, not_null
 
 

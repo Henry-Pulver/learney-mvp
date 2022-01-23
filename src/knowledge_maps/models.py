@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 
-from learney_backend.models import UUIDModel
+from learney_backend.base_models import UUIDModel
 
 
 class Concept(UUIDModel):  # Currently only used in the questions trial.

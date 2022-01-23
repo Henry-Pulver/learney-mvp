@@ -1,9 +1,7 @@
-from uuid import uuid4
-
 from django.db import models
 
-from learney_backend.models import UUIDModel
-from questions.models import QuestionTemplateModel
+from learney_backend.base_models import UUIDModel
+from questions.models.question_template import QuestionTemplateModel
 from questions.validators import ensure_list, integer_is_positive, not_null
 
 
