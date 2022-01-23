@@ -1,5 +1,4 @@
-from copy import copy
-from datetime import date, time
+from datetime import time
 from uuid import uuid4
 
 import pytest
