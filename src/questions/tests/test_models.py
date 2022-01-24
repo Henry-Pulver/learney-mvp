@@ -4,7 +4,7 @@ from uuid import uuid4
 import pytest
 from django.test import TestCase
 
-from questions.models import QuestionModel, QuestionResponseModel
+from questions.models import QuestionResponseModel, QuestionTemplateModel
 
 
 class QuestionModelTests(TestCase):
@@ -16,7 +16,7 @@ class QuestionModelTests(TestCase):
 
     @pytest.fixture(scope="class", autouse=True)
     def set_up(self):
-        created_object = QuestionModel.objects.create(
+        created_object = QuestionTemplateModel.objects.create(
             question_text=self.TEST_QUESTION_TEXT,
             answer_text=self.TEST_ANSWER_TEXT,
             feedback_text=self.TEST_FEEDBACK_TEXT,
@@ -27,7 +27,7 @@ class QuestionModelTests(TestCase):
         self.id = created_object.id
 
     def test_get_from_db(self):
-        question = QuestionModel.objects.get(id=self.id)
+        question = QuestionTemplateModel.objects.get(id=self.id)
         assert question.question_text == self.TEST_QUESTION_TEXT
         assert question.answer_text == self.TEST_ANSWER_TEXT
         assert question.feedback_text == self.TEST_FEEDBACK_TEXT
