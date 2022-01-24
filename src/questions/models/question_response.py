@@ -4,7 +4,7 @@ from django.db import models
 
 from accounts.models import User
 from learney_backend.base_models import UUIDModel
-from questions.models import QuestionTemplateModel
+from questions.models.question_template import QuestionTemplate
 
 
 class QuestionResponseModel(UUIDModel):
@@ -15,7 +15,7 @@ class QuestionResponseModel(UUIDModel):
         on_delete=models.CASCADE,
     )
     question_template = models.ForeignKey(
-        QuestionTemplateModel,
+        QuestionTemplate,
         on_delete=models.CASCADE,
         help_text="question template this was a response to",
         related_name="responses",

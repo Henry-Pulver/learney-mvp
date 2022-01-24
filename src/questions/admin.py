@@ -1,9 +1,9 @@
 from django.contrib import admin
 
-from questions.models import QuestionResponseModel, QuestionTemplateModel
+from questions.models import QuestionResponseModel, QuestionTemplate
 
 
-@admin.register(QuestionTemplateModel)
+@admin.register(QuestionTemplate)
 class QuestionTemplateModelAdmin(admin.ModelAdmin):
     list_select_related = ("concept",)
     list_display = ("id", "concept__name", "question_type", "difficulty", "last_updated")

@@ -2,15 +2,13 @@ import json
 from typing import Any, Dict, Tuple
 from uuid import UUID
 
-from questions.models import QuestionTemplateModel
-
-ParamsDict = Dict[str, Any]
+SampledParamsDict = Dict[str, str]
 
 
-def get_frontend_id(template: QuestionTemplateModel, params_dict: ParamsDict) -> str:
-    return f"{params_dict}|{template.id}"
+def get_frontend_id(template_id: UUID, params_dict: SampledParamsDict) -> str:
+    return f"{params_dict}|{template_id}"
 
 
-def uuid_and_params_from_frontend_id(frontend_id: str) -> Tuple[UUID, ParamsDict]:
+def uuid_and_params_from_frontend_id(frontend_id: str) -> Tuple[UUID, SampledParamsDict]:
     params_string, template_id = frontend_id.split("|")
     return UUID(template_id), json.loads(params_string) if params_string else {}

@@ -5,7 +5,7 @@ from learney_backend.base_models import UUIDModel
 from questions.validators import integer_is_positive, not_null
 
 
-class QuestionTemplateModel(UUIDModel):
+class QuestionTemplate(UUIDModel):
     concept = models.ForeignKey(
         Concept,
         related_name="question_templates",
@@ -30,7 +30,18 @@ class QuestionTemplateModel(UUIDModel):
         validators=[not_null],
         max_length=16384,
     )
+    correct_answer = models.CharField(
+        max_length=1, help_text="Correct answer to the question", blank=False
+    )
     last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(correct_answer__in=["a", "A", "b", "B", "c", "C", "d", "D"]),
+                name="correct_answer_letter",
+            )
+        ]
 
     # map = models.ForeignKey(
     #     KnowledgeMapModel,

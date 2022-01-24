@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 import boto3
 from botocore.exceptions import ClientError
 from learney_web.settings import IS_PROD
-from questions.models import QuestionTemplateModel
+from questions.models import QuestionTemplate
 from questions.utils import uuid_and_params_from_frontend_id
 
 CHARSET = "UTF-8"
@@ -25,9 +25,7 @@ def get_admin_edit_link(question_template_id: str) -> str:
 class ReportBrokenQuestionView(APIView):
     def post(self, request: Request, format=None) -> Response:
         template_id, params = uuid_and_params_from_frontend_id(request.data["question"]["id"])
-        question_template = QuestionTemplateModel.objects.get(id=template_id).prefetch_related(
-            "concept"
-        )
+        question_template = QuestionTemplate.objects.get(id=template_id).prefetch_related("concept")
         concept_name = question_template.concept.name
 
         subject = f"Question broken on '{concept_name}'"
