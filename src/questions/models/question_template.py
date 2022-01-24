@@ -30,6 +30,7 @@ class QuestionTemplateModel(UUIDModel):
         validators=[not_null],
         max_length=16384,
     )
+    last_updated = models.DateTimeField(auto_now=True)
 
     # map = models.ForeignKey(
     #     KnowledgeMapModel,
