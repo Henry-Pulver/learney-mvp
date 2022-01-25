@@ -31,7 +31,9 @@ class QuestionTemplate(UUIDModel):
         max_length=16384,
     )
     correct_answer = models.CharField(
-        max_length=1, help_text="Correct answer to the question", blank=False
+        max_length=1,
+        help_text="Answer option (a, b, c or d) which is the correct answer to the question",
+        blank=False,
     )
     active = models.BooleanField(
         default=False,
