@@ -3,6 +3,7 @@ from django.db import models
 from accounts.models import User
 from knowledge_maps.models import Concept
 from learney_backend.base_models import UUIDModel
+from questions.inference import GaussianParams
 
 
 class InferredKnowledgeState(UUIDModel):
@@ -25,3 +26,7 @@ class InferredKnowledgeState(UUIDModel):
     last_updated = models.DateTimeField(
         auto_now=True, help_text="Time that the knowledge state was last updated"
     )
+
+    @property
+    def knowledge_state(self) -> GaussianParams:
+        return GaussianParams(mean=self.mean, std_dev=self.std_dev)
