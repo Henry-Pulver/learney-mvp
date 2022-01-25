@@ -1,2 +1,2 @@
-from .question_response import QuestionResponseModel
+from .question_response import QuestionResponse
 from .question_template import QuestionTemplate

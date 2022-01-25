@@ -6,10 +6,10 @@ from questions.models.question_set import QuestionSet
 from questions.models.question_template import QuestionTemplate
 
 
-class QuestionResponseModel(UUIDModel):
+class QuestionResponse(UUIDModel):
     user = models.ForeignKey(
         User,
-        related_name="question_responses",
+        related_name="responses",
         help_text="User whose response this is",
         on_delete=models.CASCADE,
     )
@@ -23,12 +23,15 @@ class QuestionResponseModel(UUIDModel):
         help_text="question parameter values chosen from the template parameters",
     )
 
-    response = models.TextField(max_length=1024, help_text="Response given to the question")
-    correct = models.BooleanField(help_text="Was the response correct?")
-
-    time_asked = models.DateTimeField(
-        auto_now_add=True, help_text="Time that the question was asked"
+    response = models.TextField(
+        max_length=1024,
+        null=True,
+        help_text="Response given to the question. Null if yet to be answered",
     )
+    correct = models.BooleanField(
+        null=True, help_text="Was the response correct? Null if not yet answered."
+    )
+
     question_set = models.ForeignKey(
         QuestionSet,
         on_delete=models.CASCADE,
@@ -36,6 +39,10 @@ class QuestionResponseModel(UUIDModel):
         help_text="The question set this question corresponds to",
     )
     session_id = models.TextField(help_text="session_id of the session the response was from")
-    # time_to_respond = models.TimeField(
-    #     help_text="Time it took for the user to respond to the question"
-    # )
+    time_to_respond = models.TimeField(
+        null=True,
+        help_text="Time it took for the user to respond to the question. Measured on the backend",
+    )
+    time_asked = models.DateTimeField(
+        auto_now_add=True, help_text="Time that the question was asked"
+    )
