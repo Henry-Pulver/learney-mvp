@@ -7,8 +7,30 @@ from rest_framework.views import APIView
 from questions.models import QuestionResponse, QuestionTemplate
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_set import QuestionSet
-from questions.question_selection import difficulty_terms, novelty_terms
+from questions.question_selection import difficulty_terms, get_knowledge_level, novelty_terms
 from questions.template import parse_params, question_from_template, sample_params
+from questions.utils import get_today
+
+
+class QuestionSetView(APIView):
+    def get(self, request: Request, format=None) -> Response:
+        concept_id = request.GET["concept_id"]
+        user_id = request.GET["user_id"]
+        session_id = request.GET["session_id"]
+        prev_set = QuestionSet.objects.filter(completed=False, time_started__gte=get_today())
+        if prev_set.exists():
+            question_set = prev_set[0]
+        else:
+            ks = InferredKnowledgeState.objects.get(user=user_id, concept=concept_id)
+            question_set = QuestionSet.objects.create(
+                user=user_id,
+                level_at_start=get_knowledge_level(ks),
+                session_id=session_id,
+            )
+
+        # TODO: Track with Mixpanel
+
+        return Response({"id": question_set.id}, status=status.HTTP_200_OK)
 
 
 class QuestionView(APIView):

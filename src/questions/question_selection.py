@@ -1,4 +1,3 @@
-import datetime
 import math
 from collections import Counter
 from statistics import NormalDist
@@ -14,6 +13,7 @@ from questions.models import QuestionTemplate
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_set import QuestionSet
 from questions.template import get_number_of_answers, number_of_questions
+from questions.utils import get_today
 
 # Ideal probability of correct
 IDEAL_DIFF = 0.85
@@ -53,14 +53,7 @@ def novelty_terms(
     ]
     questions_to_avoid = (
         user.responses.all()
-        .filter(
-            Q(
-                time_asked__gte=datetime.datetime.today().replace(
-                    hour=0, minute=0, second=0, microsecond=0
-                )
-            )
-            | Q(correct=True)
-        )
+        .filter(Q(time_asked__gte=get_today()) | Q(correct=True))
         .select_related("question_set")
         .select_related("question_template")
     )

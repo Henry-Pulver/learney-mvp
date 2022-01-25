@@ -1,8 +1,13 @@
 import json
+from datetime import datetime
 from typing import Dict, Tuple
 from uuid import UUID
 
 SampledParamsDict = Dict[str, str]
+
+
+def get_today():
+    return datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def get_frontend_id(template_id: UUID, params_dict: SampledParamsDict) -> str:
