@@ -107,20 +107,25 @@ def parse_params(template_text: str) -> Tuple[ParamOptionsDict, str]:
 
 def parse_param_line(line: str) -> Tuple[str, List[Any]]:
     """Parse 1 line from a question template starting with 'param '."""
-    if not is_param_line(line):
+    regex = param_line_regex(line)
+    if regex is None:
         raise ParsingError(f"{line}\n is an invalid question template parameter line")
-    split_line_without_param = line[6:].split(":")  # [6:] removes the 'param ' characters
-    param_name = split_line_without_param[0]
-    values_string = "".join(split_line_without_param[1:])
-    values_string = values_string.replace("{", "[").replace("}", "]").replace("'", '"')
-    return param_name, json.loads(values_string)
+    values_string = regex.groups()[1].replace("{", "[").replace("}", "]").replace("'", '"')
+    return regex.groups()[0], json.loads(values_string)
+
+
+def param_line_regex(line: str) -> Optional[re.Match]:
+    """Matches line with regex for parameter line.
+
+    Returns:
+        None if not a match, otherwise a re.Match object with .groups() corresponding to contents
+         of normal brackets (), ordered by first open bracket (.
+    """
+    return re.fullmatch(
+        r"^\s*param\s([^-{}:@&%$£?!~#+=,]+):\s({([^-{}:@&%$£?!~#+=,]+,\s*)+[^-{}:@&%$£?!~#+=,]+})\s*$",
+        line,
+    )
 
 
 def is_param_line(line: str) -> bool:
-    return (
-        re.search(
-            r"^\s*param\s[^-{}:@&%$£?!~#+=,]+:\s{([^-{}:@&%$£?!~#+=,]+,\s?)+([^-{}:@&%$£?!~#+=,]+)}\s*$",
-            line,
-        )
-        is not None
-    )
+    return param_line_regex(line) is not None
