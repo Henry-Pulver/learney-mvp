@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Tuple
+from typing import Dict, Tuple
 from uuid import UUID
 
 SampledParamsDict = Dict[str, str]
