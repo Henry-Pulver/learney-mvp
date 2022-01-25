@@ -28,12 +28,17 @@ class ReportBrokenQuestionView(APIView):
         question_template = QuestionTemplate.objects.get(id=template_id).prefetch_related("concept")
         concept_name = question_template.concept.name
 
+        # Deactivate question template!
+        question_template.active = False
+        question_template.save()
+
         subject = f"Question broken on '{concept_name}'"
 
         admin_edit_link = get_admin_edit_link(str(template_id))
         # The email body for recipients with non-HTML email clients.
         body_text = (
             f"Question on {concept_name} reported as broken!\r\n"
+            f"Params used: {params}\r\n"
             f"Issue type: {request.data['type']}\r\n"
             f"Message: \n{request.data['message']}\r\n"
             f"Link to edit: {admin_edit_link}"
@@ -48,6 +53,8 @@ class ReportBrokenQuestionView(APIView):
           <p>
           Issue type: {request.data['type']}
           <br/>
+          Params used: {params}\r\n
+          <br/>
           Message: \n{request.data['message']}
           <br/>
             <a href='{admin_edit_link}'>Here is the link to edit the question</a>.
@@ -56,11 +63,7 @@ class ReportBrokenQuestionView(APIView):
         </html>
         """
 
-        # Link to question
-        # Contents of their message
-
         client = boto3.client("ses", region_name="us-west-2")
-
         try:
             # Provide the contents of the email.
             response = client.send_email(
