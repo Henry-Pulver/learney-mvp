@@ -22,6 +22,12 @@ class QuestionResponse(UUIDModel):
     question_params = models.JSONField(
         help_text="question parameter values chosen from the template parameters",
     )
+    question_set = models.ForeignKey(
+        QuestionSet,
+        on_delete=models.CASCADE,
+        related_name="responses",
+        help_text="The question set this question corresponds to",
+    )
 
     response = models.TextField(
         max_length=1024,
@@ -32,12 +38,6 @@ class QuestionResponse(UUIDModel):
         null=True, help_text="Was the response correct? Null if not yet answered."
     )
 
-    question_set = models.ForeignKey(
-        QuestionSet,
-        on_delete=models.CASCADE,
-        related_name="responses",
-        help_text="The question set this question corresponds to",
-    )
     session_id = models.TextField(help_text="session_id of the session the response was from")
     time_to_respond = models.TimeField(
         null=True,

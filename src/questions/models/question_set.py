@@ -15,11 +15,16 @@ class QuestionSet(UUIDModel):
     time_started = models.DateTimeField(
         auto_now_add=True, help_text="Time that the question set was started"
     )
-    time_completed = models.DateTimeField(
-        null=True, auto_now=True, help_text="Time that the question set was started"
+    time_taken_to_complete = models.DateTimeField(
+        null=True,
+        default=None,
+        help_text="Time after the question set was started that it was completed",
     )
-    questions_completed = models.BooleanField(
+    completed = models.BooleanField(
         default=False, help_text="Whether the user answered all the questions in the set or not"
+    )
+    level_at_start = models.IntegerField(
+        help_text="The concept level the user started the question set at"
     )
     levels_progressed = models.IntegerField(
         default=0, help_text="How many levels the user progressed in this question batch"
