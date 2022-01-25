@@ -85,6 +85,13 @@ def run_python_code_string(python_code: str) -> str:
         raise ParsingError(f"Python inside <<>> is invalid!\n Code: {python_code}\nError: {e}")
 
 
+def number_of_questions(template_text: str) -> int:
+    """Get the number of questions that can be generated from a template from a parameter options
+    dictionary."""
+    params, _ = parse_params(template_text)
+    return int(np.prod([len(values) for values in params.values()]))
+
+
 def parse_params(template_text: str) -> Tuple[ParamOptionsDict, str]:
     """Parses question template parameters from the full question template.
 
