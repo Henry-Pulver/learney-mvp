@@ -1,11 +1,14 @@
 import datetime
+import math
 from collections import Counter
+from statistics import NormalDist
 from typing import List
 
 import numpy as np
-from django.db.models import Q
+from django.db.models import Max, Q
 
 from accounts.models import User
+from knowledge_maps.models import Concept
 from questions.inference import MCMCInference
 from questions.models import QuestionTemplate
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
@@ -92,3 +95,14 @@ def novelty_terms(
         output.append(novelty_term)
 
     return np.array(output)
+
+
+# TODO: Find a new home - this probably shouldn't live here
+def get_knowledge_level(knowledge_state: InferredKnowledgeState) -> int:
+    ks = knowledge_state.knowledge_state
+    return math.floor(NormalDist(mu=ks.mean, sigma=ks.std_dev).inv_cdf(0.05))
+
+
+def get_max_difficulty_level(concept: Concept) -> int:
+    """Gets the highest difficulty of any question on a concept."""
+    return concept.responses.all().aggregate(Max("difficulty"))["difficulty"]
