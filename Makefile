@@ -1,4 +1,6 @@
-pretty:
+pretty: black
+
+black:
 	black .
 
 build:
