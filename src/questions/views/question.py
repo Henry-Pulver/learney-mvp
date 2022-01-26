@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from questions.models import QuestionResponse, QuestionTemplate
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_set import QuestionSet
-from questions.question_selection import difficulty_terms, get_knowledge_level, novelty_terms
+from questions.question_selection import difficulty_terms, novelty_terms
 from questions.template_parser import parse_params, question_from_template, sample_params
 from questions.utils import get_today
 
@@ -24,7 +24,7 @@ class QuestionSetView(APIView):
             ks = InferredKnowledgeState.objects.get(user=user_id, concept__cytoscape_id=concept_id)
             question_set = QuestionSet.objects.create(
                 user=user_id,
-                level_at_start=get_knowledge_level(ks),
+                level_at_start=ks.knowledge_state,
                 session_id=session_id,
             )
 
