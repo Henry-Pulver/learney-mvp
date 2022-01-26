@@ -4,6 +4,7 @@ from accounts.models import User
 from learney_backend.base_models import UUIDModel
 from questions.models.question_set import QuestionSet
 from questions.models.question_template import QuestionTemplate
+from questions.template_parser import parse_params, question_from_template
 
 
 class QuestionResponse(UUIDModel):
@@ -46,3 +47,7 @@ class QuestionResponse(UUIDModel):
     time_asked = models.DateTimeField(
         auto_now_add=True, help_text="Time that the question was asked"
     )
+
+    @property
+    def json(self):
+        return question_from_template(self.question_template, self.question_params)
