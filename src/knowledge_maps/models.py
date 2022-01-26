@@ -9,6 +9,9 @@ class Concept(UUIDModel):  # Currently only used in the questions trial.
     name = models.CharField(
         max_length=256, help_text="Description of the knowledge map shown in top left corner"
     )
+    cytoscape_id = models.CharField(
+        max_length=4, help_text="The id of the concept in the questions map cytoscape map json file"
+    )
 
 
 class KnowledgeMapModel(models.Model):

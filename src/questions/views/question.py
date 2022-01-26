@@ -21,7 +21,7 @@ class QuestionSetView(APIView):
         if prev_set.exists():
             question_set = prev_set[0]
         else:
-            ks = InferredKnowledgeState.objects.get(user=user_id, concept=concept_id)
+            ks = InferredKnowledgeState.objects.get(user=user_id, concept__cytoscape_id=concept_id)
             question_set = QuestionSet.objects.create(
                 user=user_id,
                 level_at_start=get_knowledge_level(ks),
@@ -48,11 +48,11 @@ class QuestionView(APIView):
             ).selected_related("responses")
 
             knowledge_state = InferredKnowledgeState.objects.get(
-                user=user_id, concept=concept_id
+                user=user_id, concept__cytoscape_id=concept_id
             ).select_related("user")
 
             template_options = QuestionTemplate.objects.filter(
-                concept__id=concept_id
+                concept__cytoscape_id=concept_id
             ).prefetch_related("responses")
 
             # Calculate the weights. Once normalised, these form the categorical
