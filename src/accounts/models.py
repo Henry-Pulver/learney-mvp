@@ -19,3 +19,6 @@ class User(models.Model):
         related_name="checked_by",
         help_text="The content links that this user has checked",
     )
+    in_questions_trial = models.BooleanField(
+        default=False, help_text="Whether or not they're involved in the question trial"
+    )
