@@ -22,12 +22,15 @@ QUESTION_TEXT = r"""$$\mathbf{A}$$ is a $$4 \times 7$$ matrix, and $$\mathbf{B}$
 What shape matrix results from $$\mathbf{A}\times\mathbf{B}$$?
 """
 
-ANSWERS = {
-    "a": r"$$7 \times 7$$",
-    "b": r"$$4 \times 4$$",
-    "c": r"$$4 \times 7$$",
-    "d": r"$$16 \times 49$$",
-}
+CORRECT_ANSWER_LETTER = "a"
+CORRECT_ANSWER = r"$$7 \times 7$$"
+
+ANSWERS = [
+    r"$$7 \times 7$$",
+    r"$$4 \times 4$$",
+    r"$$4 \times 7$$",
+    r"$$16 \times 49$$",
+]
 
 FEEDBACK = r"""In matrix multiplication, the order of operation matters (i.e. A x B ≠ B x A).
 We take the rows of the first matrix, and multiply them by the columns of the second.

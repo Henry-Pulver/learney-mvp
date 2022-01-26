@@ -216,7 +216,6 @@ def test_answer_regex(data: Tuple[str, bool]) -> None:
 
 class TestQuestionFromTemplate(TestCase):
     TEMPLATE_ID = uuid4()
-    CORRECT_ANSWER = "a"
 
     @pytest.fixture(scope="class", autouse=True)
     def set_up(self):
@@ -226,7 +225,7 @@ class TestQuestionFromTemplate(TestCase):
             difficulty=0,
             question_type="test",
             template_text=QUESTION_TEMPLATE_STRING,
-            correct_answer=self.CORRECT_ANSWER,
+            correct_answer=CORRECT_ANSWER_LETTER,
         )
 
     def test_question_from_template__pre_sample(self):
@@ -238,13 +237,12 @@ class TestQuestionFromTemplate(TestCase):
         expected_question_dict = {
             "id": get_frontend_id(self.TEMPLATE_ID, PARAMS_DICT),
             "question_text": QUESTION_TEXT,
-            "answers": ANSWERS,
+            "correct_answer": CORRECT_ANSWER,
             "feedback": FEEDBACK,
             "params": PARAMS_DICT,
-            "correct_answer": self.CORRECT_ANSWER,
         }
         answers_order_randomised = question_dict.pop("answers_order_randomised")
-        assert all(q_letter in answers_order_randomised for q_letter in ["a", "b", "c", "d"])
+        assert all(answer in answers_order_randomised for answer in ANSWERS)
         assert question_dict == expected_question_dict
 
     def test_question_from_template__sample(self):
