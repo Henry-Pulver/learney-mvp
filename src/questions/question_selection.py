@@ -12,7 +12,7 @@ from questions.inference import MCMCInference
 from questions.models import QuestionTemplate
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_set import QuestionSet
-from questions.template import get_number_of_answers, number_of_questions
+from questions.template_parser import get_number_of_answers, number_of_questions
 from questions.utils import get_today
 
 # Ideal probability of correct

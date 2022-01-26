@@ -8,7 +8,7 @@ from questions.models import QuestionResponse, QuestionTemplate
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_set import QuestionSet
 from questions.question_selection import difficulty_terms, get_knowledge_level, novelty_terms
-from questions.template import parse_params, question_from_template, sample_params
+from questions.template_parser import parse_params, question_from_template, sample_params
 from questions.utils import get_today
 
 
@@ -30,7 +30,12 @@ class QuestionSetView(APIView):
 
         # TODO: Track with Mixpanel
 
-        return Response({"id": question_set.id}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "id": question_set.id,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class QuestionView(APIView):
@@ -70,6 +75,7 @@ class QuestionView(APIView):
                 ).exists()
 
             question = question_from_template(chosen_template.id, remaining_text, sampled_params)
+            question["correct_answer"] = chosen_template.correct_answer
 
             # Track the question was sent in the DB
             QuestionResponse.objects.create(

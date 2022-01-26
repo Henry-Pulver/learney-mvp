@@ -33,10 +33,12 @@ def question_from_template(
                 question_text += line + "\n"
             elif not says_feedback(line):  # skip the word 'feedback'
                 feedback += line + "\n"
+    answers_order_randomised = np.random.shuffle([a for a in answers.keys()])
     return {
         "id": get_frontend_id(template_id, sampled_params),
         "question_text": question_text,
         "answers": answers,
+        "answers_order_randomised": answers_order_randomised,
         "feedback": feedback,
         "params": sampled_params,
     }

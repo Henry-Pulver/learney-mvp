@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 
-from questions.template import *
+from questions.template_parser import *
 
 from .template_test_data import *
 
@@ -227,4 +227,8 @@ def test_question_from_template():
         "feedback": FEEDBACK,
         "params": PARAMS_DICT,
     }
+    assert all(
+        q_letter in question_dict.pop("answers_order_randomised")
+        for q_letter in ["a", "b", "c", "d"]
+    )
     assert question_dict == expected_question_dict
