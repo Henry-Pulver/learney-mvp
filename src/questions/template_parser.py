@@ -3,10 +3,10 @@ import re
 from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, List, Optional, Tuple
-from uuid import UUID
 
 import numpy as np
 
+from questions.models.question_template import QuestionTemplate
 from questions.utils import SampledParamsDict, get_frontend_id
 
 
@@ -18,10 +18,13 @@ ParamOptionsDict = Dict[str, List[Any]]
 
 
 def question_from_template(
-    template_id: UUID, template_text: str, sampled_params: SampledParamsDict
+    template: QuestionTemplate, sampled_params: Optional[SampledParamsDict] = None
 ) -> Dict[str, Any]:
     """Gets question dictionary from a template and set of sampled parameters."""
-    text_expanded = expand_params_in_text(template_text, sampled_params)
+    parsed_params, remaining_text = parse_params(template.template_text)
+    if sampled_params is None:
+        sampled_params = sample_params(parsed_params)
+    text_expanded = expand_params_in_text(remaining_text, sampled_params)
     question_text, answers, feedback, is_feedback = "", {}, "", False
     for index, line in enumerate(text_expanded.splitlines()):
         is_feedback = is_feedback or says_feedback(line)
@@ -33,12 +36,14 @@ def question_from_template(
                 question_text += line + "\n"
             elif not says_feedback(line):  # skip the word 'feedback'
                 feedback += line + "\n"
-    answers_order_randomised = np.random.shuffle([a for a in answers.keys()])
+    answers_order_randomised = [a for a in answers.keys()]
+    np.random.shuffle(answers_order_randomised)
     return {
-        "id": get_frontend_id(template_id, sampled_params),
+        "id": get_frontend_id(template.id, sampled_params),
         "question_text": question_text,
         "answers": answers,
         "answers_order_randomised": answers_order_randomised,
+        "correct_answer": template.correct_answer,
         "feedback": feedback,
         "params": sampled_params,
     }

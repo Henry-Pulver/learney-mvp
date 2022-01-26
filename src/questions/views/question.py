@@ -74,8 +74,7 @@ class QuestionView(APIView):
                     question_template=chosen_template, question_params=sampled_params
                 ).exists()
 
-            question = question_from_template(chosen_template.id, remaining_text, sampled_params)
-            question["correct_answer"] = chosen_template.correct_answer
+            question = question_from_template(chosen_template, sampled_params)
 
             # Track the question was sent in the DB
             QuestionResponse.objects.create(
