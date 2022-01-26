@@ -34,3 +34,13 @@ class QuestionSet(UUIDModel):
         help_text="Whether the highest level of the concept was achieved in this question set",
     )
     session_id = models.TextField(help_text="session_id of the session the response was from")
+
+    def json(self):
+        responses = self.responses.all().select_related("question_template__concept")
+        return {
+            "id": self.id,
+            "questions": [response.json for response in responses],
+            "answers_given": [response.response for response in responses],
+            "completed": self.completed,
+            "concept_id": responses[0].concept.cytoscape_id,
+        }

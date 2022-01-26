@@ -25,6 +25,7 @@ def question_from_template(
     if sampled_params is None:
         sampled_params = sample_params(parsed_params)
     text_expanded = expand_params_in_text(remaining_text, sampled_params)
+
     question_text, answers, feedback, is_feedback = "", {}, "", False
     for index, line in enumerate(text_expanded.splitlines()):
         is_feedback = is_feedback or says_feedback(line)
@@ -36,14 +37,15 @@ def question_from_template(
                 question_text += line + "\n"
             elif not says_feedback(line):  # skip the word 'feedback'
                 feedback += line + "\n"
+
     answers_order_randomised = [a for a in answers.keys()]
     np.random.shuffle(answers_order_randomised)
+
     return {
         "id": get_frontend_id(template.id, sampled_params),
         "question_text": question_text,
-        "answers": answers,
         "answers_order_randomised": answers_order_randomised,
-        "correct_answer": template.correct_answer,
+        "correct_answer": answers[template.correct_answer_letter],
         "feedback": feedback,
         "params": sampled_params,
     }

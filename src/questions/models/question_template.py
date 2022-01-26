@@ -30,7 +30,7 @@ class QuestionTemplate(UUIDModel):
         validators=[not_null],
         max_length=16384,
     )
-    correct_answer = models.CharField(
+    correct_answer_letter = models.CharField(
         max_length=1,
         help_text="Answer option (a, b, c or d) which is the correct answer to the question",
         blank=False,

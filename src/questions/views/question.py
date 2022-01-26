@@ -30,12 +30,7 @@ class QuestionSetView(APIView):
 
         # TODO: Track with Mixpanel
 
-        return Response(
-            {
-                "id": question_set.id,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return Response(question_set.json(), status=status.HTTP_200_OK)
 
 
 class QuestionView(APIView):
