@@ -35,6 +35,15 @@ class Migration(migrations.Migration):
                         max_length=4,
                     ),
                 ),
+                (
+                    "direct_prerequisites",
+                    models.ManyToManyField(
+                        help_text="The direct prerequisites of this concept",
+                        related_name="_knowledge_maps_concept_direct_prerequisites_+",
+                        related_query_name="direct_successor",
+                        to="knowledge_maps.Concept",
+                    ),
+                ),
             ],
             options={
                 "abstract": False,
