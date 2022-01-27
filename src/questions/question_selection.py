@@ -23,7 +23,7 @@ def select_question(
 ) -> Dict[str, Any]:
     """Select a question from possible questions for this concept."""
     template_options = QuestionTemplate.objects.filter(
-        concept__cytoscape_id=concept_id
+        concept__cytoscape_id=concept_id, active=True
     ).prefetch_related("responses")
 
     # If no mcmc object provided (this speeds up inference), make one

@@ -36,7 +36,7 @@ class QuestionTemplate(UUIDModel):
     )
 
     template_text = models.TextField(
-        help_text="Text for question template - generates full question",
+        help_text="Text for question template - generates full questions",
         blank=False,
         validators=[not_null],
         max_length=16384,
@@ -45,14 +45,10 @@ class QuestionTemplate(UUIDModel):
         max_length=1,
         help_text="Answer option (a, b, c or d) which is the correct answer to the question",
         choices=[
-            ("a", "a_lower"),
-            ("A", "A_upper"),
-            ("b", "b_lower"),
-            ("B", "B_upper"),
-            ("c", "c_lower"),
-            ("C", "C_upper"),
-            ("d", "d_lower"),
-            ("D", "D_upper"),
+            ("a", "Option a)"),
+            ("b", "Option b)"),
+            ("c", "Option c)"),
+            ("d", "Option d)"),
         ],
         blank=False,
     )
@@ -82,7 +78,7 @@ class QuestionTemplate(UUIDModel):
             if line:
                 regex = answer_regex(line)
                 if not is_feedback and regex is not None:
-                    answers[regex.groups()[0]] = regex.groups()[1]
+                    answers[regex.groups()[0].lower()] = regex.groups()[1]
                 elif not is_feedback:
                     question_text += line + "\n"
                 elif not says_feedback(line):  # skip the word 'feedback'
