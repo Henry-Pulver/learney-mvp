@@ -1,7 +1,11 @@
+from typing import Any, Dict, Tuple
+
+import numpy as np
 from django.db import models
 
 from accounts.models import User
 from learney_backend.base_models import UUIDModel
+from questions.inference import GaussianParams
 
 
 class QuestionSet(UUIDModel):
@@ -26,6 +30,12 @@ class QuestionSet(UUIDModel):
     level_at_start = models.IntegerField(
         help_text="The concept level the user started the question set at"
     )
+    initial_knowledge_mean = models.FloatField(
+        help_text="Mean of the user's knowledge state when they started the question set"
+    )
+    initial_knowledge_std_dev = models.FloatField(
+        help_text="Standard deviation of the user's knowledge state when they started the question set"
+    )
     levels_progressed = models.IntegerField(
         default=0, help_text="How many levels the user progressed in this question batch"
     )
@@ -35,7 +45,7 @@ class QuestionSet(UUIDModel):
     )
     session_id = models.TextField(help_text="session_id of the session the response was from")
 
-    def json(self):
+    def json(self) -> Dict[str, Any]:
         responses = self.responses.all().select_related("question_template__concept")
         return {
             "id": self.id,
@@ -44,3 +54,18 @@ class QuestionSet(UUIDModel):
             "completed": self.completed,
             "concept_id": responses[0].concept.cytoscape_id,
         }
+
+    @property
+    def training_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        difficulties = np.array([response.template.difficulty for response in self.responses])
+        guess_probs = np.array(
+            [1 / response.template.number_of_answers for response in self.responses]
+        )
+        correct = np.array([response.correct for response in self.responses])
+        return difficulties, guess_probs, correct
+
+    @property
+    def initial_knowledge_state(self) -> GaussianParams:
+        return GaussianParams(
+            mean=self.initial_knowledge_mean, std_dev=self.initial_knowledge_std_dev
+        )

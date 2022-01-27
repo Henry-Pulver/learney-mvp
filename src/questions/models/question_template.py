@@ -2,6 +2,7 @@ from django.db import models
 
 from knowledge_maps.models import Concept
 from learney_backend.base_models import UUIDModel
+from questions.template_parser import answer_regex
 from questions.validators import integer_is_positive, not_null
 
 
@@ -41,6 +42,10 @@ class QuestionTemplate(UUIDModel):
         "broken questions should be deactivated until they're fixed!",
     )
     last_updated = models.DateTimeField(auto_now=True)
+
+    @property
+    def number_of_answers(self) -> int:
+        return sum(answer_regex(line) is not None for line in self.template_text.splitlines())
 
     class Meta:
         constraints = [

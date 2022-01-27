@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from django.db import models
 
 from accounts.models import User
@@ -33,21 +35,22 @@ class QuestionResponse(UUIDModel):
     response = models.TextField(
         max_length=1024,
         null=True,
+        default=None,
         help_text="Response given to the question. Null if yet to be answered",
     )
     correct = models.BooleanField(
-        null=True, help_text="Was the response correct? Null if not yet answered."
+        default=None, null=True, help_text="Was the response correct? Null if not yet answered."
     )
 
     session_id = models.TextField(help_text="session_id of the session the response was from")
-    time_to_respond = models.TimeField(
+    time_to_respond = models.DurationField(
         null=True,
-        help_text="Time it took for the user to respond to the question. Measured on the backend",
+        help_text="Time it took for the user to respond to the question. Measured on the backend. Currently measured, but not used",
     )
     time_asked = models.DateTimeField(
         auto_now_add=True, help_text="Time that the question was asked"
     )
 
     @property
-    def json(self):
+    def json(self) -> Dict[str, Any]:
         return question_from_template(self.question_template, self.question_params)

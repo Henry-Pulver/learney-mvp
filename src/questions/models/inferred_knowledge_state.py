@@ -2,6 +2,7 @@ import math
 from statistics import NormalDist
 
 from django.db import models
+from django.db.models import UniqueConstraint
 
 from accounts.models import User
 from knowledge_maps.models import Concept
@@ -11,7 +12,10 @@ from questions.inference import GaussianParams
 
 class InferredKnowledgeState(UUIDModel):
     user = models.ForeignKey(
-        User, help_text="User who this knowledge state refers to", on_delete=models.CASCADE
+        User,
+        help_text="User who this knowledge state refers to",
+        on_delete=models.CASCADE,
+        related_name="knowledge_states",
     )
     concept = models.ForeignKey(
         Concept,
@@ -38,3 +42,6 @@ class InferredKnowledgeState(UUIDModel):
     def knowledge_level(self) -> int:
         ks = self.knowledge_state
         return math.floor(NormalDist(mu=ks.mean, sigma=ks.std_dev).inv_cdf(0.05))
+
+    class Meta:
+        constraints = [UniqueConstraint(fields=["user", "concept"], name="unique_user_concept")]

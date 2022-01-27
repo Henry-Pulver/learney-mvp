@@ -14,7 +14,8 @@ class Concept(UUIDModel):  # Currently only used in the questions trial.
         max_length=4, help_text="The id of the concept in the questions map cytoscape map json file"
     )
 
-    def get_max_difficulty_level(self) -> int:
+    @property
+    def max_difficulty_level(self) -> int:
         """Gets the highest difficulty of any question on a concept."""
         return self.question_templates.all().aggregate(Max("difficulty"))["difficulty"]
 
