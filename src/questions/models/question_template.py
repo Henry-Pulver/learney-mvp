@@ -1,8 +1,18 @@
+from typing import Any, Dict, Optional
+
+import numpy as np
 from django.db import models
 
 from knowledge_maps.models import Concept
 from learney_backend.base_models import UUIDModel
-from questions.template_parser import answer_regex
+from questions.template_parser import (
+    answer_regex,
+    expand_params_in_text,
+    parse_params,
+    sample_params,
+    says_feedback,
+)
+from questions.utils import SampledParamsDict, get_frontend_id
 from questions.validators import integer_is_positive, not_null
 
 
@@ -46,6 +56,39 @@ class QuestionTemplate(UUIDModel):
     @property
     def number_of_answers(self) -> int:
         return sum(answer_regex(line) is not None for line in self.template_text.splitlines())
+
+    def to_question_json(
+        self, sampled_params: Optional[SampledParamsDict] = None
+    ) -> Dict[str, Any]:
+        """Gets question dictionary from a template and set of sampled parameters."""
+        parsed_params, remaining_text = parse_params(self.template_text)
+        if sampled_params is None:
+            sampled_params = sample_params(parsed_params)
+        text_expanded = expand_params_in_text(remaining_text, sampled_params)
+
+        question_text, answers, feedback, is_feedback = "", {}, "", False
+        for index, line in enumerate(text_expanded.splitlines()):
+            is_feedback = is_feedback or says_feedback(line)
+            if line:
+                regex = answer_regex(line)
+                if not is_feedback and regex is not None:
+                    answers[regex.groups()[0]] = regex.groups()[1]
+                elif not is_feedback:
+                    question_text += line + "\n"
+                elif not says_feedback(line):  # skip the word 'feedback'
+                    feedback += line + "\n"
+
+        answers_order_randomised = [a for a in answers.keys()]
+        np.random.shuffle(answers_order_randomised)
+
+        return {
+            "id": get_frontend_id(self.id, sampled_params),
+            "question_text": question_text,
+            "answers_order_randomised": answers_order_randomised,
+            "correct_answer": answers[self.correct_answer_letter],
+            "feedback": feedback,
+            "params": sampled_params,
+        }
 
     class Meta:
         constraints = [

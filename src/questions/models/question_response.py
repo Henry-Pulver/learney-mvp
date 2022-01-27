@@ -6,7 +6,6 @@ from accounts.models import User
 from learney_backend.base_models import UUIDModel
 from questions.models.question_set import QuestionSet
 from questions.models.question_template import QuestionTemplate
-from questions.template_parser import question_from_template
 
 
 class QuestionResponse(UUIDModel):
@@ -53,4 +52,4 @@ class QuestionResponse(UUIDModel):
 
     @property
     def json(self) -> Dict[str, Any]:
-        return question_from_template(self.question_template, self.question_params)
+        return self.question_template.to_question_json(self.question_params)

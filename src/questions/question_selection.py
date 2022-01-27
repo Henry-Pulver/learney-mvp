@@ -9,12 +9,7 @@ from questions.inference import MCMCInference
 from questions.models import QuestionTemplate
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_set import QuestionSet
-from questions.template_parser import (
-    number_of_questions,
-    parse_params,
-    question_from_template,
-    sample_params,
-)
+from questions.template_parser import number_of_questions, parse_params, sample_params
 from questions.utils import get_today
 
 # Ideal probability of correct
@@ -55,7 +50,7 @@ def select_question(
             question_template=chosen_template, question_params=sampled_params
         ).exists()
 
-    return question_from_template(chosen_template, sampled_params)
+    return chosen_template.to_question_json(sampled_params)
 
 
 def prob_correct_to_weighting(correct_probs: np.ndarray) -> np.ndarray:

@@ -230,10 +230,7 @@ class TestQuestionFromTemplate(TestCase):
 
     def test_question_from_template__pre_sample(self):
         _, remaining_text = parse_params(QUESTION_TEMPLATE_STRING)
-        question_dict = question_from_template(
-            template=self.template,
-            sampled_params=PARAMS_DICT,
-        )
+        question_dict = self.template.to_question_json(sampled_params=PARAMS_DICT)
         expected_question_dict = {
             "id": get_frontend_id(self.TEMPLATE_ID, PARAMS_DICT),
             "question_text": QUESTION_TEXT,
@@ -246,4 +243,4 @@ class TestQuestionFromTemplate(TestCase):
         assert question_dict == expected_question_dict
 
     def test_question_from_template__sample(self):
-        question_from_template(self.template)
+        self.template.to_question_json()
