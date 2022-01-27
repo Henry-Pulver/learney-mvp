@@ -13,11 +13,20 @@ class Concept(UUIDModel):  # Currently only used in the questions trial.
     cytoscape_id = models.CharField(
         max_length=4, help_text="The id of the concept in the questions map cytoscape map json file"
     )
+    direct_prerequisites = models.ManyToManyField(
+        "self",
+        related_name="direct_successors",
+        related_query_name="direct_successor",
+        help_text="The direct prerequisites of this concept",
+    )
 
     @property
     def max_difficulty_level(self) -> int:
         """Gets the highest difficulty of any question on a concept."""
         return self.question_templates.all().aggregate(Max("difficulty"))["difficulty"]
+
+    def __str__(self):
+        return self.name
 
 
 class KnowledgeMapModel(models.Model):
@@ -46,3 +55,6 @@ class KnowledgeMapModel(models.Model):
     )
 
     last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title or self.url_extension

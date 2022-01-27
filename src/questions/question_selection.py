@@ -7,7 +7,6 @@ from django.db.models import Q
 from accounts.models import User
 from questions.inference import MCMCInference
 from questions.models import QuestionTemplate
-from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_set import QuestionSet
 from questions.template_parser import number_of_questions, parse_params, sample_params
 from questions.utils import get_today

@@ -44,6 +44,16 @@ class QuestionTemplate(UUIDModel):
     correct_answer_letter = models.CharField(
         max_length=1,
         help_text="Answer option (a, b, c or d) which is the correct answer to the question",
+        choices=[
+            ("a", "a_lower"),
+            ("A", "A_upper"),
+            ("b", "b_lower"),
+            ("B", "B_upper"),
+            ("c", "c_lower"),
+            ("C", "C_upper"),
+            ("d", "d_lower"),
+            ("D", "D_upper"),
+        ],
         blank=False,
     )
     active = models.BooleanField(
@@ -89,11 +99,3 @@ class QuestionTemplate(UUIDModel):
             "feedback": feedback,
             "params": sampled_params,
         }
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(correct_answer__in=["a", "A", "b", "B", "c", "C", "d", "D"]),
-                name="correct_answer_letter",
-            )
-        ]
