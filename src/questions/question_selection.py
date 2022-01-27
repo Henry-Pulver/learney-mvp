@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import List
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 from django.db.models import Q
@@ -9,11 +9,53 @@ from questions.inference import MCMCInference
 from questions.models import QuestionTemplate
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_set import QuestionSet
-from questions.template_parser import get_number_of_answers, number_of_questions
+from questions.template_parser import (
+    number_of_questions,
+    parse_params,
+    question_from_template,
+    sample_params,
+)
 from questions.utils import get_today
 
 # Ideal probability of correct
 IDEAL_DIFF = 0.85
+
+
+def select_question(
+    concept_id: str,
+    question_set: QuestionSet,
+    user: User,
+    mcmc: Optional[MCMCInference] = None,
+) -> Dict[str, Any]:
+    """Select a question from possible questions for this concept."""
+    template_options = QuestionTemplate.objects.filter(
+        concept__cytoscape_id=concept_id
+    ).prefetch_related("responses")
+
+    # If no mcmc object provided (this speeds up inference), make one
+    mcmc = mcmc or MCMCInference(
+        user.knowledge_states.all().get(concept=concept_id).knowledge_state
+    )
+    # Calculate the weights. Once normalised, these form the categorical
+    #  distribution over question templates
+    question_weights = difficulty_terms(template_options, mcmc) * novelty_terms(
+        template_options, user, question_set
+    )
+
+    # Choose the template that's going to be used!
+    question_seen_before = True
+    while question_seen_before:
+        chosen_template = np.random.choice(
+            template_options, p=question_weights / np.mean(question_weights)
+        )
+        question_param_options, remaining_text = parse_params(chosen_template.template_text)
+        sampled_params = sample_params(question_param_options)
+        # Make 100% sure it's not been seen already in this question set!
+        question_seen_before = question_set.responses.filter(
+            question_template=chosen_template, question_params=sampled_params
+        ).exists()
+
+    return question_from_template(chosen_template, sampled_params)
 
 
 def prob_correct_to_weighting(correct_probs: np.ndarray) -> np.ndarray:
@@ -28,14 +70,12 @@ def prob_correct_to_weighting(correct_probs: np.ndarray) -> np.ndarray:
 
 
 def difficulty_terms(
-    template_options: List[QuestionTemplate], knowledge_state: InferredKnowledgeState
+    template_options: List[QuestionTemplate],
+    mcmc: MCMCInference,
 ) -> np.array:
     """Calculate 'difficulty' terms for all template options to weight different templates."""
-    guess_probs = np.array(
-        [1 / get_number_of_answers(template.template_text) for template in template_options]
-    )
+    guess_probs = np.array([1 / template.number_of_answers for template in template_options])
     difficulties = np.array([template.difficulty for template in template_options])
-    mcmc = MCMCInference(knowledge_state.knowledge_state)
     prob_correct = mcmc.prob_correct(difficulties=difficulties, guess_probs=guess_probs)
     return prob_correct_to_weighting(prob_correct)
 
