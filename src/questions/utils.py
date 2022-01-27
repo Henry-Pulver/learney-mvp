@@ -16,4 +16,4 @@ def get_frontend_id(template_id: UUID, params_dict: SampledParamsDict) -> str:
 
 def uuid_and_params_from_frontend_id(frontend_id: str) -> Tuple[UUID, SampledParamsDict]:
     params_string, template_id = frontend_id.split("|")
-    return UUID(template_id), json.loads(params_string) if params_string else {}
+    return UUID(template_id), json.loads(params_string.replace("'", '"')) if params_string else {}

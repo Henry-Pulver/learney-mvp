@@ -2,11 +2,11 @@ from collections import Counter
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 
 from accounts.models import User
 from questions.inference import MCMCInference
-from questions.models import QuestionTemplate
+from questions.models import QuestionResponse, QuestionTemplate
 from questions.models.question_set import QuestionSet
 from questions.template_parser import number_of_questions, parse_params, sample_params
 from questions.utils import get_today
@@ -40,7 +40,7 @@ def select_question(
     question_seen_before = True
     while question_seen_before:
         chosen_template = np.random.choice(
-            template_options, p=question_weights / np.mean(question_weights)
+            template_options, p=question_weights / np.sum(question_weights)
         )
         question_param_options, remaining_text = parse_params(chosen_template.template_text)
         sampled_params = sample_params(question_param_options)
@@ -82,14 +82,16 @@ def novelty_terms(
     num_of_questions = [
         number_of_questions(template.template_text) for template in template_options
     ]
-    questions_to_avoid = (
+    questions_to_avoid: QuerySet[QuestionResponse] = (
         user.responses.all()
-        .filter(Q(time_asked__gte=get_today()) | Q(correct=True))
+        .filter(
+            Q(time_asked__gte=get_today()) | Q(correct=True)
+        )  # Questions asked today or answered correct ever
         .select_related("question_set")
         .select_related("question_template")
     )
 
-    set_q_types = [question.question_type for question in question_set.responses]
+    set_q_types = [question.question_type for question in question_set.responses.all()]
     q_type_counter = Counter(set_q_types)
 
     for option, n_qs in zip(template_options, num_of_questions):
@@ -99,7 +101,7 @@ def novelty_terms(
         template_qs_to_avoid = questions_to_avoid.filter(question_template__id=option.id)
 
         # [1.1] Worst are questions from the same set - avoid like the plague
-        set_qs_to_avoid = template_qs_to_avoid.intersection(question_set)
+        set_qs_to_avoid = template_qs_to_avoid & question_set.responses.all()
         num_set_qs_to_avoid = set_qs_to_avoid.count()
         if num_set_qs_to_avoid > 0:
             novelty_term *= 0.99 * np.exp(-5 * num_set_qs_to_avoid / n_qs) + 0.01
@@ -112,9 +114,10 @@ def novelty_terms(
         novelty_term *= 0.9 * np.exp(-2.5 * distinct_qs_asked / n_qs) + 0.1
 
         # [2.0] Lastly avoid giving all the same type of question in a set
-        novelty_term *= 1 - np.exp(
-            10 * ((q_type_counter[option.question_type] / len(set_q_types)) - 1)
-        )
+        if len(set_q_types) > 1:
+            novelty_term *= 1 - np.exp(
+                10 * ((q_type_counter[option.question_type] / len(set_q_types)) - 1)
+            )
 
         output.append(novelty_term)
 
