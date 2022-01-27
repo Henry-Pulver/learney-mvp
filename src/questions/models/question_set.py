@@ -4,6 +4,7 @@ import numpy as np
 from django.db import models
 
 from accounts.models import User
+from knowledge_maps.models import Concept
 from learney_backend.base_models import UUIDModel
 from questions.inference import GaussianParams
 
@@ -13,6 +14,12 @@ class QuestionSet(UUIDModel):
         User,
         related_name="question_responses",
         help_text="User whose response this is",
+        on_delete=models.CASCADE,
+    )
+    concept = models.ForeignKey(
+        Concept,
+        related_name="question_sets",
+        help_text="The concept that the question set corresponds to",
         on_delete=models.CASCADE,
     )
 
@@ -52,7 +59,7 @@ class QuestionSet(UUIDModel):
             "questions": [response.json for response in responses],
             "answers_given": [response.response for response in responses],
             "completed": self.completed,
-            "concept_id": responses[0].concept.cytoscape_id,
+            "concept_id": self.concept.cytoscape_id,
         }
 
     @property

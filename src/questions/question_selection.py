@@ -28,7 +28,7 @@ def select_question(
 
     # If no mcmc object provided (this speeds up inference), make one
     mcmc = mcmc or MCMCInference(
-        user.knowledge_states.all().get(concept=concept_id).knowledge_state
+        user.knowledge_states.all().get(concept__cytoscape_id=concept_id).knowledge_state
     )
     # Calculate the weights. Once normalised, these form the categorical
     #  distribution over question templates

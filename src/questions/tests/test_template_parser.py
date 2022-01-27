@@ -5,8 +5,10 @@ import pytest
 from django.test import TestCase
 
 from knowledge_maps.models import Concept
+from questions.models.question_template import QuestionTemplate
 from questions.template_parser import *
 
+from ..utils import get_frontend_id
 from .template_test_data import *
 
 INVALID_PARAM_LINES = [
@@ -215,32 +217,40 @@ def test_answer_regex(data: Tuple[str, bool]) -> None:
 
 
 class TestQuestionFromTemplate(TestCase):
-    TEMPLATE_ID = uuid4()
-
     @pytest.fixture(scope="class", autouse=True)
     def set_up(self):
-        self.template = QuestionTemplate(
-            id=self.TEMPLATE_ID,
-            concept=Concept(name="test"),
-            difficulty=0,
-            question_type="test",
-            template_text=QUESTION_TEMPLATE_STRING,
-            correct_answer=CORRECT_ANSWER_LETTER,
-        )
+        self.template_ids = [uuid4(), uuid4()]
+        self.templates = [
+            QuestionTemplate(
+                id=t_id,
+                concept=Concept(name="test"),
+                difficulty=0,
+                question_type="test",
+                template_text=data_class.QUESTION_TEMPLATE_STRING,
+                correct_answer_letter=data_class.CORRECT_ANSWER_LETTER,
+            )
+            for data_class, t_id in zip(
+                [QuestionWithParams, QuestionWithoutParams], self.template_ids
+            )
+        ]
 
     def test_question_from_template__pre_sample(self):
-        _, remaining_text = parse_params(QUESTION_TEMPLATE_STRING)
-        question_dict = self.template.to_question_json(sampled_params=PARAMS_DICT)
-        expected_question_dict = {
-            "id": get_frontend_id(self.TEMPLATE_ID, PARAMS_DICT),
-            "question_text": QUESTION_TEXT,
-            "correct_answer": CORRECT_ANSWER,
-            "feedback": FEEDBACK,
-            "params": PARAMS_DICT,
-        }
-        answers_order_randomised = question_dict.pop("answers_order_randomised")
-        assert all(answer in answers_order_randomised for answer in ANSWERS)
-        assert question_dict == expected_question_dict
+        for count, data_class in enumerate([QuestionWithParams, QuestionWithoutParams]):
+            _, remaining_text = parse_params(data_class.QUESTION_TEMPLATE_STRING)
+            question_dict = self.templates[count].to_question_json(
+                sampled_params=data_class.PARAMS_DICT
+            )
+            expected_question_dict = {
+                "id": get_frontend_id(self.template_ids[count], data_class.PARAMS_DICT),
+                "question_text": data_class.QUESTION_TEXT,
+                "correct_answer": data_class.CORRECT_ANSWER,
+                "feedback": data_class.FEEDBACK,
+                "params": data_class.PARAMS_DICT,
+            }
+            answers_order_randomised = question_dict.pop("answers_order_randomised")
+            assert all(answer in answers_order_randomised for answer in data_class.ANSWERS)
+            assert question_dict == expected_question_dict
 
     def test_question_from_template__sample(self):
-        self.template.to_question_json()
+        for template in self.templates:
+            template.to_question_json()

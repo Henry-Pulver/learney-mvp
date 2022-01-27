@@ -84,14 +84,14 @@ class QuestionTemplate(UUIDModel):
                 elif not says_feedback(line):  # skip the word 'feedback'
                     feedback += line + "\n"
 
-        answers_order_randomised = [a for a in answers.keys()]
+        answers_order_randomised = [a for a in answers.values()]
         np.random.shuffle(answers_order_randomised)
 
         return {
             "id": get_frontend_id(self.id, sampled_params),
-            "question_text": question_text,
+            "question_text": question_text[:-1] if question_text else "",
             "answers_order_randomised": answers_order_randomised,
             "correct_answer": answers[self.correct_answer_letter],
-            "feedback": feedback,
+            "feedback": feedback[:-1] if feedback else "",
             "params": sampled_params,
         }

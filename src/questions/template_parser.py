@@ -80,7 +80,7 @@ def parse_params(template_text: str) -> Tuple[ParamOptionsDict, str]:
         if is_param_line(line):
             param_name, possible_values = parse_param_line(line)
             params[param_name] = possible_values
-        elif params and line:  # Allows empty lines @ start & between params and question
+        elif line:  # If not empty & not a parameter line, must be question text
             template_text = "\n".join(template_text.splitlines()[count:])
             return params, template_text
     raise ParsingError(f"Following question template invalid - missing question!\n{template_text}")
