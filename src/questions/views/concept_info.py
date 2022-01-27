@@ -26,7 +26,7 @@ class ConceptInfoView(APIView):
         return Response(
             {
                 "level": ks.knowledge_level,
-                "max_level": ks.concept.get_max_difficulty_level(),
+                "max_level": ks.concept.max_difficulty_level,
             },
             status=status.HTTP_200_OK,
         )

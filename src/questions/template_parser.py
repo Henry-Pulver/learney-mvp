@@ -51,10 +51,6 @@ def question_from_template(
     }
 
 
-def get_number_of_answers(template_text: str) -> int:
-    return sum(answer_regex(line) is not None for line in template_text.splitlines())
-
-
 def says_feedback(line: str) -> bool:
     return re.search(r"^\s*[fF]eedback:?\s*$", line) is not None
 
