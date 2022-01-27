@@ -23,7 +23,7 @@ class Concept(UUIDModel):  # Currently only used in the questions trial.
     @property
     def max_difficulty_level(self) -> int:
         """Gets the highest difficulty of any question on a concept."""
-        return self.question_templates.all().aggregate(Max("difficulty"))["difficulty"]
+        return self.question_templates.all().aggregate(Max("difficulty"))["difficulty__max"]
 
     def __str__(self):
         return self.name
