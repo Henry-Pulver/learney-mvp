@@ -1,4 +1,3 @@
-import math
 from statistics import NormalDist
 
 from django.db import models
@@ -39,9 +38,8 @@ class InferredKnowledgeState(UUIDModel):
         return GaussianParams(mean=self.mean, std_dev=self.std_dev)
 
     @property
-    def knowledge_level(self) -> int:
-        ks = self.knowledge_state
-        return math.floor(NormalDist(mu=ks.mean, sigma=ks.std_dev).inv_cdf(0.05))
+    def knowledge_level(self) -> float:
+        return self.knowledge_state.level
 
     class Meta:
         constraints = [UniqueConstraint(fields=["user", "concept"], name="unique_user_concept")]

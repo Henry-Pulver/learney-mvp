@@ -17,31 +17,43 @@ class QuestionResponseView(APIView):
         concept_id = request.data["concept_id"]
 
         # Save the response in the DB
-        q_response = (
-            QuestionResponse.objects.filter(
-                user=request.data["user_id"],
-                question_set=request.data["question_set"],
-                correct=None,
-            )
-            .latest("time_asked")
-            .prefetch_related("user__knowledge_states__concept")
-            .prefetch_related("question_set__responses")
+        q_response: QuestionResponse = QuestionResponse.objects.filter(
+            user=request.data["user_id"],
+            question_set=request.data["question_set"],
+            correct=None,
         )
         q_response.update(
             correct=request.data["correct"],
             response=request.data["response"],
-            time_to_respond=datetime.utcnow().replace(tzinfo=pytz.utc) - q_response.timestamp,
+            time_to_respond=datetime.utcnow().replace(tzinfo=pytz.utc) - q_response[0].time_asked,
         )
+        q_response = (
+            QuestionResponse.objects.filter(
+                user=request.data["user_id"],
+                question_set=request.data["question_set"],
+                correct=request.data["correct"],
+            )
+            .prefetch_related("user__knowledge_states__concept")
+            .prefetch_related("question_set__responses")
+            .latest("time_asked")
+        )
+        q_response.correct = request.data["correct"]
+        q_response.response = request.data["response"]
+        q_response.time_to_respond = (
+            datetime.utcnow().replace(tzinfo=pytz.utc) - q_response.time_asked
+        )
+        q_response.save()
 
         # Infer new knowledge state
-        guess_probs, difficulties, correct = q_response.question_set.training_data
-        mcmc = MCMCInference(q_response.initial_knowledge_state)
-        mcmc.run_mcmc_inference(difficulties, guess_probs, correct)
+        difficulties, guess_probs, correct = q_response.question_set.training_data
+        mcmc = MCMCInference(q_response.question_set.initial_knowledge_state)
+        mcmc.run_mcmc_inference(difficulties=difficulties, guess_probs=guess_probs, answers=correct)
         new_theta = mcmc.inferred_theta_params
 
         # Update inferredKnowledgeState in the DB
-        prev_ks = q_response.user.knowledge_states.all().get(concept=concept_id)
+        prev_ks = q_response.user.knowledge_states.all().filter(concept__cytoscape_id=concept_id)
         prev_ks.update(mean=new_theta.mean, std_dev=new_theta.std_dev)
+        prev_ks = prev_ks[0]
 
         # Is the question_set completed?
         concept_completed = prev_ks.knowledge_level > prev_ks.concept.max_difficulty_level
@@ -60,17 +72,19 @@ class QuestionResponseView(APIView):
 
         if completed:
             # Update stored data on the question set
-            q_response.question_set.update(
-                completed=completed,
-                levels_progressed=prev_ks.knowledge_level - q_response.initial_knowledge_state,
-                concept_completed=concept_completed,
+            q_response.question_set.completed = completed
+            q_response.question_set.levels_progressed = (
+                prev_ks.knowledge_level - q_response.question_set.initial_knowledge_state.level
             )
+            q_response.question_set.concept_completed = concept_completed
+            q_response.question_set.save()
         else:
             # Pick a new question and send it back
             response_payload["next_question"] = select_question(
                 concept_id=concept_id,
                 question_set=q_response.question_set,
                 user=q_response.user,
+                session_id=request.data["session_id"],
                 mcmc=mcmc,
             )
 

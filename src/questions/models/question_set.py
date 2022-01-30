@@ -64,11 +64,13 @@ class QuestionSet(UUIDModel):
 
     @property
     def training_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        difficulties = np.array([response.template.difficulty for response in self.responses])
-        guess_probs = np.array(
-            [1 / response.template.number_of_answers for response in self.responses]
+        difficulties = np.array(
+            [response.question_template.difficulty for response in self.responses.all()]
         )
-        correct = np.array([response.correct for response in self.responses])
+        guess_probs = np.array(
+            [1 / response.question_template.number_of_answers for response in self.responses.all()]
+        )
+        correct = np.array([response.correct for response in self.responses.all()])
         return difficulties, guess_probs, correct
 
     @property

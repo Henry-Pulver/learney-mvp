@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from statistics import NormalDist
 from typing import Dict, Optional
 from warnings import warn
 
@@ -18,6 +19,11 @@ class GaussianParams:
 
     def __post_init__(self):
         assert self.std_dev >= 0
+        self._dist = NormalDist(mu=self.mean, sigma=self.std_dev)
+
+    @property
+    def level(self) -> float:
+        return max(self._dist.inv_cdf(0.05), 0)
 
 
 # This is the 'discrimination' parameter, how steep the logistic curve is. This has been
@@ -30,7 +36,7 @@ MISTAKE_PROB = 0.05
 
 # MCMC parameters.
 # The number of warmup samples to take to reach steady-state
-MCMC_NUM_WARMUP_SAMPLES = 5000
+MCMC_NUM_WARMUP_SAMPLES = 2000
 # The number of usable samples to take to measure the steady-state distribution
 MCMC_NUM_SAMPLES = 1000
 
@@ -87,12 +93,13 @@ class MCMCInference:
             num_samples: number of MCMC samples to take to approximate the distribution
         """
         assert num_samples > 0, f"Number of samples ({num_samples}) must be >0"
-        assert all(guess_probs >= 0) and all(
-            guess_probs <= 1
-        ), "`guess_probs` probabilities aren't all valid probability values (0 < p < 1)"
+        assert all(guess_probs >= 0) and all(guess_probs <= 1), (
+            f"`guess_probs` probabilities aren't all valid probability values (0 < p < 1)\n"
+            f"guess_probs: {guess_probs}"
+        )
         assert all(
             (answers == 0) + (answers == 1)
-        ), "`guess_probs` probabilities aren't all valid probability values (0 < p < 1)"
+        ), f"`answers` aren't all either 0 or 1\nanswers: {answers}"
         assert difficulties.shape == guess_probs.shape == answers.shape, (
             f"Shapes of arrays (difficulties, guess_probs, answers) aren't all the same: "
             f"difficulties: {difficulties.shape}, guess_probs: {guess_probs.shape}, answers: {answers.shape}"

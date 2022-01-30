@@ -19,6 +19,7 @@ def select_question(
     concept_id: str,
     question_set: QuestionSet,
     user: User,
+    session_id: str,
     mcmc: Optional[MCMCInference] = None,
 ) -> Dict[str, Any]:
     """Select a question from possible questions for this concept."""
@@ -48,6 +49,16 @@ def select_question(
         question_seen_before = question_set.responses.filter(
             question_template=chosen_template, question_params=sampled_params
         ).exists()
+
+    # Track the question was sent in the DB
+    QuestionResponse.objects.create(
+        user=user,
+        question_template=chosen_template,
+        question_params=sampled_params,
+        question_set=question_set,
+        session_id=session_id,
+        time_to_respond=None,
+    )
 
     return chosen_template.to_question_json(sampled_params)
 
@@ -91,7 +102,9 @@ def novelty_terms(
         .select_related("question_template")
     )
 
-    set_q_types = [question.question_type for question in question_set.responses.all()]
+    set_q_types = [
+        question.question_template.question_type for question in question_set.responses.all()
+    ]
     q_type_counter = Counter(set_q_types)
 
     for option, n_qs in zip(template_options, num_of_questions):
@@ -105,7 +118,7 @@ def novelty_terms(
         num_set_qs_to_avoid = set_qs_to_avoid.count()
         if num_set_qs_to_avoid > 0:
             novelty_term *= 0.99 * np.exp(-5 * num_set_qs_to_avoid / n_qs) + 0.01
-            template_qs_to_avoid.exclude(set_qs_to_avoid)
+            template_qs_to_avoid.difference(set_qs_to_avoid)
 
         # [1.2] Then are questions asked today or correct from the past
         distinct_qs_asked = (
@@ -114,9 +127,9 @@ def novelty_terms(
         novelty_term *= 0.9 * np.exp(-2.5 * distinct_qs_asked / n_qs) + 0.1
 
         # [2.0] Lastly avoid giving all the same type of question in a set
-        if len(set_q_types) > 1:
+        if len(set_q_types) > 3:
             novelty_term *= 1 - np.exp(
-                10 * ((q_type_counter[option.question_type] / len(set_q_types)) - 1)
+                -10 * ((q_type_counter[option.question_type] / len(set_q_types)) - 1) + 0.1
             )
 
         output.append(novelty_term)

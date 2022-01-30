@@ -3,11 +3,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from questions.models import QuestionResponse, QuestionTemplate
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_set import QuestionSet
 from questions.question_selection import select_question
-from questions.utils import get_today, uuid_and_params_from_frontend_id
+from questions.utils import get_today
 
 
 class QuestionSetView(APIView):
@@ -46,19 +45,14 @@ class QuestionSetView(APIView):
         question_set_json = question_set.json()
 
         if len(question_set_json["questions"]) == 0:
-            question = select_question(concept_id, question_set, ks.user)
-            chosen_template_id, sampled_params = uuid_and_params_from_frontend_id(question["id"])
-
-            # Track the question was sent in the DB
-            QuestionResponse.objects.create(
-                user=ks.user,
-                question_template=QuestionTemplate.objects.get(id=chosen_template_id),
-                question_params=sampled_params,
-                question_set=question_set,
-                session_id=request.GET["session_id"],
-                time_to_respond=None,
+            question_set_json["questions"].append(
+                select_question(
+                    concept_id=concept_id,
+                    question_set=question_set,
+                    session_id=session_id,
+                    user=ks.user,
+                )
             )
-            question_set_json["questions"].append(question)
 
         return Response(question_set_json, status=status.HTTP_200_OK)
 
@@ -76,17 +70,11 @@ class QuestionView(APIView):
                 "user"
             ).get(user=user_id, concept__cytoscape_id=concept_id)
 
-            question = select_question(concept_id, question_set, knowledge_state.user)
-            chosen_template_id, sampled_params = uuid_and_params_from_frontend_id(question["id"])
-
-            # Track the question was sent in the DB
-            QuestionResponse.objects.create(
-                user=knowledge_state.user,
-                question_template=QuestionTemplate.objects.get(id=chosen_template_id),
-                question_params=sampled_params,
+            question = select_question(
+                concept_id=concept_id,
                 question_set=question_set,
+                user=knowledge_state.user,
                 session_id=request.GET["session_id"],
-                time_to_respond=None,
             )
 
             # TODO: Track with Mixpanel
