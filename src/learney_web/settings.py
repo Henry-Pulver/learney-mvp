@@ -8,7 +8,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import json
 import os
 from pathlib import Path
 
@@ -16,6 +16,7 @@ import requests
 import yaml
 
 import sentry_sdk
+from learney_web.utils import get_concept_names, get_prerequisite_dict, retrieve_map_from_s3
 from mixpanel import Mixpanel
 from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -42,6 +43,17 @@ with open("link_preview_api_key.yaml", "r") as secrets_file:
     LINK_PREVIEW_API_KEY = yaml.load(secrets_file, Loader=yaml.Loader)["API_KEY"]
 
 IS_PROD = PYTHON_ENV == "production"
+
+CONTENT_JSON = json.loads(
+    retrieve_map_from_s3(
+        s3_bucket_name="learney-prod" if IS_PROD else "learney-test",
+        s3_key="questions_map.json",
+        aws_credentials=AWS_CREDENTIALS,
+    )
+)
+
+QUESTIONS_PREREQUISITE_DICT = get_prerequisite_dict(CONTENT_JSON)
+CONCEPT_NAMES = get_concept_names(CONTENT_JSON)
 
 if PYTHON_ENV in ["staging", "production"]:
     sentry_sdk.init(
