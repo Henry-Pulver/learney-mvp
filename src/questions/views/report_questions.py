@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 
 import boto3
 from botocore.exceptions import ClientError
-from learney_web.settings import IS_PROD
+from learney_web.settings import AWS_CREDENTIALS, IS_PROD
 from questions.models import QuestionTemplate
 from questions.utils import uuid_and_params_from_frontend_id
 
@@ -27,7 +27,7 @@ def get_admin_edit_link(question_template_id: str) -> str:
 class ReportBrokenQuestionView(APIView):
     def post(self, request: Request, format=None) -> Response:
         template_id, params = uuid_and_params_from_frontend_id(request.data["question"]["id"])
-        question_template = QuestionTemplate.objects.get(id=template_id).prefetch_related("concept")
+        question_template = QuestionTemplate.objects.prefetch_related("concept").get(id=template_id)
         concept_name = question_template.concept.name
 
         # Deactivate question template!
@@ -39,7 +39,7 @@ class ReportBrokenQuestionView(APIView):
         admin_edit_link = get_admin_edit_link(str(template_id))
         # The email body for recipients with non-HTML email clients.
         body_text = (
-            f"Question on {concept_name} reported as broken!\r\n"
+            f"Question on '{concept_name}' reported as broken!\r\n"
             f"Params used: {params}\r\n"
             f"Issue type: {request.data['type']}\r\n"
             f"Message: \n{request.data['message']}\r\n"
@@ -50,10 +50,9 @@ class ReportBrokenQuestionView(APIView):
         body_html = f"""<html>
         <head></head>
         <body>
-          <h1>Question on {concept_name} reported as broken!</h1>
-          <br/>
+          <h1>Question on '{concept_name}' reported as broken!</h1>
           <p>
-          Issue type: {request.data['type']}
+          <b>{request.data['type']}</b>
           <br/>
           Params used: {params}\r\n
           <br/>
@@ -65,7 +64,12 @@ class ReportBrokenQuestionView(APIView):
         </html>
         """
 
-        client = boto3.client("ses", region_name="us-west-2")
+        client = boto3.client(
+            "ses",
+            region_name="us-west-2",
+            aws_access_key_id=AWS_CREDENTIALS["ACCESS_ID"],
+            aws_secret_access_key=AWS_CREDENTIALS["SECRET_KEY"],
+        )
         try:
             # Provide the contents of the email.
             response = client.send_email(
