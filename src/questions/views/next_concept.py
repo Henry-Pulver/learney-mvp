@@ -35,49 +35,63 @@ class NextConceptView(APIView):
             map = KnowledgeMapModel.objects.get(url_extension="questionsmap")
             valid_next_concepts = get_valid_current_concept_ids(user_id, map)
 
+            if len(valid_next_concepts) == 0:
+                return Response({"concept_id": None}, status=status.HTTP_200_OK)
+
             prev_question_sets: QuerySet[QuestionSet] = QuestionSet.objects.filter(
                 user__id=user_id
             ).prefetch_related("concept__direct_prerequisites")
             if prev_question_sets.count() > 0:
-                # [0] Get the most recent question set
+                # [1.0] Get the most recent question set
                 prev_question_set: QuestionSet = prev_question_sets.latest("time_started")
 
                 if (
                     prev_question_set.concept.id in valid_next_concepts
-                ):  # [1.0] Concept is not learned
+                ):  # [2.0] Concept prev question set is a valid next concept
                     return Response(
                         {"concept_id": prev_question_set.concept.cytoscape_id},
                         status=status.HTTP_200_OK,
                     )
-                # [2.0] Find valid concepts
-                if len(valid_next_concepts) == 0:
-                    return Response({"concept_id": None}, status=status.HTTP_200_OK)
-                # Prefer if a successor to the concept the previous question set was on
-                valid_successors: List[Concept] = list(
-                    Concept.objects.filter(
-                        direct_prerequisites=prev_question_set.concept,
-                        cytoscape_id__in=valid_next_concepts,
-                    )
-                )
 
-                if len(valid_successors) == 1:
+                # [2.1] If not valid, it may be learned. If so, prefer if a successor
+                # to the concept the previous question set was on
+                if prev_question_set.concept.id in get_prereqs_learned(user_id, map):
+                    valid_successors: List[Concept] = list(
+                        Concept.objects.filter(
+                            direct_prerequisites=prev_question_set.concept,
+                            cytoscape_id__in=valid_next_concepts,
+                        )
+                    )
+
+                    if len(valid_successors) == 1:
+                        # [2.1.1] Only 1 valid successor. Pick this
+                        return Response(
+                            {"concept_id": valid_successors[0].cytoscape_id},
+                            status=status.HTTP_200_OK,
+                        )
+                    elif len(valid_successors) > 2:
+                        # [2.1.2] If multiple successors, pick between them
+                        return use_link_clicks_or_random(
+                            map, user_id, [s.cytoscape_id for s in valid_successors]
+                        )
+
+                # [2.2] If not valid and not learned (with valid successors), see if we can get the
+                # last question set answered on a valid concept and use that!
+                prev_qs_on_valid_cs = prev_question_sets.filter(
+                    concept__cytoscape_id__in=valid_next_concepts
+                )
+                if prev_qs_on_valid_cs.count() > 0:
                     return Response(
-                        {"concept_id": valid_successors[0].cytoscape_id},
+                        {
+                            "concept_id": prev_qs_on_valid_cs.latest(
+                                "time_started"
+                            ).concept.cytoscape_id
+                        },
                         status=status.HTTP_200_OK,
                     )
-                elif len(valid_successors) > 2:
-                    # [2.3] If multiple successors, go for the one which has had a content link clicked by this user before
-                    return use_link_clicks_or_random(
-                        map, user_id, [s.cytoscape_id for s in valid_successors]
-                    )
-                else:  # [2.4] Otherwise try other valid concepts
-                    return use_link_clicks_or_random(map, user_id, valid_next_concepts)
 
-            else:  # [3.0] No past question sets
-                map = KnowledgeMapModel.objects.get(url_extension="questionsmap")
-                if len(valid_next_concepts) == 0:
-                    return Response({"concept_id": None}, status=status.HTTP_200_OK)
-                return use_link_clicks_or_random(map, user_id, valid_next_concepts)
+            # [3.0] If all else fails, pick from valid next concepts
+            return use_link_clicks_or_random(map, user_id, valid_next_concepts)
 
             # Display an error if something goes wrong.
         except Exception as e:
@@ -99,6 +113,15 @@ def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[
     ]
 
     # [2.2] All prerequisites learned
+    prereqs_learned = get_prereqs_learned(user_id, map)
+    return [
+        concept_id
+        for count, concept_id in enumerate(QUESTIONS_PREREQUISITE_DICT)
+        if prereqs_learned[count] and is_towards_goal[count]
+    ]
+
+
+def get_prereqs_learned(user_id: str, map: KnowledgeMapModel) -> List[bool]:
     learned_concepts_queryset: QuerySet[LearnedModel] = LearnedModel.objects.filter(
         user_id=user_id, map=map
     )
@@ -107,17 +130,12 @@ def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[
         if learned_concepts_queryset.count() > 0
         else {}
     )
-    prereqs_learned = [
+    return [
         all(
             learned_concepts.get(prereq, False)
             for prereq in QUESTIONS_PREREQUISITE_DICT[concept_id]
         )
         for concept_id in QUESTIONS_PREREQUISITE_DICT
-    ]
-    return [
-        concept_id
-        for count, concept_id in enumerate(QUESTIONS_PREREQUISITE_DICT)
-        if prereqs_learned[count] and is_towards_goal[count]
     ]
 
 
