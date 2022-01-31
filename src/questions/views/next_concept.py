@@ -32,16 +32,8 @@ class NextConceptView(APIView):
             # Set seed in case randomness is required (for reproducibility)
             np.random.seed(1)
 
-            # Grab the concepts that are learned
             map = KnowledgeMapModel.objects.get(url_extension="questionsmap")
-            learned_concepts_queryset: QuerySet[LearnedModel] = LearnedModel.objects.filter(
-                user_id=user_id, map=map
-            )
-            learned_concepts: Dict[str, str] = (
-                learned_concepts_queryset.latest("timestamp").learned_concepts
-                if learned_concepts_queryset.count() > 0
-                else {}
-            )
+            valid_next_concepts = get_valid_current_concept_ids(user_id, map)
 
             prev_question_sets: QuerySet[QuestionSet] = QuestionSet.objects.filter(
                 user__id=user_id
@@ -51,14 +43,13 @@ class NextConceptView(APIView):
                 prev_question_set: QuestionSet = prev_question_sets.latest("time_started")
 
                 if (
-                    prev_question_set.concept.id not in learned_concepts
+                    prev_question_set.concept.id in valid_next_concepts
                 ):  # [1.0] Concept is not learned
                     return Response(
                         {"concept_id": prev_question_set.concept.cytoscape_id},
                         status=status.HTTP_200_OK,
                     )
                 # [2.0] Find valid concepts
-                valid_next_concepts = get_valid_current_concept_ids(user_id, map, learned_concepts)
                 if len(valid_next_concepts) == 0:
                     return Response({"concept_id": None}, status=status.HTTP_200_OK)
                 # Prefer if a successor to the concept the previous question set was on
@@ -84,7 +75,6 @@ class NextConceptView(APIView):
 
             else:  # [3.0] No past question sets
                 map = KnowledgeMapModel.objects.get(url_extension="questionsmap")
-                valid_next_concepts = get_valid_current_concept_ids(user_id, map, learned_concepts)
                 if len(valid_next_concepts) == 0:
                     return Response({"concept_id": None}, status=status.HTTP_200_OK)
                 return use_link_clicks_or_random(map, user_id, valid_next_concepts)
@@ -94,9 +84,7 @@ class NextConceptView(APIView):
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 
-def get_valid_current_concept_ids(
-    user_id: str, map: KnowledgeMapModel, learned_concepts: Dict[str, str]
-) -> List[str]:
+def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[str]:
     """Get concept ids of concepts which are potential next concepts for the user.
 
     This means they are both on the path to one of their goals and all prerequisites are set as
@@ -111,6 +99,14 @@ def get_valid_current_concept_ids(
     ]
 
     # [2.2] All prerequisites learned
+    learned_concepts_queryset: QuerySet[LearnedModel] = LearnedModel.objects.filter(
+        user_id=user_id, map=map
+    )
+    learned_concepts: Dict[str, str] = (
+        learned_concepts_queryset.latest("timestamp").learned_concepts
+        if learned_concepts_queryset.count() > 0
+        else {}
+    )
     prereqs_learned = [
         all(
             learned_concepts.get(prereq, False)
