@@ -46,36 +46,36 @@ class NextConceptView(APIView):
                 prev_question_set: QuestionSet = prev_question_sets.latest("time_started")
 
                 if (
-                    prev_question_set.concept.id in valid_next_concepts
+                    prev_question_set.concept.cytoscape_id in valid_next_concepts
                 ):  # [2.0] Concept prev question set is a valid next concept
                     return Response(
                         {"concept_id": prev_question_set.concept.cytoscape_id},
                         status=status.HTTP_200_OK,
                     )
 
-                # [2.1] If not valid, it may be learned. If so, prefer if a successor
-                # to the concept the previous question set was on
-                if prev_question_set.concept.id in get_prereqs_learned(user_id, map):
-                    valid_successors: List[Concept] = list(
-                        Concept.objects.filter(
-                            direct_prerequisites=prev_question_set.concept,
-                            cytoscape_id__in=valid_next_concepts,
-                        )
-                    )
+                # [2.1] If not valid, it may not be valid because it's been learned!
+                learned_concepts_queryset: QuerySet[LearnedModel] = LearnedModel.objects.filter(
+                    user_id=user_id, map=map
+                )
+                learned_concepts: Dict[str, str] = (
+                    learned_concepts_queryset.latest("timestamp").learned_concepts
+                    if learned_concepts_queryset.count() > 0
+                    else {}
+                )
+                prev_concept_id: str = prev_question_set.concept.cytoscape_id
+                if learned_concepts.get(prev_concept_id, False):
+                    # If learned, prefer if a successor to the concept the previous question set was on
+                    valid_successors: List[str] = [
+                        c_id
+                        for c_id, prereqs in QUESTIONS_PREREQUISITE_DICT.items()
+                        if prev_concept_id in prereqs and c_id in valid_next_concepts
+                    ]
 
-                    if len(valid_successors) == 1:
-                        # [2.1.1] Only 1 valid successor. Pick this
-                        return Response(
-                            {"concept_id": valid_successors[0].cytoscape_id},
-                            status=status.HTTP_200_OK,
-                        )
-                    elif len(valid_successors) > 2:
-                        # [2.1.2] If multiple successors, pick between them
-                        return use_link_clicks_or_random(
-                            map, user_id, [s.cytoscape_id for s in valid_successors]
-                        )
+                    if len(valid_successors) > 1:
+                        # [2.2] If multiple successors, pick between them
+                        return use_link_clicks_or_random(map, user_id, valid_successors)
 
-                # [2.2] If not valid and not learned (with valid successors), see if we can get the
+                # [2.3] If not valid and not learned (with valid successors), see if we can get the
                 # last question set answered on a valid concept and use that!
                 prev_qs_on_valid_cs = prev_question_sets.filter(
                     concept__cytoscape_id__in=valid_next_concepts
@@ -104,24 +104,16 @@ def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[
     This means they are both on the path to one of their goals and all prerequisites are set as
     learned.
     """
+    concept_ids = [concept_id for concept_id in QUESTIONS_PREREQUISITE_DICT]
     # [2.1] Towards their goal
     goals_queryset = GoalModel.objects.filter(user_id=user_id, map=map)
     goals = goals_queryset.latest("timestamp").goal_concepts if goals_queryset.count() > 0 else {}
     is_towards_goal = [
         any(concept_id in QUESTIONS_PREREQUISITE_DICT[goal_id] for goal_id in goals)
-        for concept_id in QUESTIONS_PREREQUISITE_DICT
+        for concept_id in concept_ids
     ]
 
-    # [2.2] All prerequisites learned
-    prereqs_learned = get_prereqs_learned(user_id, map)
-    return [
-        concept_id
-        for count, concept_id in enumerate(QUESTIONS_PREREQUISITE_DICT)
-        if prereqs_learned[count] and is_towards_goal[count]
-    ]
-
-
-def get_prereqs_learned(user_id: str, map: KnowledgeMapModel) -> List[bool]:
+    # [2.2] Check all concept's prerequisites are learned and it's not learned
     learned_concepts_queryset: QuerySet[LearnedModel] = LearnedModel.objects.filter(
         user_id=user_id, map=map
     )
@@ -130,12 +122,19 @@ def get_prereqs_learned(user_id: str, map: KnowledgeMapModel) -> List[bool]:
         if learned_concepts_queryset.count() > 0
         else {}
     )
-    return [
+    are_all_prereqs_learned = [
+        # All prereqs must be learned!
         all(
             learned_concepts.get(prereq, False)
             for prereq in QUESTIONS_PREREQUISITE_DICT[concept_id]
         )
-        for concept_id in QUESTIONS_PREREQUISITE_DICT
+        and not learned_concepts.get(concept_id, False)  # Can't already be learned!
+        for concept_id in concept_ids
+    ]
+    return [
+        concept_id
+        for count, concept_id in enumerate(concept_ids)
+        if are_all_prereqs_learned[count] and is_towards_goal[count]
     ]
 
 
@@ -147,6 +146,12 @@ def use_link_clicks_or_random(
 
     Otherwise, pick randomly!
     """
+    if len(possible_concept_ids) == 1:
+        # Only 1 valid option. Pick this
+        return Response(
+            {"concept_id": possible_concept_ids[0]},
+            status=status.HTTP_200_OK,
+        )
     relevant_link_clicks = LinkClickModel.objects.filter(
         map=map, user_id=user_id, concept_id__in=possible_concept_ids
     )
