@@ -16,6 +16,8 @@ from numpyro.infer import MCMC, NUTS, Predictive
 class GaussianParams:
     mean: float
     std_dev: float
+    # The level is where CDF(user's knowledge state = level) = LEVEL_THRESHOLD
+    LEVEL_THRESHOLD = 0.05
 
     def __post_init__(self):
         assert self.std_dev >= 0
@@ -23,7 +25,7 @@ class GaussianParams:
 
     @property
     def level(self) -> float:
-        return max(self._dist.inv_cdf(0.05), 0)
+        return max(self._dist.inv_cdf(self.LEVEL_THRESHOLD), 0)
 
 
 # This is the 'discrimination' parameter, how steep the logistic curve is. This has been

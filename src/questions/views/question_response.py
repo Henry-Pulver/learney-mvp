@@ -55,15 +55,17 @@ class QuestionResponseView(APIView):
         prev_ks.update(mean=new_theta.mean, std_dev=new_theta.std_dev)
         prev_ks = prev_ks[0]
 
+        # Check it's not a 'revision batch' - if it is, ignore how well they do!
+        revision = q_response.question_set.level_at_start > prev_ks.concept.max_difficulty_level
         # Is the question_set completed?
         concept_completed = prev_ks.knowledge_level > prev_ks.concept.max_difficulty_level
         doing_poorly = len(correct) >= 5 and prev_ks.knowledge_level < -0.5
         max_num_of_questions = len(correct) >= 10
         completed = (
             "completed_concept"
-            if concept_completed
+            if concept_completed and not revision
             else "doing_poorly"
-            if doing_poorly
+            if doing_poorly and not revision
             else "max_num_of_questions"
             if max_num_of_questions
             else None
