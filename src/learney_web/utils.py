@@ -29,12 +29,14 @@ def get_prerequisite_dict(
         predecessor_dict[edge["data"]["target"]].add(edge["data"]["source"])
     for concept, prereqs in predecessor_dict.items():
         prereqs_to_check = copy(prereqs)
+        prereqs_checked = set()
         while prereqs_to_check:
             for prereq in prereqs_to_check:
                 predecessor_dict[concept] = predecessor_dict[concept].union(
                     predecessor_dict[prereq]
                 )
-            prereqs_to_check = prereqs_to_check.difference(predecessor_dict[concept])
+                prereqs_checked.add(prereq)
+            prereqs_to_check = predecessor_dict[concept].difference(prereqs_checked)
 
     return predecessor_dict
 

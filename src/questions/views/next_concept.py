@@ -82,13 +82,6 @@ def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[
         any(concept_id in QUESTIONS_PREREQUISITE_DICT[goal_id] for goal_id in goals)
         for concept_id in QUESTIONS_PREREQUISITE_DICT
     ]
-    print(
-        [
-            concept_id
-            for count, concept_id in enumerate(QUESTIONS_PREREQUISITE_DICT)
-            if is_towards_goal[count]
-        ]
-    )
 
     # [2.1.2] All prerequisites learned
     learned_concepts_queryset = LearnedModel.objects.filter(user_id=user_id, map=map)
@@ -104,13 +97,6 @@ def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[
         )
         for concept_id in QUESTIONS_PREREQUISITE_DICT
     ]
-    print(
-        [
-            concept_id
-            for count, concept_id in enumerate(QUESTIONS_PREREQUISITE_DICT)
-            if prereqs_learned[count]
-        ]
-    )
     # print(f"is_towards_goal: {is_towards_goal}")
     # print(f"prereqs_learned: {prereqs_learned}")
     output = [
@@ -118,7 +104,6 @@ def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[
         for count, concept_id in enumerate(QUESTIONS_PREREQUISITE_DICT)
         if prereqs_learned[count] and is_towards_goal[count]
     ]
-    print(f"output: {output}")
     return output
 
 

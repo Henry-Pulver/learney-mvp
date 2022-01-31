@@ -9,11 +9,11 @@ from learney_web.utils import get_prerequisite_dict, retrieve_map_from_s3
 def test_get_prereq_dict_small_map():
     test_json = {
         "nodes": [
-            {"data": {"id": "1"}},
-            {"data": {"id": "2"}},
-            {"data": {"id": "3"}},
-            {"data": {"id": "4"}},
-            {"data": {"id": "5"}},
+            {"data": {"id": "1", "nodetype": "concept"}},
+            {"data": {"id": "2", "nodetype": "concept"}},
+            {"data": {"id": "3", "nodetype": "concept"}},
+            {"data": {"id": "4", "nodetype": "concept"}},
+            {"data": {"id": "5", "nodetype": "concept"}},
         ],
         "edges": [
             {"data": {"target": "2", "source": "1"}},
