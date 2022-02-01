@@ -10,9 +10,11 @@ from rest_framework.views import APIView
 from questions.inference import MCMCInference
 from questions.models import QuestionResponse
 from questions.question_selection import select_question
+from silk.profiling.profiler import silk_profile
 
 
 class QuestionResponseView(APIView):
+    @silk_profile(name="Question Response - Infer Knowledge and Select new Question")
     def post(self, request: Request, format=None) -> Response:
         try:
             # Extract data from request

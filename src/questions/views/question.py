@@ -7,9 +7,11 @@ from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_batch import QuestionBatch
 from questions.question_selection import select_question
 from questions.utils import get_today
+from silk.profiling.profiler import silk_profile
 
 
 class QuestionBatchView(APIView):
+    @silk_profile(name="Get Question Batch")
     def get(self, request: Request, format=None) -> Response:
         # Extract payload from request
         concept_id = request.GET["concept_id"]

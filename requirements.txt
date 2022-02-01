@@ -5,6 +5,7 @@ colormap
 Django==3.2.2
 djangorestframework==3.12.4
 django-cors-headers
+django-silk
 easydev
 jax
 notion-client
