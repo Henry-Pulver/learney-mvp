@@ -15,12 +15,12 @@ from link_clicks.models import LinkClickModel
 from questions.models.question_set import QuestionSet
 
 
-class NextConceptView(APIView):
+class CurrentConceptView(APIView):
     def get(self, request: Request, format=None) -> Response:
-        """Gets the concept that we suggest the user work on next.
+        """Gets the concept that we suggest the user work on.
 
         It first gets the concept of the previous question set you did (if that concept
-        isn't completed already). Then it looks for valid next steps given your goals
+        isn't completed already). Then it looks for valid concepts given your goals
         and what you've learned and picks based on content link clicks and if you haven't
         clicked any content - it picks randomly from these.
 
@@ -28,14 +28,15 @@ class NextConceptView(APIView):
         """
         try:
             user_id = request.GET["user_id"]
+            map_uuid = request.GET["map_uuid"]
 
             # Set seed in case randomness is required (for reproducibility)
             np.random.seed(1)
 
-            map = KnowledgeMapModel.objects.get(url_extension="questionsmap")
-            valid_next_concepts = get_valid_current_concept_ids(user_id, map)
+            map = KnowledgeMapModel.objects.get(unique_id=map_uuid)
+            valid_current_concepts = get_valid_current_concept_ids(user_id, map)
 
-            if len(valid_next_concepts) == 0:
+            if len(valid_current_concepts) == 0:
                 return Response({"concept_id": None}, status=status.HTTP_200_OK)
 
             prev_question_sets: QuerySet[QuestionSet] = QuestionSet.objects.filter(
@@ -46,8 +47,8 @@ class NextConceptView(APIView):
                 prev_question_set: QuestionSet = prev_question_sets.latest("time_started")
 
                 if (
-                    prev_question_set.concept.cytoscape_id in valid_next_concepts
-                ):  # [2.0] Concept prev question set is a valid next concept
+                    prev_question_set.concept.cytoscape_id in valid_current_concepts
+                ):  # [2.0] Concept prev question set is a valid current concept
                     return Response(
                         {"concept_id": prev_question_set.concept.cytoscape_id},
                         status=status.HTTP_200_OK,
@@ -68,7 +69,7 @@ class NextConceptView(APIView):
                     valid_successors: List[str] = [
                         c_id
                         for c_id, prereqs in QUESTIONS_PREREQUISITE_DICT.items()
-                        if prev_concept_id in prereqs and c_id in valid_next_concepts
+                        if prev_concept_id in prereqs and c_id in valid_current_concepts
                     ]
 
                     if len(valid_successors) > 1:
@@ -78,7 +79,7 @@ class NextConceptView(APIView):
                 # [2.3] If not valid and not learned (with valid successors), see if we can get the
                 # last question set answered on a valid concept and use that!
                 prev_qs_on_valid_cs = prev_question_sets.filter(
-                    concept__cytoscape_id__in=valid_next_concepts
+                    concept__cytoscape_id__in=valid_current_concepts
                 )
                 if prev_qs_on_valid_cs.count() > 0:
                     return Response(
@@ -90,8 +91,8 @@ class NextConceptView(APIView):
                         status=status.HTTP_200_OK,
                     )
 
-            # [3.0] If all else fails, pick from valid next concepts
-            return use_link_clicks_or_random(map, user_id, valid_next_concepts)
+            # [3.0] If all else fails, pick from valid current concepts
+            return use_link_clicks_or_random(map, user_id, valid_current_concepts)
 
             # Display an error if something goes wrong.
         except Exception as e:
@@ -99,7 +100,7 @@ class NextConceptView(APIView):
 
 
 def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[str]:
-    """Get concept ids of concepts which are potential next concepts for the user.
+    """Get concept ids of concepts which are potential current concepts for the user.
 
     This means they are both on the path to one of their goals and all prerequisites are set as
     learned.

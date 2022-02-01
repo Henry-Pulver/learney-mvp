@@ -17,7 +17,7 @@ from django.urls import path
 
 from questions.views import (
     ConceptInfoView,
-    NextConceptView,
+    CurrentConceptView,
     QuestionResponseView,
     QuestionSetView,
     QuestionView,
@@ -26,7 +26,7 @@ from questions.views import (
 
 urlpatterns = [
     path("api/v0/concept_info", ConceptInfoView.as_view(), name="concept_info"),
-    path("api/v0/next_concept", NextConceptView.as_view(), name="next_concept"),
+    path("api/v0/current_concept", CurrentConceptView.as_view(), name="next_concept"),
     path("api/v0/question_set", QuestionSetView.as_view(), name="question_set"),
     path("api/v0/questions", QuestionView.as_view(), name="questions"),
     path("api/v0/question_response", QuestionResponseView.as_view(), name="question_responses"),
