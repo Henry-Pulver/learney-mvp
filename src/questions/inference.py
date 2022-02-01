@@ -77,6 +77,7 @@ class MCMCInference:
         # Samples of theta from MCMC
         self._samples: Optional[Dict[str, np.ndarray]] = None
         self._seed = random_seed
+        self._correct_probs: Optional[np.ndarray] = None
 
     def run_mcmc_inference(
         self,
@@ -129,7 +130,13 @@ class MCMCInference:
             float(np.mean(self._samples["theta"])), np.sqrt(np.var(self._samples["theta"]))
         )
 
-    def prob_correct(
+    @property
+    def correct_probs(self) -> np.ndarray:
+        if self._correct_probs is None:
+            warn("First run calculate_correct_probs() to get the probability the user is correct")
+        return self._correct_probs
+
+    def calculate_correct_probs(
         self,
         difficulties: np.ndarray,
         guess_probs: np.ndarray,
@@ -163,4 +170,5 @@ class MCMCInference:
         samples_predictive = predictive(
             random.PRNGKey(self._seed), self._theta_prior, difficulties, guess_probs
         )
-        return np.mean(samples_predictive["obs"], 0)
+        self._correct_probs = np.mean(samples_predictive["obs"], 0)
+        return self._correct_probs

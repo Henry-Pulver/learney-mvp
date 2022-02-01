@@ -84,8 +84,8 @@ def difficulty_terms(
     """Calculate 'difficulty' terms for all template options to weight different templates."""
     guess_probs = np.array([1 / template.number_of_answers for template in template_options])
     difficulties = np.array([template.difficulty for template in template_options])
-    prob_correct = mcmc.prob_correct(difficulties=difficulties, guess_probs=guess_probs)
-    return prob_correct_to_weighting(prob_correct)
+    correct_probs = mcmc.calculate_correct_probs(difficulties=difficulties, guess_probs=guess_probs)
+    return prob_correct_to_weighting(correct_probs)
 
 
 def novelty_terms(

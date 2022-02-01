@@ -63,7 +63,7 @@ def expand_params_in_text(text: str, sampled_params: SampledParamsDict) -> str:
         try:
             return run_python_code_string(python_expression)
         except ParsingError as e:
-            raise ParsingError(f"Error when parsing: {text}\n{e}")
+            raise ParsingError(f"Error when parsing: {text}\nWith params: {sampled_params}\n{e}")
 
     return re.sub(r"(<<([^>]+)>>)", replace_with_expression_output, text)
 
@@ -104,9 +104,8 @@ def parse_params(template_text: str) -> ParamOptionsDict:
         if is_param_line(line):
             param_name, possible_values = parse_param_line(line)
             params[param_name] = possible_values
-        elif contains_non_whitespace_characters(
-            line
-        ):  # If not empty & not a parameter line, must be question text
+        elif contains_non_whitespace_characters(line):
+            # If not empty & not a parameter line, must be question text
             return params
     raise ParsingError(f"Following question template invalid - missing question!\n{template_text}")
 

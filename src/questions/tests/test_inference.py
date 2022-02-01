@@ -24,7 +24,7 @@ def test_inference_without_observations():
 def test_empty_predictions(theta_params: GaussianParams):
     mcmc = MCMCInference(theta_params)
     with pytest.raises(AssertionError):
-        mcmc.prob_correct(np.ones(0), np.zeros(0))
+        mcmc.calculate_correct_probs(np.ones(0), np.zeros(0))
 
 
 @pytest.mark.parametrize(
@@ -56,9 +56,9 @@ def test_predictions_consistent(
     )
     mcmc2 = MCMCInference(mcmc_low_narrow.inferred_theta_params)
 
-    orig_mcmc_pred = mcmc_low_narrow.prob_correct(*questions_to_predict)
+    orig_mcmc_pred = mcmc_low_narrow.calculate_correct_probs(*questions_to_predict)
 
-    mcmc2_pred = mcmc2.prob_correct(*questions_to_predict)
+    mcmc2_pred = mcmc2.calculate_correct_probs(*questions_to_predict)
 
     assert orig_mcmc_pred.shape == mcmc2_pred.shape
     assert all(np.abs(orig_mcmc_pred - mcmc2_pred) < 0.05)
