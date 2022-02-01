@@ -111,8 +111,12 @@ class MCMCInference:
             f"difficulties: {difficulties.shape}, guess_probs: {guess_probs.shape}, answers: {answers.shape}"
         )
         nuts_kernel = NUTS(answers_model)
-        mcmc = MCMC(nuts_kernel, num_warmup=MCMC_NUM_WARMUP_SAMPLES, num_samples=num_samples)
-
+        mcmc = MCMC(
+            nuts_kernel,
+            num_warmup=MCMC_NUM_WARMUP_SAMPLES,
+            num_samples=num_samples,
+            progress_bar=False,
+        )
         mcmc.run(random.PRNGKey(self._seed), self._theta_prior, difficulties, guess_probs, answers)
         self._samples = mcmc.get_samples()
 
