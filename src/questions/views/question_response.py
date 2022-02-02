@@ -19,7 +19,7 @@ class QuestionResponseView(APIView):
         # Save the response in the DB
         q_response: QuestionResponse = QuestionResponse.objects.filter(
             user=request.data["user_id"],
-            question_set=request.data["question_set"],
+            question_batch=request.data["question_set"],
             correct=None,
         )
         q_response.update(
@@ -30,11 +30,11 @@ class QuestionResponseView(APIView):
         q_response = (
             QuestionResponse.objects.filter(
                 user=request.data["user_id"],
-                question_set=request.data["question_set"],
+                question_batch=request.data["question_set"],
                 correct=request.data["correct"],
             )
             .prefetch_related("user__knowledge_states__concept")
-            .prefetch_related("question_set__responses")
+            .prefetch_related("question_batch__responses")
             .latest("time_asked")
         )
         q_response.correct = request.data["correct"]
@@ -45,8 +45,8 @@ class QuestionResponseView(APIView):
         q_response.save()
 
         # Infer new knowledge state
-        difficulties, guess_probs, correct = q_response.question_set.training_data
-        mcmc = MCMCInference(q_response.question_set.initial_knowledge_state)
+        difficulties, guess_probs, correct = q_response.question_batch.training_data
+        mcmc = MCMCInference(q_response.question_batch.initial_knowledge_state)
         mcmc.run_mcmc_inference(difficulties=difficulties, guess_probs=guess_probs, answers=correct)
         new_theta = mcmc.inferred_theta_params
 
@@ -56,8 +56,8 @@ class QuestionResponseView(APIView):
         prev_ks = prev_ks[0]
 
         # Check it's not a 'revision batch' - if it is, ignore how well they do!
-        revision = q_response.question_set.level_at_start > prev_ks.concept.max_difficulty_level
-        # Is the question_set completed?
+        revision = q_response.question_batch.level_at_start > prev_ks.concept.max_difficulty_level
+        # Is the question_batch completed?
         concept_completed = prev_ks.knowledge_level > prev_ks.concept.max_difficulty_level
         doing_poorly = len(correct) >= 5 and prev_ks.knowledge_level < -0.5
         max_num_of_questions = len(correct) >= 10
@@ -73,18 +73,18 @@ class QuestionResponseView(APIView):
         response_payload = {"level": prev_ks.knowledge_level, "completed": completed}
 
         if completed:
-            # Update stored data on the question set
-            q_response.question_set.completed = completed
-            q_response.question_set.levels_progressed = (
-                prev_ks.knowledge_level - q_response.question_set.initial_knowledge_state.level
+            # Update stored data on the question batch
+            q_response.question_batch.completed = completed
+            q_response.question_batch.levels_progressed = (
+                prev_ks.knowledge_level - q_response.question_batch.initial_knowledge_state.level
             )
-            q_response.question_set.concept_completed = concept_completed
-            q_response.question_set.save()
+            q_response.question_batch.concept_completed = concept_completed
+            q_response.question_batch.save()
         else:
             # Pick a new question and send it back
             response_payload["next_question"] = select_question(
                 concept_id=concept_id,
-                question_set=q_response.question_set,
+                question_batch=q_response.question_batch,
                 user=q_response.user,
                 session_id=request.data["session_id"],
                 mcmc=mcmc,

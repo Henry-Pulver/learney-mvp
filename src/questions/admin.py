@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from questions.models import QuestionResponse, QuestionTemplate
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
-from questions.models.question_set import QuestionSet
+from questions.models.question_batch import QuestionBatch
 
 
 @admin.register(QuestionTemplate)
@@ -12,8 +12,8 @@ class QuestionTemplateAdmin(admin.ModelAdmin):
     search_fields = ["id", "question_type", "template_text", "difficulty", "concept"]
 
 
-@admin.register(QuestionSet)
-class QuestionSetAdmin(admin.ModelAdmin):
+@admin.register(QuestionBatch)
+class QuestionBatchAdmin(admin.ModelAdmin):
     list_select_related = ("concept", "user")
     list_display = (
         "id",
@@ -30,13 +30,13 @@ class QuestionSetAdmin(admin.ModelAdmin):
 
 @admin.register(QuestionResponse)
 class QuestionResponseAdmin(admin.ModelAdmin):
-    list_select_related = ("user", "question_template", "question_set")
+    list_select_related = ("user", "question_template", "question_batch")
     list_display = (
         "id",
         "user",
         "question_template",
         "question_params",
-        "question_set",
+        "question_batch",
         "correct",
         "response",
         "time_to_respond",
@@ -47,7 +47,7 @@ class QuestionResponseAdmin(admin.ModelAdmin):
         "user",
         "question_template",
         "question_params",
-        "question_set",
+        "question_batch",
         "response",
         "concept",
     ]

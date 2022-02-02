@@ -8,11 +8,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from goals.models import GoalModel
-from knowledge_maps.models import Concept, KnowledgeMapModel
+from knowledge_maps.models import KnowledgeMapModel
 from learned.models import LearnedModel
 from learney_web.settings import QUESTIONS_PREREQUISITE_DICT
 from link_clicks.models import LinkClickModel
-from questions.models.question_set import QuestionSet
+from questions.models.question_batch import QuestionBatch
 
 
 class CurrentConceptView(APIView):
@@ -39,18 +39,18 @@ class CurrentConceptView(APIView):
             if len(valid_current_concepts) == 0:
                 return Response({"concept_id": None}, status=status.HTTP_200_OK)
 
-            prev_question_sets: QuerySet[QuestionSet] = QuestionSet.objects.filter(
+            prev_question_batches: QuerySet[QuestionBatch] = QuestionBatch.objects.filter(
                 user__id=user_id
             ).prefetch_related("concept__direct_prerequisites")
-            if prev_question_sets.count() > 0:
-                # [1.0] Get the most recent question set
-                prev_question_set: QuestionSet = prev_question_sets.latest("time_started")
+            if prev_question_batches.count() > 0:
+                # [1.0] Get the most recent question batch
+                prev_question_batch: QuestionBatch = prev_question_batches.latest("time_started")
 
                 if (
-                    prev_question_set.concept.cytoscape_id in valid_current_concepts
-                ):  # [2.0] Concept prev question set is a valid current concept
+                    prev_question_batch.concept.cytoscape_id in valid_current_concepts
+                ):  # [2.0] Concept prev question batch is a valid current concept
                     return Response(
-                        {"concept_id": prev_question_set.concept.cytoscape_id},
+                        {"concept_id": prev_question_batch.concept.cytoscape_id},
                         status=status.HTTP_200_OK,
                     )
 
@@ -63,9 +63,9 @@ class CurrentConceptView(APIView):
                     if learned_concepts_queryset.count() > 0
                     else {}
                 )
-                prev_concept_id: str = prev_question_set.concept.cytoscape_id
+                prev_concept_id: str = prev_question_batch.concept.cytoscape_id
                 if learned_concepts.get(prev_concept_id, False):
-                    # If learned, prefer if a successor to the concept the previous question set was on
+                    # If learned, prefer if a successor to the concept the previous question batch was on
                     valid_successors: List[str] = [
                         c_id
                         for c_id, prereqs in QUESTIONS_PREREQUISITE_DICT.items()
@@ -77,8 +77,8 @@ class CurrentConceptView(APIView):
                         return use_link_clicks_or_random(map, user_id, valid_successors)
 
                 # [2.3] If not valid and not learned (with valid successors), see if we can get the
-                # last question set answered on a valid concept and use that!
-                prev_qs_on_valid_cs = prev_question_sets.filter(
+                # last question batch answered on a valid concept and use that!
+                prev_qs_on_valid_cs = prev_question_batches.filter(
                     concept__cytoscape_id__in=valid_current_concepts
                 )
                 if prev_qs_on_valid_cs.count() > 0:

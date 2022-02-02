@@ -4,20 +4,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
-from questions.models.question_set import QuestionSet
+from questions.models.question_batch import QuestionBatch
 from questions.question_selection import select_question
 from questions.utils import get_today
 
 
-class QuestionSetView(APIView):
+class QuestionBatchView(APIView):
     def get(self, request: Request, format=None) -> Response:
         # Extract payload from request
         concept_id = request.GET["concept_id"]
         user_id = request.GET["user_id"]
         session_id = request.GET["session_id"]
 
-        # If a previous set of questions exists, use that. Otherwise make a new one
-        prev_set = QuestionSet.objects.filter(
+        # If a previous batch of questions exists, use that. Otherwise make a new one
+        prev_batch = QuestionBatch.objects.filter(
             user=user_id,
             completed=False,
             time_started__gte=get_today(),
@@ -28,10 +28,10 @@ class QuestionSetView(APIView):
             .select_related("user")
             .get(user=user_id, concept__cytoscape_id=concept_id)
         )
-        if prev_set.exists():
-            question_set: QuestionSet = prev_set[0]
+        if prev_batch.exists():
+            question_batch: QuestionBatch = prev_batch[0]
         else:
-            question_set = QuestionSet.objects.create(
+            question_batch = QuestionBatch.objects.create(
                 user=ks.user,
                 concept=ks.concept,
                 level_at_start=ks.knowledge_level,
@@ -42,19 +42,19 @@ class QuestionSetView(APIView):
 
         # TODO: Track with Mixpanel
 
-        question_set_json = question_set.json()
+        question_batch_json = question_batch.json()
 
-        if len(question_set_json["questions"]) == 0:
-            question_set_json["questions"].append(
+        if len(question_batch_json["questions"]) == 0:
+            question_batch_json["questions"].append(
                 select_question(
                     concept_id=concept_id,
-                    question_set=question_set,
+                    question_batch=question_batch,
                     session_id=session_id,
                     user=ks.user,
                 )
             )
 
-        return Response(question_set_json, status=status.HTTP_200_OK)
+        return Response(question_batch_json, status=status.HTTP_200_OK)
 
 
 class QuestionView(APIView):
@@ -64,7 +64,7 @@ class QuestionView(APIView):
         try:
             concept_id = request.GET["concept_id"]
             user_id = request.GET["user_id"]
-            question_set: QuestionSet = QuestionSet.objects.get(
+            question_batch: QuestionBatch = QuestionBatch.objects.get(
                 id=request.GET["question_set"]
             ).selected_related("responses")
 
@@ -74,7 +74,7 @@ class QuestionView(APIView):
 
             question = select_question(
                 concept_id=concept_id,
-                question_set=question_set,
+                question_batch=question_batch,
                 user=knowledge_state.user,
                 session_id=request.GET["session_id"],
             )

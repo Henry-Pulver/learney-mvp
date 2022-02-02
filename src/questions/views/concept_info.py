@@ -27,12 +27,10 @@ class ConceptInfoView(APIView):
             )
         else:
             ks = ks[0]
-        r = {
-            "level": ks.knowledge_level,
-            "max_level": ks.concept.max_difficulty_level,
-        }
-        print(r)
         return Response(
-            r,
+            {
+                "level": ks.knowledge_level,
+                "max_level": ks.concept.max_difficulty_level,
+            },
             status=status.HTTP_200_OK,
         )

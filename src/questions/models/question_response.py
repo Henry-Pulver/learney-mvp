@@ -4,7 +4,7 @@ from django.db import models
 
 from accounts.models import User
 from learney_backend.base_models import UUIDModel
-from questions.models.question_set import QuestionSet
+from questions.models.question_batch import QuestionBatch
 from questions.models.question_template import QuestionTemplate
 
 
@@ -24,11 +24,11 @@ class QuestionResponse(UUIDModel):
     question_params = models.JSONField(
         help_text="question parameter values chosen from the template parameters",
     )
-    question_set = models.ForeignKey(
-        QuestionSet,
+    question_batch = models.ForeignKey(
+        QuestionBatch,
         on_delete=models.CASCADE,
         related_name="responses",
-        help_text="The question set this question corresponds to",
+        help_text="The question batch this question corresponds to",
     )
 
     response = models.TextField(

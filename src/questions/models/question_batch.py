@@ -9,46 +9,46 @@ from learney_backend.base_models import UUIDModel
 from questions.inference import GaussianParams
 
 
-class QuestionSet(UUIDModel):
+class QuestionBatch(UUIDModel):
     user = models.ForeignKey(
         User,
-        related_name="question_responses",
-        help_text="User whose response this is",
+        related_name="question_batches",
+        help_text="User whose question-answer batch this is",
         on_delete=models.CASCADE,
     )
     concept = models.ForeignKey(
         Concept,
-        related_name="question_sets",
-        help_text="The concept that the question set corresponds to",
+        related_name="question_batches",
+        help_text="The concept that the question batch corresponds to",
         on_delete=models.CASCADE,
     )
 
     time_started = models.DateTimeField(
-        auto_now_add=True, help_text="Time that the question set was started"
+        auto_now_add=True, help_text="Time that the question batch was started"
     )
     time_taken_to_complete = models.DateTimeField(
         null=True,
         default=None,
-        help_text="Time after the question set was started that it was completed",
+        help_text="Time after the question batch was started that it was completed",
     )
     completed = models.BooleanField(
-        default=False, help_text="Whether the user answered all the questions in the set or not"
+        default=False, help_text="Whether the user answered all the questions in the batch or not"
     )
     level_at_start = models.IntegerField(
-        help_text="The concept level the user started the question set at"
+        help_text="The concept level the user started the question batch at"
     )
     initial_knowledge_mean = models.FloatField(
-        help_text="Mean of the user's knowledge state when they started the question set"
+        help_text="Mean of the user's knowledge state when they started the question batch"
     )
     initial_knowledge_std_dev = models.FloatField(
-        help_text="Standard deviation of the user's knowledge state when they started the question set"
+        help_text="Standard deviation of the user's knowledge state when they started the question batch"
     )
     levels_progressed = models.IntegerField(
         default=0, help_text="How many levels the user progressed in this question batch"
     )
     concept_completed = models.BooleanField(
         default=False,
-        help_text="Whether the highest level of the concept was achieved in this question set",
+        help_text="Whether the highest level of the concept was achieved in this question batch",
     )
     session_id = models.TextField(help_text="session_id of the session the response was from")
 

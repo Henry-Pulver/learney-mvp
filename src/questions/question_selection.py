@@ -7,7 +7,7 @@ from django.db.models import Q, QuerySet
 from accounts.models import User
 from questions.inference import MCMCInference
 from questions.models import QuestionResponse, QuestionTemplate
-from questions.models.question_set import QuestionSet
+from questions.models.question_batch import QuestionBatch
 from questions.template_parser import number_of_questions, parse_params, sample_params
 from questions.utils import get_today
 
@@ -17,7 +17,7 @@ IDEAL_DIFF = 0.85
 
 def select_question(
     concept_id: str,
-    question_set: QuestionSet,
+    question_batch: QuestionBatch,
     user: User,
     session_id: str,
     mcmc: Optional[MCMCInference] = None,
@@ -34,7 +34,7 @@ def select_question(
     # Calculate the weights. Once normalised, these form the categorical
     #  distribution over question templates
     question_weights = difficulty_terms(template_options, mcmc) * novelty_terms(
-        template_options, user, question_set
+        template_options, user, question_batch
     )
 
     # Choose the template that's going to be used!
@@ -45,8 +45,8 @@ def select_question(
         )
         question_param_options, remaining_text = parse_params(chosen_template.template_text)
         sampled_params = sample_params(question_param_options)
-        # Make 100% sure it's not been seen already in this question set!
-        question_seen_before = question_set.responses.filter(
+        # Make 100% sure it's not been seen already in this question batch!
+        question_seen_before = question_batch.responses.filter(
             question_template=chosen_template, question_params=sampled_params
         ).exists()
 
@@ -55,7 +55,7 @@ def select_question(
         user=user,
         question_template=chosen_template,
         question_params=sampled_params,
-        question_set=question_set,
+        question_batch=question_batch,
         session_id=session_id,
         time_to_respond=None,
     )
@@ -86,7 +86,7 @@ def difficulty_terms(
 
 
 def novelty_terms(
-    template_options: List[QuestionTemplate], user: User, question_set: QuestionSet
+    template_options: List[QuestionTemplate], user: User, question_batch: QuestionBatch
 ) -> np.ndarray:
     """Calculate the novelty terms for all template options to weight different templates."""
     output = []
@@ -98,14 +98,14 @@ def novelty_terms(
         .filter(
             Q(time_asked__gte=get_today()) | Q(correct=True)
         )  # Questions asked today or answered correct ever
-        .select_related("question_set")
+        .select_related("question_batch")
         .select_related("question_template")
     )
 
-    set_q_types = [
-        question.question_template.question_type for question in question_set.responses.all()
+    batch_q_types = [
+        question.question_template.question_type for question in question_batch.responses.all()
     ]
-    q_type_counter = Counter(set_q_types)
+    q_type_counter = Counter(batch_q_types)
 
     for option, n_qs in zip(template_options, num_of_questions):
         novelty_term = 1
@@ -113,12 +113,12 @@ def novelty_terms(
         # [1.0] Avoid questions on the same template
         template_qs_to_avoid = questions_to_avoid.filter(question_template__id=option.id)
 
-        # [1.1] Worst are questions from the same set - avoid like the plague
-        set_qs_to_avoid = template_qs_to_avoid & question_set.responses.all()
-        num_set_qs_to_avoid = set_qs_to_avoid.count()
-        if num_set_qs_to_avoid > 0:
-            novelty_term *= 0.99 * np.exp(-5 * num_set_qs_to_avoid / n_qs) + 0.01
-            template_qs_to_avoid.difference(set_qs_to_avoid)
+        # [1.1] Worst are questions from the same batch - avoid like the plague
+        batch_qs_to_avoid = template_qs_to_avoid & question_batch.responses.all()
+        num_batch_qs_to_avoid = batch_qs_to_avoid.count()
+        if num_batch_qs_to_avoid > 0:
+            novelty_term *= 0.99 * np.exp(-5 * num_batch_qs_to_avoid / n_qs) + 0.01
+            template_qs_to_avoid.difference(batch_qs_to_avoid)
 
         # [1.2] Then are questions asked today or correct from the past
         distinct_qs_asked = (
@@ -126,10 +126,10 @@ def novelty_terms(
         )
         novelty_term *= 0.9 * np.exp(-2.5 * distinct_qs_asked / n_qs) + 0.1
 
-        # [2.0] Lastly avoid giving all the same type of question in a set
-        if len(set_q_types) > 3:
+        # [2.0] Lastly avoid giving all the same type of question in a batch
+        if len(batch_q_types) > 3:
             novelty_term *= 1 - np.exp(
-                -10 * ((q_type_counter[option.question_type] / len(set_q_types)) - 1) + 0.1
+                -10 * ((q_type_counter[option.question_type] / len(batch_q_types)) - 1) + 0.1
             )
 
         output.append(novelty_term)
