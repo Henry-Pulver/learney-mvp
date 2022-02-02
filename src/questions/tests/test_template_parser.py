@@ -125,6 +125,23 @@ def test_run_python_code_string__error(failure_test_data: str) -> None:
 
 
 @pytest.mark.parametrize(
+    "test_data",
+    [
+        ("2", "2"),
+        ("2.234", "2.234"),
+        ("2e-2", "2e-2"),
+        ("5000.21", "5000.21"),
+        ("[1, 2, 3, 4, 5]", "[1, 2, 3, 4, 5]"),
+        ("['1', '2', '3', '4', '5']", "['1', '2', '3', '4', '5']"),
+        ("string", '"string"'),
+        ("another string", '"another string"'),
+    ],
+)
+def test_convert_to_python(test_data: Tuple[str, str]) -> None:
+    assert convert_string_to_python(test_data[0]) == test_data[1]
+
+
+@pytest.mark.parametrize(
     "test_data_pairs",
     [
         (r"What is $$2 \times <<A / B>>$$?", lambda a, b: rf"What is $$2 \times {a / b}$$?"),

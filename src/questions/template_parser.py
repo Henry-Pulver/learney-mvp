@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from questions.utils import SampledParamsDict
+from questions.utils import SampledParamsDict, is_number
 
 
 class ParsingError(BaseException):
@@ -53,7 +53,7 @@ def expand_params_in_text(text: str, sampled_params: SampledParamsDict) -> str:
 
 
 def convert_string_to_python(value: str) -> str:
-    return value if "." in value or value.isnumeric() or value.startswith("[") else f'"{value}"'
+    return value if is_number(value) or value.startswith("[") else f'"{value}"'
 
 
 def run_python_code_string(python_code: str) -> str:
