@@ -110,7 +110,10 @@ def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[
     goals_queryset = GoalModel.objects.filter(user_id=user_id, map=map)
     goals = goals_queryset.latest("timestamp").goal_concepts if goals_queryset.count() > 0 else {}
     is_towards_goal = [
-        any(concept_id in QUESTIONS_PREREQUISITE_DICT[goal_id] for goal_id in goals)
+        any(
+            concept_id in QUESTIONS_PREREQUISITE_DICT[goal_id] or concept_id == goal_id
+            for goal_id in goals
+        )
         for concept_id in concept_ids
     ]
 
