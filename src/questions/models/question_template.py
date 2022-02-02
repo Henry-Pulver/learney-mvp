@@ -61,7 +61,14 @@ class QuestionTemplate(UUIDModel):
 
     @property
     def number_of_answers(self) -> int:
-        return sum(answer_regex(line) is not None for line in self.template_text.splitlines())
+        num_answers = sum(
+            answer_regex(line) is not None for line in self.template_text.splitlines()
+        )
+        assert num_answers in [
+            2,
+            4,
+        ], f"Invalid number of answers ({num_answers}) for {self.id}. Template:\n{self.template_text}"
+        return num_answers
 
     def to_question_json(
         self, sampled_params: Optional[SampledParamsDict] = None

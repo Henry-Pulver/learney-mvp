@@ -21,7 +21,7 @@ def says_feedback(line: str) -> bool:
 
 
 def answer_regex(line: str) -> Optional[re.Match]:
-    return re.search(r"^\s*([abcdABCD])[).]\s*(\S+.*)", line)
+    return re.search(r"^\s*\(?([abcdABCD])[).]\s*(\S+.*)", line)
 
 
 def sample_params(param_option_dict: ParamOptionsDict) -> SampledParamsDict:
@@ -42,10 +42,18 @@ def expand_params_in_text(text: str, sampled_params: SampledParamsDict) -> str:
     def replace_with_expression_output(match: re.Match) -> str:
         python_expression = match.groups()[1]
         for variable, value in sampled_params.items():
-            python_expression = python_expression.replace(variable, value)
-        return run_python_code_string(python_expression)
+            python_expression = python_expression.replace(variable, convert_string_to_python(value))
+        print(python_expression)
+        try:
+            return run_python_code_string(python_expression)
+        except ParsingError as e:
+            raise ParsingError(f"Error when parsing: {text}\n{e}")
 
     return re.sub(r"(<<([^>]+)>>)", replace_with_expression_output, text)
+
+
+def convert_string_to_python(value: str) -> str:
+    return value if "." in value or value.isnumeric() or value.startswith("[") else f'"{value}"'
 
 
 def run_python_code_string(python_code: str) -> str:
@@ -91,7 +99,13 @@ def parse_param_line(line: str) -> Tuple[str, List[Any]]:
     regex = param_line_regex(line)
     if regex is None:
         raise ParsingError(f"{line}\n is an invalid question template parameter line")
-    values_string = regex.groups()[1].replace("{", "[").replace("}", "]").replace("'", '"')
+    # values_string = regex.groups()[1].replace("{", "[").replace("}", "]").replace("'", '"')
+    values_string = (
+        re.sub(r"""(['\u201c\u201d])""", lambda x: '"', regex.groups()[1])
+        .replace("{", "[")
+        .replace("}", "]")
+    )
+    print(f"values_string: {values_string}")
     return regex.groups()[0], json.loads(values_string)
 
 

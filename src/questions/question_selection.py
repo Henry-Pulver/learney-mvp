@@ -26,6 +26,9 @@ def select_question(
     template_options = QuestionTemplate.objects.filter(
         concept__cytoscape_id=concept_id, active=True
     ).prefetch_related("responses")
+    assert (
+        template_options.count() > 0
+    ), f"No template options to choose from for concept with cytoscape id: {concept_id} {QuestionTemplate.objects.filter(concept__cytoscape_id=concept_id, active=True)}!"
 
     # If no mcmc object provided (this speeds up inference), make one
     mcmc = mcmc or MCMCInference(
