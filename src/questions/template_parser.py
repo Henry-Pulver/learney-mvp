@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from questions.utils import SampledParamsDict, is_number
+from questions.utils import SampledParamsDict
 
 
 class ParsingError(BaseException):
@@ -14,6 +14,23 @@ class ParsingError(BaseException):
 
 
 ParamOptionsDict = Dict[str, List[Any]]
+
+
+NUMBER_REGEX = r"-?\d+\.?\d*(e-?\d+)?"
+STRING_REGEX = r"""("[^"]+"|'[^']+')"""
+LIST_REGEX = f"\[(({NUMBER_REGEX}|{STRING_REGEX})+.*,\s*)*({NUMBER_REGEX}|{STRING_REGEX})]"
+
+
+def is_number(value: str) -> bool:
+    return re.fullmatch(NUMBER_REGEX, value) is not None
+
+
+def is_string(value: str) -> bool:
+    return re.fullmatch(STRING_REGEX, value) is not None
+
+
+def is_list(value: str) -> bool:
+    return re.fullmatch(LIST_REGEX, value) is not None
 
 
 def says_feedback(line: str) -> bool:
@@ -43,7 +60,6 @@ def expand_params_in_text(text: str, sampled_params: SampledParamsDict) -> str:
         python_expression = match.groups()[1]
         for variable, value in sampled_params.items():
             python_expression = python_expression.replace(variable, convert_string_to_python(value))
-        print(python_expression)
         try:
             return run_python_code_string(python_expression)
         except ParsingError as e:
@@ -70,27 +86,28 @@ def run_python_code_string(python_code: str) -> str:
 def number_of_questions(template_text: str) -> int:
     """Get the number of questions that can be generated from a template from a parameter options
     dictionary."""
-    params, _ = parse_params(template_text)
+    params = parse_params(template_text)
     return int(np.prod([len(values) for values in params.values()]))
 
 
-def parse_params(template_text: str) -> Tuple[ParamOptionsDict, str]:
+def parse_params(template_text: str) -> ParamOptionsDict:
     """Parses question template parameters from the full question template.
 
     Args:
         template_text: question template string
 
     Returns:
-        tuple of [Parameter options, template text with parameter lines removed]
+        Parameter options dictionary, {param_name: [list of possible values]}
     """
     params = {}
     for count, line in enumerate(template_text.splitlines()):
         if is_param_line(line):
             param_name, possible_values = parse_param_line(line)
             params[param_name] = possible_values
-        elif line:  # If not empty & not a parameter line, must be question text
-            template_text = "\n".join(template_text.splitlines()[count:])
-            return params, template_text
+        elif contains_non_whitespace_characters(
+            line
+        ):  # If not empty & not a parameter line, must be question text
+            return params
     raise ParsingError(f"Following question template invalid - missing question!\n{template_text}")
 
 
@@ -99,13 +116,12 @@ def parse_param_line(line: str) -> Tuple[str, List[Any]]:
     regex = param_line_regex(line)
     if regex is None:
         raise ParsingError(f"{line}\n is an invalid question template parameter line")
-    # values_string = regex.groups()[1].replace("{", "[").replace("}", "]").replace("'", '"')
+    # \u201c and \u201d are the unicode characters that " is turned into on Notion
     values_string = (
         re.sub(r"""(['\u201c\u201d])""", lambda x: '"', regex.groups()[1])
         .replace("{", "[")
         .replace("}", "]")
     )
-    print(f"values_string: {values_string}")
     return regex.groups()[0], json.loads(values_string)
 
 
@@ -116,11 +132,29 @@ def param_line_regex(line: str) -> Optional[re.Match]:
         None if not a match, otherwise a re.Match object with .groups() corresponding to contents
          of normal brackets (), ordered by first open bracket (.
     """
+    param_element_regex = f"({NUMBER_REGEX}|{STRING_REGEX}|{LIST_REGEX})"
     return re.fullmatch(
-        r"^\s*param\s([^-{}:@&%$£?!~#+=,]+):\s({([^-{}:@&%$£?!~#+=,]+,\s*)+[^-{}:@&%$£?!~#+=,]+})\s*$",
+        r"\s*param\s([^-{}:@&%$£?!~#+=,]+):\s({("
+        + param_element_regex
+        + ",\s*)*"
+        + param_element_regex
+        + "})\s*",
         line,
     )
 
 
 def is_param_line(line: str) -> bool:
     return param_line_regex(line) is not None
+
+
+def contains_non_whitespace_characters(line: str) -> str:
+    return line if re.match(r"\S+", line) is not None else ""
+
+
+def remove_start_and_end_newlines(text: str) -> str:
+    """Remove line-breaks ('\n') at the start & end of the string."""
+    while text.startswith("\n"):
+        text = text[1:]
+    while text.endswith("\n"):
+        text = text[:-1]
+    return text

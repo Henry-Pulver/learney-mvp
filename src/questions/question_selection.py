@@ -46,7 +46,7 @@ def select_question(
         chosen_template = np.random.choice(
             template_options, p=question_weights / np.sum(question_weights)
         )
-        question_param_options, remaining_text = parse_params(chosen_template.template_text)
+        question_param_options = parse_params(chosen_template.template_text)
         sampled_params = sample_params(question_param_options)
         # Make 100% sure it's not been seen already in this question batch!
         question_seen_before = question_batch.responses.filter(

@@ -8,7 +8,9 @@ from learney_backend.base_models import UUIDModel
 from questions.template_parser import (
     answer_regex,
     expand_params_in_text,
+    is_param_line,
     parse_params,
+    remove_start_and_end_newlines,
     sample_params,
     says_feedback,
 )
@@ -74,21 +76,40 @@ class QuestionTemplate(UUIDModel):
         self, sampled_params: Optional[SampledParamsDict] = None
     ) -> Dict[str, Any]:
         """Gets question dictionary from a template and set of sampled parameters."""
-        parsed_params, remaining_text = parse_params(self.template_text)
         if sampled_params is None:
+            parsed_params = parse_params(self.template_text)
             sampled_params = sample_params(parsed_params)
-        text_expanded = expand_params_in_text(remaining_text, sampled_params)
+        text_expanded = expand_params_in_text(self.template_text, sampled_params)
 
-        question_text, answers, feedback, is_feedback = "", {}, "", False
+        answers: Dict[str, str] = {}
+        question_text, feedback, is_feedback, current_answer = "", "", False, ""
         for index, line in enumerate(text_expanded.splitlines()):
-            is_feedback = is_feedback or says_feedback(line)
-            if line:
+            if not is_param_line(line):  # Ignore param lines
+                is_feedback = is_feedback or says_feedback(line)
                 regex = answer_regex(line)
-                if not is_feedback and regex is not None:
-                    answers[regex.groups()[0].lower()] = regex.groups()[1]
-                elif not is_feedback:
+                # Allow for answers spanning multiple lines - remember if it's on an answer from previous line
+                current_answer = (
+                    regex.groups()[0].lower()
+                    if (regex is not None)
+                    else current_answer
+                    if not is_feedback
+                    else ""
+                )
+                if not current_answer and not is_feedback:
                     question_text += line + "\n"
-                elif not says_feedback(line):  # skip the word 'feedback'
+                elif current_answer:
+                    # Add new line to prev line if answer spans multiple lines
+                    prev_answer_line = (
+                        f"{current_answer}) {answers[current_answer]}"
+                        if answers.get(current_answer)
+                        else ""
+                    )
+                    regex = answer_regex(prev_answer_line + line)
+                    assert (
+                        regex is not None
+                    ), f"This is a bug. This should enInvalid answer line: {prev_answer_line + line}"
+                    answers[current_answer] = regex.groups()[1]
+                elif is_feedback and not says_feedback(line):  # skip the word 'feedback'
                     feedback += line + "\n"
 
         answers_order_randomised = [a for a in answers.values()]
@@ -96,9 +117,9 @@ class QuestionTemplate(UUIDModel):
 
         return {
             "id": get_frontend_id(self.id, sampled_params),
-            "question_text": question_text[:-1] if question_text else "",
+            "question_text": remove_start_and_end_newlines(question_text),
             "answers_order_randomised": answers_order_randomised,
             "correct_answer": answers[self.correct_answer_letter],
-            "feedback": feedback[:-1] if feedback else "",
+            "feedback": remove_start_and_end_newlines(feedback),
             "params": sampled_params,
         }

@@ -1,7 +1,7 @@
 from typing import Dict
 
 
-class QuestionWithParams:
+class QuestionWithParamsOne:
     QUESTION_TEMPLATE_STRING = r"""param A: {1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 param B: {1, 2, 3, 4, 5, 6, 7, 8, 9}
@@ -39,6 +39,53 @@ What shape matrix results from $$\mathbf{A}\times\mathbf{B}$$?"""
 We take the rows of the first matrix, and multiply them by the columns of the second.
 In practice, this means the size of the output matrix will be $$n(rows(A)) \times n(columns(B))$$
 In this case, that means an 4 by 4 matrix."""
+
+
+class QuestionWithParamsTwo:
+    QUESTION_TEMPLATE_STRING = r"""param A: {-5, -3, -1, 1, 3, 5}
+param B: {-4, -2, 0, 2, 4, 6}
+param C: {5, 8, 10, -2, -4, -6}
+param D: {7, 9, 11, -3, -5, -7}
+Which of the following is a symmetric matrix?
+(a) $$\begin{bmatrix}    <<A>> & <<B>>\\
+    <<-B>> & <<A>>
+\end{bmatrix}$$
+(b) $$\begin{bmatrix}    <<C>> & <<A>>\\
+    <<B>> & <<D>>
+\end{bmatrix}$$
+(c) $$\begin{bmatrix}    <<C>> & <<A>>\\
+    <<A>> & <<D>>
+\end{bmatrix}$$
+(d) $$\begin{bmatrix}    <<B>> & <<A>>\\
+    <<D>> & <<C>>
+\end{bmatrix}$$
+Feedback
+By definition of symmetric matrix $$A^T=A.$$
+$$\begin{bmatrix}    <<C>> & <<A>>\\
+    <<A>> & <<D>>
+\end{bmatrix}^T=\begin{bmatrix}    <<C>> & <<A>>\\
+<<A>> & <<D>>
+\end{bmatrix}.$$"""
+    PARAMS_DICT = {"A": "1", "B": "2", "C": "5", "D": "7"}
+
+    QUESTION_TEXT = r"""Which of the following is a symmetric matrix?"""
+
+    CORRECT_ANSWER_LETTER = "a"
+    CORRECT_ANSWER = r"""$$\begin{bmatrix}    1 & 2\\    -2 & 1\end{bmatrix}$$"""
+
+    ANSWERS = [
+        r"""$$\begin{bmatrix}    1 & 2\\    -2 & 1\end{bmatrix}$$""",
+        r"""$$\begin{bmatrix}    5 & 1\\    2 & 7\end{bmatrix}$$""",
+        r"""$$\begin{bmatrix}    5 & 1\\    1 & 7\end{bmatrix}$$""",
+        r"""$$\begin{bmatrix}    2 & 1\\    7 & 5\end{bmatrix}$$""",
+    ]
+
+    FEEDBACK = r"""By definition of symmetric matrix $$A^T=A.$$
+$$\begin{bmatrix}    5 & 1\\
+    1 & 7
+\end{bmatrix}^T=\begin{bmatrix}    5 & 1\\
+1 & 7
+\end{bmatrix}.$$"""
 
 
 class QuestionWithoutParams:

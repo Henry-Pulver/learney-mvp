@@ -1,5 +1,4 @@
 import json
-import re
 from datetime import datetime
 from typing import Dict, Tuple
 from uuid import UUID
@@ -18,7 +17,3 @@ def get_frontend_id(template_id: UUID, params_dict: SampledParamsDict) -> str:
 def uuid_and_params_from_frontend_id(frontend_id: str) -> Tuple[UUID, SampledParamsDict]:
     params_string, template_id = frontend_id.split("|")
     return UUID(template_id), json.loads(params_string.replace("'", '"')) if params_string else {}
-
-
-def is_number(value: str) -> bool:
-    return re.fullmatch(r"-?\d+\.?\d*(e-?\d+)?", value) is not None

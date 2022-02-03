@@ -11,6 +11,77 @@ from questions.template_parser import *
 from ..utils import get_frontend_id
 from .template_test_data import *
 
+
+@pytest.mark.parametrize(
+    "test_data",
+    [
+        ("2", True),
+        ("27", True),
+        ("3.2", True),
+        ("1.2", True),
+        ("1.2e2", True),
+        ("-1.2e2", True),
+        ("-1.2e-2", True),
+        ("3^{2}", False),
+        ("-1.2e-2.5", False),  # Interestingly, python only accepts ints after e
+        ("5 2", False),
+        ('"string', False),
+        ("another string", False),
+        ("[1, 2, 3, 4]", False),
+        ("-1, 2, 3", False),
+    ],
+)
+def test_is_number(test_data: Tuple[str, str]) -> None:
+    assert is_number(test_data[0]) == test_data[1]
+
+
+@pytest.mark.parametrize(
+    "test_data",
+    [
+        ("1", False),
+        ("1.139874", False),
+        ("[1, 2, 3]", False),
+        ("I am a string. Don't hurt me", False),
+        ('"learney', False),  # "learney
+        ('learney"', False),  # learney"
+        ("'learney", False),  # 'learney
+        ("learney'", False),  # learney'
+        (''''learney"''', False),  # 'learney"
+        (""""learney'""", False),  # "learney'
+        (""""learney'""", False),  # "learney'
+        ("'The cake is a lie'", True),
+        ('" "', True),
+        ('"2.3"', True),
+        ('"[1, 2, 3, 4]"', True),
+    ],
+)
+def test_is_string(test_data: str) -> None:
+    assert is_string(test_data[0]) == test_data[1]
+
+
+@pytest.mark.parametrize(
+    "test_data",
+    [
+        ("1", False),
+        ("1.139874", False),
+        ("I'm a Companion Cube. Don't hurt me", False),
+        ("'The cake is a lie'", False),
+        ('" "', False),
+        ('"2.3"', False),
+        ('"[1, 2, 3, 4]"', False),
+        ("[[1, 2, 3]", False),
+        ("[1, 2, 3,]", False),
+        ("[1]", True),
+        ("[1, 2]", True),
+        ("[1, 2, 2.3, 55]", True),
+        ("[1, '2', 2]", True),
+        ("[' ', '2', '2.3', '55']", True),
+    ],
+)
+def test_is_list(test_data: str) -> None:
+    assert is_list(test_data[0]) == test_data[1]
+
+
 INVALID_PARAM_LINES = [
     "",
     " ",
@@ -19,7 +90,6 @@ INVALID_PARAM_LINES = [
     "param A: ",
     "param A: {}",
     "param A {1, 2}",
-    "param A: {1}",
     "param : {1, 2}",
     "param A?: {1, 2}",
     "param A: {1, 2",
@@ -29,13 +99,20 @@ INVALID_PARAM_LINES = [
     "param A: {1, 2}}",
     "'param A: {1, 2}'",
     "param A: {1-2, 3}",
+    "param A: {$, 3}",
+    "param A: {%, 3}",
+    "param A: { , 3}",
+    "param A: {, 3}",
+    "param A: {s, 3}",
 ]
 
 VALID_PARAM_LINES = [
+    ("param A: {1}", "A", [1]),
     ("param A: {1, 2}", "A", [1, 2]),
     ("param Abbbbb: {1, 2}", "Abbbbb", [1, 2]),
     ("param B: {[1], [2]}", "B", [[1], [2]]),
     ("param C: {'1', '2'}", "C", ["1", "2"]),
+    ("param C: {' ', '1 ,'}", "C", [" ", "1 ,"]),
 ]
 
 
@@ -73,9 +150,8 @@ def test_parse_params__success(
 ) -> None:
     text_to_parse = "".join(line + "\n" for line, _, _ in params_info) + "\n" + remaining_text
     expected_all_param_options = {name: value for _, name, value in params_info}
-    all_param_options, text_without_params = parse_params(text_to_parse)
+    all_param_options = parse_params(text_to_parse)
     assert all_param_options == expected_all_param_options
-    assert text_without_params == remaining_text
 
 
 def test_parse_params__error() -> None:
@@ -233,10 +309,15 @@ def test_answer_regex(data: Tuple[str, bool]) -> None:
     assert (answer_regex(data[0]) is not None) is data[1]
 
 
+DATA_CLASSES = [QuestionWithParamsOne, QuestionWithParamsTwo, QuestionWithoutParams]
+
+
 class TestQuestionFromTemplate(TestCase):
     @pytest.fixture(scope="class", autouse=True)
     def set_up(self):
-        self.template_ids = [uuid4(), uuid4()]
+        self.template_ids = [
+            fn() for fn in [uuid4] * len(DATA_CLASSES)
+        ]  # outside loop ensures uuids aren't the same
         self.templates = [
             QuestionTemplate(
                 id=t_id,
@@ -246,14 +327,11 @@ class TestQuestionFromTemplate(TestCase):
                 template_text=data_class.QUESTION_TEMPLATE_STRING,
                 correct_answer_letter=data_class.CORRECT_ANSWER_LETTER,
             )
-            for data_class, t_id in zip(
-                [QuestionWithParams, QuestionWithoutParams], self.template_ids
-            )
+            for data_class, t_id in zip(DATA_CLASSES, self.template_ids)
         ]
 
     def test_question_from_template__pre_sample(self):
-        for count, data_class in enumerate([QuestionWithParams, QuestionWithoutParams]):
-            _, remaining_text = parse_params(data_class.QUESTION_TEMPLATE_STRING)
+        for count, data_class in enumerate(DATA_CLASSES):
             question_dict = self.templates[count].to_question_json(
                 sampled_params=data_class.PARAMS_DICT
             )
