@@ -1,3 +1,4 @@
+import math
 from typing import Any, Dict, Tuple
 
 import numpy as np
@@ -31,8 +32,10 @@ class QuestionBatch(UUIDModel):
         default=None,
         help_text="Time after the question batch was started that it was completed",
     )
-    completed = models.BooleanField(
-        default=False, help_text="Whether the user answered all the questions in the batch or not"
+    completed = models.CharField(
+        default="",
+        max_length=28,
+        help_text="Whether the user completed the batch and the type of completion",
     )
     level_at_start = models.IntegerField(
         help_text="The concept level the user started the question batch at"
@@ -52,6 +55,18 @@ class QuestionBatch(UUIDModel):
     )
     session_id = models.TextField(help_text="session_id of the session the response was from")
 
+    @property
+    def initial_knowledge_level(self) -> int:
+        return math.floor(
+            GaussianParams(
+                mean=self.initial_knowledge_mean, std_dev=self.initial_knowledge_std_dev
+            ).level
+        )
+
+    @property
+    def max_number_of_questions(self) -> int:
+        return 5 if self.initial_knowledge_level > self.concept.max_difficulty_level else 10
+
     def json(self) -> Dict[str, Any]:
         responses = self.responses.all().select_related("question_template__concept")
         return {
@@ -60,17 +75,20 @@ class QuestionBatch(UUIDModel):
             "answers_given": [response.response for response in responses],
             "completed": self.completed,
             "concept_id": self.concept.cytoscape_id,
+            "initial_knowledge_level": self.initial_knowledge_level,
+            "max_num_questions": self.max_number_of_questions,
         }
 
     @property
     def training_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        answered_responses = self.responses.all().exclude(response=None)
         difficulties = np.array(
-            [response.question_template.difficulty for response in self.responses.all()]
+            [response.question_template.difficulty for response in answered_responses]
         )
         guess_probs = np.array(
-            [1 / response.question_template.number_of_answers for response in self.responses.all()]
+            [1 / response.question_template.number_of_answers for response in answered_responses]
         )
-        correct = np.array([response.correct for response in self.responses.all()])
+        correct = np.array([response.correct for response in answered_responses])
         return difficulties, guess_probs, correct
 
     @property
