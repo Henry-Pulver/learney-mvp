@@ -41,13 +41,25 @@ def answer_regex(line: str) -> Optional[re.Match]:
     return re.search(r"^\s*\(?([abcdABCD])[).]\s*(\S+.*)", line)
 
 
-def sample_params(param_option_dict: ParamOptionsDict) -> SampledParamsDict:
+def sample_params(
+    param_option_dict: ParamOptionsDict, params_to_avoid: Optional[List[SampledParamsDict]] = None
+) -> SampledParamsDict:
     """Samples question template parameter values from possible options from a uniform categorical
-    distribution."""
-    return {
-        name: str(np.random.choice(param_options))
-        for name, param_options in param_option_dict.items()
-    }
+    distribution.
+
+    Redraw if the sampled parameters are in the list of params_to_avoid.
+    """
+    while True:
+        sampled_params = {
+            name: str(np.random.choice(value_options))
+            for name, value_options in param_option_dict.items()
+        }
+        if params_to_avoid is None or sampled_params not in params_to_avoid:
+            return sampled_params
+        elif len(params_to_avoid) == np.prod(
+            [len(values) for values in param_option_dict.values()]
+        ):
+            raise ParsingError("All possible parameter values have been sampled. This is a bug.")
 
 
 def expand_params_in_text(text: str, sampled_params: SampledParamsDict) -> str:
