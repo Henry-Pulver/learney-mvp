@@ -24,14 +24,14 @@ def select_question(
     track_question: bool = True,
 ) -> Dict[str, Any]:
     """Select a question from possible questions for this concept."""
-    template_options = QuestionTemplate.objects.filter(
-        concept__cytoscape_id=concept_id, active=True
-    ).prefetch_related("responses")
+    template_options: List[QuestionTemplate] = list(
+        QuestionTemplate.objects.filter(concept__cytoscape_id=concept_id, active=True)
+    )
     assert (
-        template_options.count() > 0
-    ), f"No template options to choose from for concept with cytoscape id: {concept_id} {QuestionTemplate.objects.filter(concept__cytoscape_id=concept_id, active=True)}!"
+        len(template_options) > 0
+    ), f"No template options to choose from for concept with cytoscape id: {concept_id}!"
 
-    # If no mcmc object provided (this speeds up inference), make one
+    # If no mcmc object provided, make one (providing one speeds up inference by using past samples)
     mcmc = mcmc or MCMCInference(
         user.knowledge_states.all().get(concept__cytoscape_id=concept_id).knowledge_state
     )
@@ -42,26 +42,27 @@ def select_question(
     question_weights = difficulty_terms * novelty_terms
 
     # Choose the template that's going to be used!
-    question_seen_before = True
-    while question_seen_before:
-        chosen_template = np.random.choice(
-            template_options, p=question_weights / np.sum(question_weights)
+    chosen_template: QuestionTemplate = np.random.choice(
+        template_options, p=question_weights / np.sum(question_weights)
+    )
+    question_param_options = parse_params(chosen_template.template_text)
+    # Avoid sampling parameters for this template already seen in this question batch!
+    params_to_avoid = [
+        p["question_params"]
+        for p in question_batch.responses.filter(question_template=chosen_template).values(
+            "question_params"
         )
-        question_param_options = parse_params(chosen_template.template_text)
-        sampled_params = sample_params(question_param_options)
-        # Make 100% sure it's not been seen already in this question batch!
-        question_seen_before = question_batch.responses.filter(
-            question_template=chosen_template, question_params=sampled_params
-        ).exists()
-
-    chosen_prob_correct = mcmc.correct_probs[template_options.index(chosen_template)]
+    ]
+    sampled_params = sample_params(question_param_options, params_to_avoid)
 
     if track_question:  # Track the question was sent in the DB
+        chosen_prob_correct = mcmc.correct_probs[template_options.index(chosen_template)]
         QuestionResponse.objects.create(
             user=user,
             question_template=chosen_template,
             question_params=sampled_params,
             question_batch=question_batch,
+            predicted_prob_correct=chosen_prob_correct,
             session_id=session_id,
             time_to_respond=None,
         )
@@ -123,6 +124,7 @@ def get_novelty_terms(
         batch_qs_to_avoid = template_qs_to_avoid & question_batch.responses.all()
         num_batch_qs_to_avoid = batch_qs_to_avoid.count()
         if num_batch_qs_to_avoid > 0:
+            # Weight by the number of questions (n_qs) generated from a template
             novelty_term *= 0.99 * np.exp(-5 * num_batch_qs_to_avoid / n_qs) + 0.01
             template_qs_to_avoid.difference(batch_qs_to_avoid)
 
