@@ -21,6 +21,7 @@ def select_question(
     user: User,
     session_id: str,
     mcmc: Optional[MCMCInference] = None,
+    track_question: bool = True,
 ) -> Dict[str, Any]:
     """Select a question from possible questions for this concept."""
     template_options = QuestionTemplate.objects.filter(
@@ -36,9 +37,9 @@ def select_question(
     )
     # Calculate the weights. Once normalised, these form the categorical
     #  distribution over question templates
-    question_weights = difficulty_terms(template_options, mcmc) * novelty_terms(
-        template_options, user, question_batch
-    )
+    difficulty_terms = get_difficulty_terms(template_options, mcmc)
+    novelty_terms = get_novelty_terms(template_options, user, question_batch)
+    question_weights = difficulty_terms * novelty_terms
 
     # Choose the template that's going to be used!
     question_seen_before = True
@@ -53,15 +54,17 @@ def select_question(
             question_template=chosen_template, question_params=sampled_params
         ).exists()
 
-    # Track the question was sent in the DB
-    QuestionResponse.objects.create(
-        user=user,
-        question_template=chosen_template,
-        question_params=sampled_params,
-        question_batch=question_batch,
-        session_id=session_id,
-        time_to_respond=None,
-    )
+    chosen_prob_correct = mcmc.correct_probs[template_options.index(chosen_template)]
+
+    if track_question:  # Track the question was sent in the DB
+        QuestionResponse.objects.create(
+            user=user,
+            question_template=chosen_template,
+            question_params=sampled_params,
+            question_batch=question_batch,
+            session_id=session_id,
+            time_to_respond=None,
+        )
 
     return chosen_template.to_question_json(sampled_params)
 
@@ -77,7 +80,7 @@ def prob_correct_to_weighting(correct_probs: np.ndarray) -> np.ndarray:
     return np.exp(-(1 / 2) * (((correct_probs - IDEAL_DIFF) / std_dev) ** 2))
 
 
-def difficulty_terms(
+def get_difficulty_terms(
     template_options: List[QuestionTemplate],
     mcmc: MCMCInference,
 ) -> np.array:
@@ -88,7 +91,7 @@ def difficulty_terms(
     return prob_correct_to_weighting(correct_probs)
 
 
-def novelty_terms(
+def get_novelty_terms(
     template_options: List[QuestionTemplate], user: User, question_batch: QuestionBatch
 ) -> np.ndarray:
     """Calculate the novelty terms for all template options to weight different templates."""
