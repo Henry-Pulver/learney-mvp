@@ -1,6 +1,6 @@
+import random
 from typing import Dict, List
 
-import numpy as np
 from django.db.models import QuerySet
 from rest_framework import status
 from rest_framework.request import Request
@@ -31,7 +31,7 @@ class CurrentConceptView(APIView):
             map_uuid = request.GET["map_uuid"]
 
             # Set seed in case randomness is required (for reproducibility)
-            np.random.seed(1)
+            random.seed(1)
 
             map = KnowledgeMapModel.objects.get(unique_id=map_uuid)
             valid_current_concepts = get_valid_current_concept_ids(user_id, map)
@@ -163,7 +163,7 @@ def use_link_clicks_or_random(
         {
             "concept_id": relevant_link_clicks.latest("timestamp").concept_id
             if relevant_link_clicks.count() > 0
-            else np.random.choice(possible_concept_ids)
+            else random.choice(possible_concept_ids)
         },
         status=status.HTTP_200_OK,
     )

@@ -36,7 +36,6 @@ class QuestionBatchView(APIView):
             question_batch = QuestionBatch.objects.create(
                 user=ks.user,
                 concept=ks.concept,
-                level_at_start=ks.knowledge_level,
                 initial_knowledge_mean=ks.knowledge_state.mean,
                 initial_knowledge_std_dev=ks.knowledge_state.std_dev,
                 session_id=session_id,
@@ -46,13 +45,18 @@ class QuestionBatchView(APIView):
 
         question_batch_json = question_batch.json()
 
-        if len(question_batch_json["questions"]) == 0:
+        # Select another question if most recent one is answered
+        if (
+            len(question_batch_json["answers_given"]) == 0
+            or question_batch_json["answers_given"][-1]
+        ):
             question_batch_json["questions"].append(
                 select_question(
                     concept_id=concept_id,
                     question_batch=question_batch,
                     session_id=session_id,
                     user=ks.user,
+                    save_question_to_db=True,
                 )
             )
 
@@ -60,16 +64,15 @@ class QuestionBatchView(APIView):
 
 
 class QuestionView(APIView):
-    """Currently not being used!"""
-
+    @silk_profile(name="Get Question")
     def get(self, request: Request, format=None) -> Response:
         try:
             concept_id = request.GET["concept_id"]
             user_id = request.GET["user_id"]
-            question_batch: QuestionBatch = QuestionBatch.objects.get(
-                id=request.GET["question_set"]
-            ).selected_related("responses")
 
+            question_batch: QuestionBatch = QuestionBatch.objects.prefetch_related("responses").get(
+                id=request.GET["question_set"]
+            )
             knowledge_state: InferredKnowledgeState = InferredKnowledgeState.objects.select_related(
                 "user"
             ).get(user=user_id, concept__cytoscape_id=concept_id)
@@ -79,6 +82,7 @@ class QuestionView(APIView):
                 question_batch=question_batch,
                 user=knowledge_state.user,
                 session_id=request.GET["session_id"],
+                save_question_to_db=True,
             )
 
             # TODO: Track with Mixpanel
