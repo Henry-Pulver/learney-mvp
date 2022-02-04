@@ -14,7 +14,7 @@ from questions.template_parser import (
     sample_params,
     says_feedback,
 )
-from questions.utils import SampledParamsDict, get_frontend_id
+from questions.utils import SampledParamsDict
 from questions.validators import integer_is_positive, not_null
 
 
@@ -83,7 +83,7 @@ class QuestionTemplate(UUIDModel):
 
         answers: Dict[str, str] = {}
         question_text, feedback, is_feedback, current_answer = "", "", False, ""
-        for index, line in enumerate(text_expanded.splitlines()):
+        for line in text_expanded.splitlines():
             if not is_param_line(line):  # Ignore param lines
                 is_feedback = is_feedback or says_feedback(line)
                 regex = answer_regex(line)
@@ -112,11 +112,10 @@ class QuestionTemplate(UUIDModel):
                 elif is_feedback and not says_feedback(line):  # skip the word 'feedback'
                     feedback += line + "\n"
 
-        answers_order_randomised = [a for a in answers.values()]
+        answers_order_randomised = list(answers.values())
         np.random.shuffle(answers_order_randomised)
-
         return {
-            "id": get_frontend_id(self.id, sampled_params),
+            "template_id": self.id,
             "question_text": remove_start_and_end_newlines(question_text),
             "answers_order_randomised": answers_order_randomised,
             "correct_answer": answers[self.correct_answer_letter],
