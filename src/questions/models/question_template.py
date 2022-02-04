@@ -1,3 +1,4 @@
+import random
 from typing import Any, Dict, Optional
 
 import numpy as np
@@ -73,7 +74,9 @@ class QuestionTemplate(UUIDModel):
         return num_answers
 
     def to_question_json(
-        self, sampled_params: Optional[SampledParamsDict] = None
+        self,
+        response_id: str,
+        sampled_params: Optional[SampledParamsDict] = None,
     ) -> Dict[str, Any]:
         """Gets question dictionary from a template and set of sampled parameters."""
         if sampled_params is None:
@@ -111,10 +114,10 @@ class QuestionTemplate(UUIDModel):
                     answers[current_answer] = regex.groups()[1]
                 elif is_feedback and not says_feedback(line):  # skip the word 'feedback'
                     feedback += line + "\n"
-
         answers_order_randomised = list(answers.values())
-        np.random.shuffle(answers_order_randomised)
+        random.shuffle(answers_order_randomised)
         return {
+            "id": response_id,
             "template_id": self.id,
             "question_text": remove_start_and_end_newlines(question_text),
             "answers_order_randomised": answers_order_randomised,

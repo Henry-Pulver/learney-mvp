@@ -21,7 +21,7 @@ def select_question(
     user: User,
     session_id: str,
     mcmc: Optional[MCMCInference] = None,
-    track_question: bool = True,
+    save_question_to_db: bool = True,
 ) -> Dict[str, Any]:
     """Select a question from possible questions for this concept."""
     template_options: List[QuestionTemplate] = list(
@@ -55,19 +55,20 @@ def select_question(
     ]
     sampled_params = sample_params(question_param_options, params_to_avoid)
 
-    if track_question:  # Track the question was sent in the DB
-        chosen_prob_correct = mcmc.correct_probs[template_options.index(chosen_template)]
-        QuestionResponse.objects.create(
+    response_id = ""
+    if save_question_to_db:  # Track the question was sent in the DB
+        q_response = QuestionResponse.objects.create(
             user=user,
             question_template=chosen_template,
             question_params=sampled_params,
             question_batch=question_batch,
-            predicted_prob_correct=chosen_prob_correct,
+            predicted_prob_correct=mcmc.correct_probs[template_options.index(chosen_template)],
             session_id=session_id,
             time_to_respond=None,
         )
+        response_id = q_response.id
 
-    return chosen_template.to_question_json(sampled_params)
+    return chosen_template.to_question_json(response_id, sampled_params)
 
 
 def prob_correct_to_weighting(correct_probs: np.ndarray) -> np.ndarray:
