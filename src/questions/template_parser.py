@@ -1,4 +1,5 @@
 import json
+import random
 import re
 from contextlib import redirect_stdout
 from io import StringIO
@@ -17,7 +18,7 @@ ParamOptionsDict = Dict[str, List[Any]]
 
 
 NUMBER_REGEX = r"-?\d+\.?\d*(e-?\d+)?"
-STRING_REGEX = r"""("[^"]+"|'[^']+')"""
+STRING_REGEX = """(["][^"]+"|'[^']+'|[\u201c\u201d][^\u201c\u201d]+[\u201c\u201d])"""
 LIST_REGEX = f"\[(({NUMBER_REGEX}|{STRING_REGEX})+.*,\s*)*({NUMBER_REGEX}|{STRING_REGEX})]"
 
 
@@ -51,7 +52,7 @@ def sample_params(
     """
     while True:
         sampled_params = {
-            name: str(np.random.choice(value_options))
+            name: str(random.choice(value_options))
             for name, value_options in param_option_dict.items()
         }
         if params_to_avoid is None or sampled_params not in params_to_avoid:
@@ -112,7 +113,7 @@ def parse_params(template_text: str) -> ParamOptionsDict:
         Parameter options dictionary, {param_name: [list of possible values]}
     """
     params = {}
-    for count, line in enumerate(template_text.splitlines()):
+    for line in template_text.splitlines():
         if is_param_line(line):
             param_name, possible_values = parse_param_line(line)
             params[param_name] = possible_values
@@ -145,7 +146,7 @@ def param_line_regex(line: str) -> Optional[re.Match]:
     """
     param_element_regex = f"({NUMBER_REGEX}|{STRING_REGEX}|{LIST_REGEX})"
     return re.fullmatch(
-        r"\s*param\s([^-{}:@&%$£?!~#+=,]+):\s({("
+        r"\s*param\s*([^-{}:@&%$£?!~#+=,]+):\s*({("
         + param_element_regex
         + ",\s*)*"
         + param_element_regex
