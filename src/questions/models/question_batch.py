@@ -37,9 +37,6 @@ class QuestionBatch(UUIDModel):
         max_length=28,
         help_text="Whether the user completed the batch and the type of completion",
     )
-    level_at_start = models.IntegerField(
-        help_text="The concept level the user started the question batch at"
-    )
     initial_knowledge_mean = models.FloatField(
         help_text="Mean of the user's knowledge state when they started the question batch"
     )
@@ -64,8 +61,12 @@ class QuestionBatch(UUIDModel):
         )
 
     @property
+    def is_revision_batch(self) -> bool:
+        return self.initial_knowledge_level > self.concept.max_difficulty_level
+
+    @property
     def max_number_of_questions(self) -> int:
-        return 5 if self.initial_knowledge_level > self.concept.max_difficulty_level else 10
+        return 5 if self.is_revision_batch else 10
 
     def json(self) -> Dict[str, Any]:
         responses = self.responses.all().select_related("question_template__concept")

@@ -21,7 +21,6 @@ class QuestionBatchAdmin(admin.ModelAdmin):
         "concept",
         "time_started",
         "time_taken_to_complete",
-        "level_at_start",
         "levels_progressed",
         "concept_completed",
     )

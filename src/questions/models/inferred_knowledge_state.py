@@ -26,6 +26,10 @@ class InferredKnowledgeState(UUIDModel):
     std_dev = models.FloatField(
         help_text="Standard deviation of the inferred knowledge state distribution"
     )
+    highest_level_achieved = models.FloatField(
+        help_text="We don't want users' knowledge to seemingly drop so precipitously "
+        "between sessions, so we keep track of the highest level achieved by them"
+    )
 
     last_updated = models.DateTimeField(
         auto_now=True, help_text="Time that the knowledge state was last updated"
