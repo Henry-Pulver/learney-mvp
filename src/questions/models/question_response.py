@@ -1,6 +1,7 @@
 from typing import Any, Dict
 
 from django.db import models
+from django.db.models import CheckConstraint
 
 from accounts.models import User
 from learney_backend.base_models import UUIDModel
@@ -37,6 +38,9 @@ class QuestionResponse(UUIDModel):
         default=None,
         help_text="Response given to the question. Null if yet to be answered",
     )
+    predicted_prob_correct = models.FloatField(
+        help_text="Predicted probability of answer being correct prior to answering"
+    )
     correct = models.BooleanField(
         default=None, null=True, help_text="Was the response correct? Null if not yet answered."
     )
@@ -53,3 +57,12 @@ class QuestionResponse(UUIDModel):
     @property
     def json(self) -> Dict[str, Any]:
         return self.question_template.to_question_json(self.question_params)
+
+    class Meta:
+        constraints = [
+            CheckConstraint(
+                check=models.Q(predicted_prob_correct__gte=0)
+                & models.Q(predicted_prob_correct__lte=1),
+                name="prob_correct_is_valid_probability",
+            )
+        ]
