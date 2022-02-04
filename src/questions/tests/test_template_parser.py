@@ -8,7 +8,6 @@ from knowledge_maps.models import Concept
 from questions.models.question_template import QuestionTemplate
 from questions.template_parser import *
 
-from ..utils import get_frontend_id
 from .template_test_data import *
 
 
@@ -250,6 +249,35 @@ def test_sample_params(params: ParamOptionsDict):
 
 
 @pytest.mark.parametrize(
+    "test_data",
+    [
+        ({"A": [1, 2, 3, 4, 5]}, [{"A": "2"}]),
+        ({"Beefy": [1, 2, 3, 4, 5]}, [{"Beefy": "2"}]),
+        ({"A": [[1, 2], [3, 4, 5]]}, [{"A": "[1, 2]"}]),
+        ({"A": ["1, 2", "3, 4", "5 n"]}, [{"A": "[1, 2"}]),
+    ],
+)
+def test_sample_params__avoid__success(test_data: Tuple[ParamOptionsDict, List[SampledParamsDict]]):
+    for name, v in sample_params(test_data[0], test_data[1]).items():
+        assert v != test_data[1][0][name]
+        transformed_v = int(v) if v.isnumeric() else json.loads(v) if v.startswith("[") else v
+        assert transformed_v in test_data[0][name]
+
+
+@pytest.mark.parametrize(
+    "test_data",
+    [
+        ({"A": [1, 2]}, [{"A": "1"}, {"A": "2"}]),
+        ({"A": [1]}, [{"A": "1"}]),
+        ({"A": [1, 2, 3, 4, 5]}, [{"A": "1"}, {"A": "2"}, {"A": "3"}, {"A": "4"}, {"A": "5"}]),
+    ],
+)
+def test_sample_params__avoid__error(test_data: Tuple[ParamOptionsDict, List[SampledParamsDict]]):
+    with pytest.raises(ParsingError):
+        sample_params(test_data[0], test_data[1])
+
+
+@pytest.mark.parametrize(
     "text",
     [
         "<<A>>",
@@ -336,7 +364,7 @@ class TestQuestionFromTemplate(TestCase):
                 sampled_params=data_class.PARAMS_DICT
             )
             expected_question_dict = {
-                "id": get_frontend_id(self.template_ids[count], data_class.PARAMS_DICT),
+                "template_id": self.template_ids[count],
                 "question_text": data_class.QUESTION_TEXT,
                 "correct_answer": data_class.CORRECT_ANSWER,
                 "feedback": data_class.FEEDBACK,
