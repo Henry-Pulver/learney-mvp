@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pytz
+from django.db.models import QuerySet
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -8,6 +9,7 @@ from rest_framework.views import APIView
 
 from questions.inference import GaussianParams, MCMCInference
 from questions.models import QuestionResponse
+from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_batch import QuestionBatch
 from questions.question_selection import select_question
 
@@ -45,14 +47,19 @@ class QuestionResponseView(APIView):
         new_theta = mcmc.inferred_theta_params
 
         # Update inferredKnowledgeState in the DB
-        q_batch.user.knowledge_states.all().filter(concept__cytoscape_id=concept_id).update(
-            mean=new_theta.mean, std_dev=new_theta.std_dev
+        prev_ks: QuerySet[InferredKnowledgeState] = q_batch.user.knowledge_states.all().filter(
+            concept__cytoscape_id=concept_id
         )
-        prev_ks = GaussianParams(mean=new_theta.mean, std_dev=new_theta.std_dev)
+        new_ks = GaussianParams(mean=new_theta.mean, std_dev=new_theta.std_dev)
+        prev_ks.update(
+            mean=new_theta.mean,
+            std_dev=new_theta.std_dev,
+            highest_level_achieved=max(prev_ks[0].highest_level_achieved, new_ks.level),
+        )
 
         # Is the question_batch completed?
-        concept_completed = prev_ks.level > q_batch.concept.max_difficulty_level
-        doing_poorly = len(correct) >= 5 and prev_ks.level < -0.5
+        concept_completed = new_ks.level > q_batch.concept.max_difficulty_level
+        doing_poorly = len(correct) >= 5 and new_ks.level < -0.5
         max_num_of_questions_answered = len(correct) >= q_batch.max_number_of_questions
         # Check it's not a 'revision batch' - if it is, ignore how well they do!
         completed = (
@@ -64,12 +71,12 @@ class QuestionResponseView(APIView):
             if max_num_of_questions_answered
             else ""
         )
-        response_payload = {"level": prev_ks.level, "completed": completed}
+        response_payload = {"level": new_ks.level, "completed": completed}
 
         if completed:
             # Update stored data on the question batch
             q_batch.completed = completed
-            q_batch.levels_progressed = prev_ks.level - q_batch.initial_knowledge_state.level
+            q_batch.levels_progressed = new_ks.level - q_batch.initial_knowledge_state.level
             q_batch.concept_completed = concept_completed
             q_batch.save()
         # else:

@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 
 from accounts.models import User
 from knowledge_maps.models import Concept
+from questions.inference import GaussianParams
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 
 INIT_MEAN = 1.0
@@ -24,6 +25,7 @@ class ConceptInfoView(APIView):
                 concept=Concept.objects.get(cytoscape_id=concept_id),
                 mean=INIT_MEAN,
                 std_dev=INIT_STD_DEV,
+                highest_level_achieved=GaussianParams(INIT_MEAN, INIT_STD_DEV).level,
             )
         else:
             ks = ks[0]
