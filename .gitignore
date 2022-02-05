@@ -5,6 +5,7 @@ pgadmin4/
 assets/*.json
 maps/
 src/S3_cache_dir/
+silk_profiler_results/
 
 !assets/positions_map_v013.json
 !assets/introSlides*

@@ -202,7 +202,7 @@ WSGI_APPLICATION = "learney_web.wsgi.application"
 
 SILKY_PYTHON_PROFILER = True
 SILKY_PYTHON_PROFILER_BINARY = True
-SILKY_PYTHON_PROFILER_RESULT_PATH = ""
+SILKY_PYTHON_PROFILER_RESULT_PATH = "../silk_profiler_results"
 SILKY_AUTHENTICATION = True  # User must login
 SILKY_AUTHORISATION = True  # User must have permissions
 # (by default Silk will only authorise users with is_staff==True)
