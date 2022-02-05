@@ -11,7 +11,7 @@ from silk.profiling.profiler import silk_profile
 
 
 class QuestionBatchView(APIView):
-    @silk_profile(name="Get Question Batch")
+    # @silk_profile(name="Get Question Batch")
     def get(self, request: Request, format=None) -> Response:
         # Extract payload from request
         concept_id = request.GET["concept_id"]
@@ -64,7 +64,7 @@ class QuestionBatchView(APIView):
 
 
 class QuestionView(APIView):
-    @silk_profile(name="Get Question")
+    # @silk_profile(name="Get Question")
     def get(self, request: Request, format=None) -> Response:
         try:
             concept_id = request.GET["concept_id"]
