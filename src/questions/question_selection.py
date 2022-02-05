@@ -97,10 +97,6 @@ def get_novelty_terms(
     template_options: List[QuestionTemplate], user: User, question_batch: QuestionBatch
 ) -> np.ndarray:
     """Calculate the novelty terms for all template options to weight different templates."""
-    output = []
-    num_of_questions = [
-        number_of_questions(template.template_text) for template in template_options
-    ]
     questions_to_avoid: QuerySet[QuestionResponse] = (
         user.responses.all()
         .filter(
@@ -115,32 +111,42 @@ def get_novelty_terms(
     ]
     q_type_counter = Counter(batch_q_types)
 
-    for option, n_qs in zip(template_options, num_of_questions):
-        novelty_term = 1
-
-        # [1.0] Avoid questions on the same template
-        template_qs_to_avoid = questions_to_avoid.filter(question_template__id=option.id)
-
-        # [1.1] Worst are questions from the same batch - avoid like the plague
-        batch_qs_to_avoid = template_qs_to_avoid & question_batch.responses.all()
-        num_batch_qs_to_avoid = batch_qs_to_avoid.count()
-        if num_batch_qs_to_avoid > 0:
-            # Weight by the number of questions (n_qs) generated from a template
-            novelty_term *= 0.99 * np.exp(-5 * num_batch_qs_to_avoid / n_qs) + 0.01
-            template_qs_to_avoid.difference(batch_qs_to_avoid)
-
-        # [1.2] Then are questions asked today or correct from the past
-        distinct_qs_asked = (
-            template_qs_to_avoid.filter(correct=True).distinct("question_params").count()
-        )
-        novelty_term *= 0.9 * np.exp(-2.5 * distinct_qs_asked / n_qs) + 0.1
-
-        # [2.0] Lastly avoid giving all the same type of question in a batch
-        if len(batch_q_types) > 3:
-            novelty_term *= 1 - np.exp(
-                -10 * ((q_type_counter[option.question_type] / len(batch_q_types)) - 1) + 0.1
-            )
-
-        output.append(novelty_term)
+    output = [
+        calculate_novelty(option, questions_to_avoid, question_batch, q_type_counter)
+        for option in template_options
+    ]
 
     return np.array(output)
+
+
+def calculate_novelty(
+    template: QuestionTemplate,
+    questions_to_avoid: QuerySet[QuestionResponse],
+    question_batch: QuestionBatch,
+    q_type_counter: Counter,
+) -> float:
+    n_qs = number_of_questions(template.template_text)
+    novelty_term = 1
+
+    # [1.0] Avoid questions on the same template
+    template_qs_to_avoid = questions_to_avoid.filter(question_template__id=template.id)
+
+    # [1.1] Worst are questions from the same batch - avoid like the plague
+    batch_qs_to_avoid = template_qs_to_avoid & question_batch.responses.all()
+    num_batch_qs_to_avoid = batch_qs_to_avoid.count()
+    if num_batch_qs_to_avoid > 0:
+        # Weight by the number of questions (n_qs) generated from a template
+        novelty_term *= np.exp(-5 * num_batch_qs_to_avoid / n_qs)
+        template_qs_to_avoid.difference(batch_qs_to_avoid)
+
+    # [1.2] Then there are questions asked today or correct from the past
+    distinct_qs_asked = template_qs_to_avoid.count()
+    novelty_term *= 0.9 * np.exp(-2.5 * distinct_qs_asked / n_qs) + 0.1
+
+    # [2.0] Lastly avoid giving all the same type of question in a batch
+    num_batch_q_types = sum(q_type_counter.values())
+    if num_batch_q_types > 3:
+        novelty_term *= 1 - np.exp(
+            -10 * ((q_type_counter[template.question_type] / num_batch_q_types) - 1) + 0.1
+        )
+    return novelty_term

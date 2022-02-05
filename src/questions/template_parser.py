@@ -60,7 +60,10 @@ def sample_params(
         elif len(params_to_avoid) == np.prod(
             [len(values) for values in param_option_dict.values()]
         ):
-            raise ParsingError("All possible parameter values have been sampled. This is a bug.")
+            raise ParsingError(
+                f"All possible parameter values have been sampled. This is a bug."
+                f"\nparam_option_dict: {param_option_dict}\nparams_to_avoid: {params_to_avoid}"
+            )
 
 
 def expand_params_in_text(text: str, sampled_params: SampledParamsDict) -> str:
