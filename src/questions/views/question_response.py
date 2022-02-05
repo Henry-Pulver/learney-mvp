@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pytz
+from django.core.cache import cache
 from django.db.models import QuerySet
 from rest_framework import status
 from rest_framework.request import Request
@@ -22,11 +23,14 @@ class QuestionResponseView(APIView):
         # try:
         # Extract data from request
         concept_id = request.data["concept_id"]
+        user_id = request.data["user_id"]
 
         # Save the response in the DB
-        q_response: QuestionResponse = QuestionResponse.objects.get(
-            id=request.data["question_response_id"],
-        )
+        q_response: QuestionResponse = cache.get(request.data["question_response_id"])
+        if q_response is None:
+            q_response = QuestionResponse.objects.get(
+                id=request.data["question_response_id"],
+            )
         q_response.correct = request.data["correct"]
         q_response.response = request.data["response"]
         q_response.time_to_respond = (
@@ -36,7 +40,7 @@ class QuestionResponseView(APIView):
 
         q_batch: QuestionBatch = (
             QuestionBatch.objects.prefetch_related("user__knowledge_states__concept")
-            .prefetch_related("responses__question_template")
+            .prefetch_related("responses__question_template__concept")
             .get(id=request.data["question_set"])
         )
 
@@ -47,15 +51,18 @@ class QuestionResponseView(APIView):
         new_theta = mcmc.inferred_theta_params
 
         # Update inferredKnowledgeState in the DB
-        prev_ks: QuerySet[InferredKnowledgeState] = q_batch.user.knowledge_states.all().filter(
-            concept__cytoscape_id=concept_id
+        prev_ks: QuerySet[InferredKnowledgeState] = cache.get(
+            f"inferredKnowledgeState_{user_id}_{concept_id}"
         )
+        if prev_ks is None:
+            prev_ks = q_batch.user.knowledge_states.all().filter(concept__cytoscape_id=concept_id)
         new_ks = GaussianParams(mean=new_theta.mean, std_dev=new_theta.std_dev)
         prev_ks.update(
             mean=new_theta.mean,
             std_dev=new_theta.std_dev,
             highest_level_achieved=max(prev_ks[0].highest_level_achieved, new_ks.level),
         )
+        cache.set(f"inferredKnowledgeState_{user_id}_{concept_id}", prev_ks)
 
         # Is the question_batch completed?
         concept_completed = new_ks.level > q_batch.concept.max_difficulty_level
@@ -79,15 +86,15 @@ class QuestionResponseView(APIView):
             q_batch.levels_progressed = new_ks.level - q_batch.initial_knowledge_state.level
             q_batch.concept_completed = concept_completed
             q_batch.save()
-        # else:
-        #     # Pick a new question and send it back
-        #     response_payload["next_question"] = select_question(
-        #         concept_id=concept_id,
-        #         question_batch=q_batch,
-        #         user=q_batch.user,
-        #         session_id=request.data["session_id"],
-        #         mcmc=mcmc,
-        #     )
+        else:
+            # Pick a new question and send it back
+            response_payload["next_question"] = select_question(
+                concept_id=concept_id,
+                question_batch=q_batch,
+                user=q_batch.user,
+                session_id=request.data["session_id"],
+                mcmc=mcmc,
+            )
 
         return Response(response_payload, status=status.HTTP_200_OK)
         # except Exception as e:

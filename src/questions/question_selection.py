@@ -2,6 +2,7 @@ from collections import Counter
 from typing import Any, Dict, List, Optional
 
 import numpy as np
+from django.core.cache import cache
 from django.db.models import Q, QuerySet
 
 from accounts.models import User
@@ -27,6 +28,7 @@ def select_question(
     template_options: List[QuestionTemplate] = list(
         QuestionTemplate.objects.filter(concept__cytoscape_id=concept_id, active=True)
     )
+    print(f"template_options: {template_options}")
     assert (
         len(template_options) > 0
     ), f"No template options to choose from for concept with cytoscape id: {concept_id}!"
@@ -38,12 +40,17 @@ def select_question(
     # Calculate the weights. Once normalised, these form the categorical
     #  distribution over question templates
     difficulty_terms = get_difficulty_terms(template_options, mcmc)
+    print(f"difficulty_terms: {difficulty_terms}")
     novelty_terms = get_novelty_terms(template_options, user, question_batch)
+    print(f"Novelty terms: {novelty_terms}")
     question_weights = difficulty_terms * novelty_terms
 
     # Choose the template that's going to be used!
     chosen_template: QuestionTemplate = np.random.choice(
         template_options, p=question_weights / np.sum(question_weights)
+    )
+    print(
+        f"Chosen template: {chosen_template}, number of questions: {number_of_questions(chosen_template.template_text)}"
     )
     question_param_options = parse_params(chosen_template.template_text)
     # Avoid sampling parameters for this template already seen in this question batch!
@@ -67,6 +74,7 @@ def select_question(
             time_to_respond=None,
         )
         response_id = q_response.id
+        cache.set(q_response, q_response.id)
 
     return chosen_template.to_question_json(response_id, sampled_params)
 
@@ -100,8 +108,9 @@ def get_novelty_terms(
     questions_to_avoid: QuerySet[QuestionResponse] = (
         user.responses.all()
         .filter(
-            Q(time_asked__gte=get_today()) | Q(correct=True)
-        )  # Questions asked today or answered correct ever
+            Q(time_asked__gte=get_today()) | Q(correct=True),
+            question_template__concept__cytoscape_id=question_batch.concept.cytoscape_id,
+        )  # Questions asked today or answered correct ever on this concept
         .select_related("question_batch")
         .select_related("question_template")
     )
@@ -111,10 +120,20 @@ def get_novelty_terms(
     ]
     q_type_counter = Counter(batch_q_types)
 
-    output = [
-        calculate_novelty(option, questions_to_avoid, question_batch, q_type_counter)
-        for option in template_options
-    ]
+    output = cache.get(f"novelty_terms_{question_batch.id}")
+    if output:
+        most_recent_question_template = (
+            question_batch.responses.all().latest("time_asked").question_template
+        )
+        output[template_options.index(most_recent_question_template)] = calculate_novelty(
+            most_recent_question_template, questions_to_avoid, question_batch, q_type_counter
+        )
+    else:
+        output = [
+            calculate_novelty(option, questions_to_avoid, question_batch, q_type_counter)
+            for option in template_options
+        ]
+    cache.set(f"novelty_terms_{question_batch.id}", output)
 
     return np.array(output)
 
@@ -135,8 +154,8 @@ def calculate_novelty(
     batch_qs_to_avoid = template_qs_to_avoid & question_batch.responses.all()
     num_batch_qs_to_avoid = batch_qs_to_avoid.count()
     if num_batch_qs_to_avoid > 0:
-        # Weight by the number of questions (n_qs) generated from a template
-        novelty_term *= np.exp(-5 * num_batch_qs_to_avoid / n_qs)
+        # Weight by the sqrt of the number of questions (n_qs) generated from a template
+        novelty_term *= np.exp(-5 * num_batch_qs_to_avoid / np.sqrt(n_qs))
         template_qs_to_avoid.difference(batch_qs_to_avoid)
 
     # [1.2] Then there are questions asked today or correct from the past
