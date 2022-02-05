@@ -1,7 +1,6 @@
 import random
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-import numpy as np
 from django.db import models
 
 from knowledge_maps.models import Concept
@@ -32,10 +31,10 @@ class QuestionTemplate(UUIDModel):
         "possible and as many difficulty levels as is deemed makes sense by the expert.",
         validators=[integer_is_positive],
     )
-    question_type = models.TextField(
-        help_text="Text for question template - generates full question",
-        blank=False,
-        validators=[not_null],
+    question_type = models.CharField(
+        help_text="Type of question - used to pick questions which vary in type",
+        choices=[("conceptual", "Conceptual"), ("practice", "Practice"), ("", "No type")],
+        max_length=20,
     )
 
     template_text = models.TextField(
@@ -79,49 +78,59 @@ class QuestionTemplate(UUIDModel):
         sampled_params: Optional[SampledParamsDict] = None,
     ) -> Dict[str, Any]:
         """Gets question dictionary from a template and set of sampled parameters."""
-        if sampled_params is None:
-            parsed_params = parse_params(self.template_text)
-            sampled_params = sample_params(parsed_params)
-        text_expanded = expand_params_in_text(self.template_text, sampled_params)
+        while True:  # This loop is to ensure that multiple answers aren't identical
+            if sampled_params is None:
+                parsed_params = parse_params(self.template_text)
+                sampled_params = sample_params(parsed_params)
+            text_expanded = expand_params_in_text(self.template_text, sampled_params)
 
-        answers: Dict[str, str] = {}
-        question_text, feedback, is_feedback, current_answer = "", "", False, ""
-        for line in text_expanded.splitlines():
-            if not is_param_line(line):  # Ignore param lines
-                is_feedback = is_feedback or says_feedback(line)
-                regex = answer_regex(line)
-                # Allow for answers spanning multiple lines - remember if it's on an answer from previous line
-                current_answer = (
-                    regex.groups()[0].lower()
-                    if (regex is not None)
-                    else current_answer
-                    if not is_feedback
-                    else ""
-                )
-                if not current_answer and not is_feedback:
-                    question_text += line + "\n"
-                elif current_answer:
-                    # Add new line to prev line if answer spans multiple lines
-                    prev_answer_line = (
-                        f"{current_answer}) {answers[current_answer]}"
-                        if answers.get(current_answer)
+            answers: Dict[str, str] = {}
+            question_text, feedback, is_feedback, current_answer = "", "", False, ""
+            for line in text_expanded.splitlines():
+                if not is_param_line(line):  # Ignore param lines
+                    is_feedback = is_feedback or says_feedback(line)
+                    regex = answer_regex(line)
+                    # Allow for answers spanning multiple lines - remember if it's on an answer from previous line
+                    current_answer = (
+                        regex.groups()[0].lower()
+                        if (regex is not None)
+                        else current_answer
+                        if not is_feedback
                         else ""
                     )
-                    regex = answer_regex(prev_answer_line + line)
-                    assert (
-                        regex is not None
-                    ), f"This is a bug. This should enInvalid answer line: {prev_answer_line + line}"
-                    answers[current_answer] = regex.groups()[1]
-                elif is_feedback and not says_feedback(line):  # skip the word 'feedback'
-                    feedback += line + "\n"
-        answers_order_randomised = list(answers.values())
-        random.shuffle(answers_order_randomised)
-        return {
-            "id": response_id,
-            "template_id": self.id,
-            "question_text": remove_start_and_end_newlines(question_text),
-            "answers_order_randomised": answers_order_randomised,
-            "correct_answer": answers[self.correct_answer_letter],
-            "feedback": remove_start_and_end_newlines(feedback),
-            "params": sampled_params,
-        }
+                    if not current_answer and not is_feedback:
+                        question_text += line + "\n"
+                    elif current_answer:
+                        # Add new line to prev line if answer spans multiple lines
+                        prev_answer_line = (
+                            f"{current_answer}) {answers[current_answer]}"
+                            if answers.get(current_answer)
+                            else ""
+                        )
+                        regex = answer_regex(prev_answer_line + line)
+                        assert (
+                            regex is not None
+                        ), f"This is a bug. This should enInvalid answer line: {prev_answer_line + line}"
+                        answers[current_answer] = regex.groups()[1]
+                    elif is_feedback and not says_feedback(line):  # skip the word 'feedback'
+                        feedback += line + "\n"
+            answers_order_randomised = list(answers.values())
+            # For many question templates, it's possible that 2 answers are the same.
+            # This is a problem when it comes to
+            if self.answers_all_different(answer_list=answers_order_randomised):
+                random.shuffle(answers_order_randomised)
+                return {
+                    "id": response_id,
+                    "template_id": self.id,
+                    "question_text": remove_start_and_end_newlines(question_text),
+                    "answers_order_randomised": answers_order_randomised,
+                    "correct_answer": answers[self.correct_answer_letter],
+                    "feedback": remove_start_and_end_newlines(feedback),
+                    "params": sampled_params,
+                }
+
+    @staticmethod
+    def answers_all_different(answer_list: List[str]) -> bool:
+        """Checks if all answers are different."""
+        answer_list_without_spaces = [answer.replace(" ", "") for answer in answer_list]
+        return len(set(answer_list_without_spaces)) == len(answer_list_without_spaces)
