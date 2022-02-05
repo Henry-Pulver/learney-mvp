@@ -18,7 +18,7 @@ ParamOptionsDict = Dict[str, List[Any]]
 
 
 NUMBER_REGEX = r"-?\d+\.?\d*(e-?\d+)?"
-STRING_REGEX = """(["][^"]+"|'[^']+'|[\u201c\u201d][^\u201c\u201d]+[\u201c\u201d])"""
+STRING_REGEX = """(["][^"]+"|'[^']+'|[\u201c\u201d][^\u201c\u201d]+[\u201c\u201d]|[\u2018\u2019][^\u2018\u2019]+[\u2018\u2019])"""
 LIST_REGEX = f"\[(({NUMBER_REGEX}|{STRING_REGEX})+.*,\s*)*({NUMBER_REGEX}|{STRING_REGEX})]"
 
 
@@ -130,7 +130,7 @@ def parse_param_line(line: str) -> Tuple[str, List[Any]]:
         raise ParsingError(f"{line}\n is an invalid question template parameter line")
     # \u201c and \u201d are the unicode characters that " is turned into on Notion
     values_string = (
-        re.sub(r"""(['\u201c\u201d])""", lambda x: '"', regex.groups()[1])
+        re.sub(r"""(['\u201c\u201d\u2018\u2019])""", lambda x: '"', regex.groups()[1])
         .replace("{", "[")
         .replace("}", "]")
     )
