@@ -1,6 +1,7 @@
 import json
 import random
 import re
+import warnings
 from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, List, Optional, Tuple
@@ -48,7 +49,8 @@ def sample_params(
     """Samples question template parameter values from possible options from a uniform categorical
     distribution.
 
-    Redraw if the sampled parameters are in the list of params_to_avoid.
+    Redraw if the sampled parameters are in the list of params_to_avoid, unless all possible values
+    are in that list.
     """
     while True:
         sampled_params = {
@@ -60,10 +62,11 @@ def sample_params(
         elif len(params_to_avoid) == np.prod(
             [len(values) for values in param_option_dict.values()]
         ):
-            raise ParsingError(
+            warnings.warn(
                 f"All possible parameter values have been sampled. This is a bug."
                 f"\nparam_option_dict: {param_option_dict}\nparams_to_avoid: {params_to_avoid}"
             )
+            return sampled_params
 
 
 def expand_params_in_text(text: str, sampled_params: SampledParamsDict) -> str:
