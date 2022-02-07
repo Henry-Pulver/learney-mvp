@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -6,7 +7,7 @@ from rest_framework.views import APIView
 import boto3
 from botocore.exceptions import ClientError
 from learney_web.settings import AWS_CREDENTIALS, IS_PROD
-from questions.models import QuestionTemplate
+from questions.models import QuestionResponse, QuestionTemplate
 
 CHARSET = "UTF-8"
 
@@ -26,6 +27,7 @@ def get_admin_edit_link(question_template_id: str) -> str:
 class ReportBrokenQuestionView(APIView):
     def post(self, request: Request, format=None) -> Response:
         template_id = request.data["question"]["template_id"]
+        response_id = request.data["question"]["id"]
 
         question_template = QuestionTemplate.objects.prefetch_related("concept").get(id=template_id)
         concept_name = question_template.concept.name
@@ -33,6 +35,13 @@ class ReportBrokenQuestionView(APIView):
         # Deactivate question template!
         question_template.active = False
         question_template.save()
+
+        # Other views store novelty terms and the active question templates to pick from in cache,
+        # so we need to invalidate these
+        cache.delete(f"template_options_{question_template.concept.cytoscape_id}")
+        cache.delete(
+            f"novelty_terms_{QuestionResponse.objects.get(id=response_id).question_batch.id}"
+        )
 
         subject = f"Question broken on '{concept_name}'"
 

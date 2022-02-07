@@ -1,13 +1,16 @@
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.models import User
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_batch import QuestionBatch
-from questions.question_selection import select_question
+from questions.question_selection import select_questions
 from questions.utils import get_today
-from silk.profiling.profiler import silk_profile
+
+# from silk.profiling.profiler import silk_profile
 
 
 class QuestionBatchView(APIView):
@@ -25,14 +28,18 @@ class QuestionBatchView(APIView):
             time_started__gte=get_today(),
             concept__cytoscape_id=concept_id,
         )
-        ks = (
-            InferredKnowledgeState.objects.select_related("concept")
-            .select_related("user")
-            .get(user=user_id, concept__cytoscape_id=concept_id)
-        )
+        ks = cache.get(f"InferredKnowledgeState:concept:{concept_id}user:{user_id}")
+        if ks is None:
+            ks = (
+                InferredKnowledgeState.objects.select_related("concept")
+                .select_related("user")
+                .get(user=user_id, concept__cytoscape_id=concept_id)
+            )
         if prev_batch.exists():
+            print("PREV BATCH")
             question_batch: QuestionBatch = prev_batch[0]
         else:
+            print("NEW BATCH")
             question_batch = QuestionBatch.objects.create(
                 user=ks.user,
                 concept=ks.concept,
@@ -40,6 +47,7 @@ class QuestionBatchView(APIView):
                 initial_knowledge_std_dev=ks.knowledge_state.std_dev,
                 session_id=session_id,
             )
+        cache.set(question_batch.id, question_batch, 600)
 
         # TODO: Track with Mixpanel
 
@@ -50,14 +58,13 @@ class QuestionBatchView(APIView):
             len(question_batch_json["answers_given"]) == 0
             or question_batch_json["answers_given"][-1]
         ):
-            question_batch_json["questions"].append(
-                select_question(
-                    concept_id=concept_id,
-                    question_batch=question_batch,
-                    session_id=session_id,
-                    user=ks.user,
-                    save_question_to_db=True,
-                )
+            question_batch_json["questions"] += select_questions(
+                concept_id=concept_id,
+                question_batch=question_batch,
+                session_id=session_id,
+                user=ks.user,
+                save_question_to_db=True,
+                number_to_select=2,
             )
 
         return Response(question_batch_json, status=status.HTTP_200_OK)
@@ -69,21 +76,22 @@ class QuestionView(APIView):
         try:
             concept_id = request.GET["concept_id"]
             user_id = request.GET["user_id"]
+            question_batch_id = request.GET["question_set"]
 
-            question_batch: QuestionBatch = QuestionBatch.objects.prefetch_related("responses").get(
-                id=request.GET["question_set"]
-            )
-            knowledge_state: InferredKnowledgeState = InferredKnowledgeState.objects.select_related(
-                "user"
-            ).get(user=user_id, concept__cytoscape_id=concept_id)
+            question_batch: QuestionBatch = cache.get(question_batch_id)
+            if question_batch is None:
+                question_batch = QuestionBatch.objects.prefetch_related("responses").get(
+                    id=question_batch_id
+                )
 
-            question = select_question(
+            question = select_questions(
                 concept_id=concept_id,
                 question_batch=question_batch,
-                user=knowledge_state.user,
+                user=User.objects.get(id=user_id),
                 session_id=request.GET["session_id"],
                 save_question_to_db=True,
-            )
+                number_to_select=1,
+            )[0]
 
             # TODO: Track with Mixpanel
 

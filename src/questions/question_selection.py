@@ -15,68 +15,88 @@ from questions.utils import get_today
 # Ideal probability of correct
 IDEAL_DIFF = 0.85
 
+MCMC_MUTEX = "MCMC_MUTEX"
 
-def select_question(
+
+def select_questions(
     concept_id: str,
     question_batch: QuestionBatch,
     user: User,
     session_id: str,
     mcmc: Optional[MCMCInference] = None,
     save_question_to_db: bool = True,
-) -> Dict[str, Any]:
-    """Select a question from possible questions for this concept."""
-    template_options: List[QuestionTemplate] = list(
-        QuestionTemplate.objects.filter(concept__cytoscape_id=concept_id, active=True)
-    )
+    number_to_select: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """Select questions from possible questions for this concept."""
+    assert (
+        number_to_select is None or number_to_select > 0
+    ), f"{number_to_select} is not a valid number of questions"
+    template_options: List[QuestionTemplate] = cache.get(f"template_options_{concept_id}")
+    if template_options is None:
+        template_options = list(
+            QuestionTemplate.objects.filter(concept__cytoscape_id=concept_id, active=True)
+        )
+        cache.set(f"template_options_{concept_id}", template_options, timeout=60 * 60 * 24)
     print(f"template_options: {template_options}")
     assert (
         len(template_options) > 0
     ), f"No template options to choose from for concept with cytoscape id: {concept_id}!"
 
     # If no mcmc object provided, make one (providing one speeds up inference by using past samples)
+    ks = cache.get(f"InferredKnowledgeState:concept:{concept_id}user:{user.id}")
     mcmc = mcmc or MCMCInference(
-        user.knowledge_states.all().get(concept__cytoscape_id=concept_id).knowledge_state
+        ks.knowledge_state
+        if ks
+        else user.knowledge_states.all().get(concept__cytoscape_id=concept_id).knowledge_state
     )
+
     # Calculate the weights. Once normalised, these form the categorical
     #  distribution over question templates
     difficulty_terms = get_difficulty_terms(template_options, mcmc)
     print(f"difficulty_terms: {difficulty_terms}")
-    novelty_terms = get_novelty_terms(template_options, user, question_batch)
-    print(f"Novelty terms: {novelty_terms}")
-    question_weights = difficulty_terms * novelty_terms
+    questions_chosen: List[Dict[str, Any]] = []
+    # Check cache for number of extra questions to select if number_to_select not provided. If both None, select 1
+    while len(questions_chosen) < (number_to_select or cache.get(f"{MCMC_MUTEX}_{user.id}") or 1):
+        novelty_terms = get_novelty_terms(template_options, user, question_batch)
+        print(f"Novelty terms: {novelty_terms}")
+        question_weights = difficulty_terms * novelty_terms
+        question_probs = np.nan_to_num(
+            question_weights / np.sum(question_weights)
+        )  # nan_to_num converts very small nans to 0
 
-    # Choose the template that's going to be used!
-    chosen_template: QuestionTemplate = np.random.choice(
-        template_options, p=question_weights / np.sum(question_weights)
-    )
-    print(
-        f"Chosen template: {chosen_template}, number of questions: {number_of_questions(chosen_template.template_text)}"
-    )
-    question_param_options = parse_params(chosen_template.template_text)
-    # Avoid sampling parameters for this template already seen in this question batch!
-    params_to_avoid = [
-        p["question_params"]
-        for p in question_batch.responses.filter(question_template=chosen_template).values(
-            "question_params"
+        # Choose the template that's going to be used!
+        chosen_template: QuestionTemplate = np.random.choice(template_options, p=question_probs)
+        print(
+            f"Chosen template: {chosen_template}, number of questions: {number_of_questions(chosen_template.template_text)}"
         )
-    ]
-    sampled_params = sample_params(question_param_options, params_to_avoid)
+        question_param_options = parse_params(chosen_template.template_text)
+        # Avoid sampling parameters for this template already seen in this question batch!
+        params_to_avoid = [
+            p["question_params"]
+            for p in question_batch.responses.filter(question_template=chosen_template).values(
+                "question_params"
+            )
+        ]
+        sampled_params = sample_params(question_param_options, params_to_avoid)
 
-    response_id = ""
-    if save_question_to_db:  # Track the question was sent in the DB
-        q_response = QuestionResponse.objects.create(
-            user=user,
-            question_template=chosen_template,
-            question_params=sampled_params,
-            question_batch=question_batch,
-            predicted_prob_correct=mcmc.correct_probs[template_options.index(chosen_template)],
-            session_id=session_id,
-            time_to_respond=None,
-        )
-        response_id = q_response.id
-        cache.set(q_response, q_response.id)
+        response_id = ""
+        if save_question_to_db:  # Track the question was sent in the DB
+            q_response = QuestionResponse.objects.create(
+                user=user,
+                question_template=chosen_template,
+                question_params=sampled_params,
+                question_batch=question_batch,
+                predicted_prob_correct=mcmc.correct_probs[template_options.index(chosen_template)],
+                session_id=session_id,
+                time_to_respond=None,
+            )
+            response_id = q_response.id
+            # Cache for use when question is answered
+            cache.set(q_response.id, q_response, timeout=120)
 
-    return chosen_template.to_question_json(response_id, sampled_params)
+        questions_chosen.append(chosen_template.to_question_json(response_id, sampled_params))
+
+    return questions_chosen
 
 
 def prob_correct_to_weighting(correct_probs: np.ndarray) -> np.ndarray:
@@ -134,8 +154,12 @@ def get_novelty_terms(
             for option in template_options
         ]
     cache.set(f"novelty_terms_{question_batch.id}", output)
+    array_output = np.array(output)
+    assert np.any(
+        array_output >= 0
+    ), f"All novelty terms are 0, thus all questions have been seen before ({array_output})"
 
-    return np.array(output)
+    return array_output
 
 
 def calculate_novelty(
@@ -165,7 +189,9 @@ def calculate_novelty(
     # [2.0] Lastly avoid giving all the same type of question in a batch
     num_batch_q_types = sum(q_type_counter.values())
     if num_batch_q_types > 3:
-        novelty_term *= 1 - np.exp(
-            -10 * ((q_type_counter[template.question_type] / num_batch_q_types) - 1) + 0.1
+        novelty_term *= (
+            0.9
+            - np.exp(-5 * (1 - (q_type_counter[template.question_type] / num_batch_q_types)))
+            + 0.1
         )
     return novelty_term
