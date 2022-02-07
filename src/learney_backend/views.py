@@ -1,6 +1,7 @@
 import datetime
 from typing import Dict, Optional, Union
 
+from django.core.cache import cache
 from django.utils.datastructures import MultiValueDictKeyError
 from pytz import timezone
 from rest_framework import status
@@ -19,34 +20,31 @@ UTC = timezone("UTC")
 class ContentLinkPreviewView(APIView):
     def get(self, request: Request, format=None) -> Response:
         try:
-            retrieved_entries = ContentLinkPreview.objects.filter(
-                map__unique_id=request.GET["map"],
-                concept=request.GET["concept"],
-                url=request.GET["url"],
-            )
-            if retrieved_entries.count() == 0:
-                return self._serialize_and_respond(get_from_linkpreview_net(request.GET), False)
-            else:
-                retrieved_entry = retrieved_entries.latest("preview_last_updated")
-                checked = (
-                    retrieved_entry.checked_by.all().filter(id=request.GET["user_id"]).count() > 0
+            url = request.GET["url"]
+            retrieved_entry: Optional[ContentLinkPreview] = cache.get(url)
+            if retrieved_entry is None:
+                retrieved_entries = ContentLinkPreview.objects.filter(
+                    map__unique_id=request.GET["map"],
+                    concept=request.GET["concept"],
+                    url=url,
                 )
+                if retrieved_entries.count() == 0:
+                    # if no entry is found, get it from linkpreview.net
+                    return self._serialize_and_respond(get_from_linkpreview_net(request.GET), False)
 
-                # If no details found and old, try linkpreview.net
-                utc_now = UTC.localize(datetime.datetime.utcnow())
-                if retrieved_entry.description == "" and (
-                    utc_now - retrieved_entry.preview_last_updated > datetime.timedelta(weeks=1)
-                ):
-                    return self._serialize_and_respond(
-                        get_from_linkpreview_net(request.GET), checked
-                    )
-                else:
-                    serializer = LinkPreviewSerializer(
-                        retrieved_entry, context={"request": request}
-                    )
-                    return Response(
-                        {**serializer.data, "checked": checked}, status=status.HTTP_200_OK
-                    )
+                retrieved_entry = retrieved_entries.latest("preview_last_updated")
+                cache.set(url, retrieved_entry, timeout=60 * 60 * 24)
+
+            checked = retrieved_entry.checked_by.all().filter(id=request.GET["user_id"]).count() > 0
+
+            # If no details found and old, try linkpreview.net
+            utc_now = UTC.localize(datetime.datetime.utcnow())
+            if retrieved_entry.description == "" and (
+                utc_now - retrieved_entry.preview_last_updated > datetime.timedelta(weeks=1)
+            ):
+                return self._serialize_and_respond(get_from_linkpreview_net(request.GET), checked)
+            serializer = LinkPreviewSerializer(retrieved_entry, context={"request": request})
+            return Response({**serializer.data, "checked": checked}, status=status.HTTP_200_OK)
         except KeyError as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
