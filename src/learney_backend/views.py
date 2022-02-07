@@ -79,8 +79,8 @@ class TotalVoteCountView(APIView):
         if data is None:
             data = {
                 url_dict["url"]: sum(
-                    2 * int(v_entry["vote"]) - 1  # True, False or None
-                    for v_entry in entries.filter(url=url_dict["url"]).values("vote")
+                    2 * int(vote) - 1  # True, False or None
+                    for vote in entries.filter(url=url_dict["url"]).values_list("vote", flat=True)
                 )
                 for url_dict in entries.values("url").distinct()
             }

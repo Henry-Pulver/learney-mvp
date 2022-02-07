@@ -59,10 +59,7 @@ class KnowledgeMapView(APIView):
                 )
             else:
                 return Response(
-                    [
-                        entry["url_extension"]
-                        for entry in KnowledgeMapModel.objects.all().values("url_extension")
-                    ],
+                    KnowledgeMapModel.objects.values_list("url_extension", flat=True),
                     status=status.HTTP_200_OK,
                 )
 

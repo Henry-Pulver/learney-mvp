@@ -42,9 +42,7 @@ class QuestionResponseView(APIView):
             # The second mutex checks the process holding the first mutex is related to the same user.
             if cache.get(f"{MCMC_MUTEX}_{user_id}") is not None:
                 # If it is, we increment this counter of the number of questions to select and
-                cache.set(
-                    f"{MCMC_MUTEX}_{user_id}", cache.get(f"{MCMC_MUTEX}_{user_id}") + 1, timeout=30
-                )
+                cache.incr(f"{MCMC_MUTEX}_{user_id}")
                 return Response(
                     {"response": "MCMC busy from prev request"}, status=status.HTTP_204_NO_CONTENT
                 )
