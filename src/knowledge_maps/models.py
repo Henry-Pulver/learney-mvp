@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.cache import cache
 from django.db import models
 from django.db.models import Max
 
@@ -22,8 +23,19 @@ class Concept(UUIDModel):  # Currently only used in the questions trial.
 
     @property
     def max_difficulty_level(self) -> int:
-        """Gets the highest difficulty of any question on a concept."""
-        return self.question_templates.all().aggregate(Max("difficulty"))["difficulty__max"]
+        """Gets the highest difficulty of any question on a concept.
+
+        Tries cache first.
+        """
+        max_diff = cache.get(f"max_difficulty_level_{self.cytoscape_id}")
+        if max_diff is None:
+            max_diff = (
+                self.question_templates.all().aggregate(Max("difficulty"))["difficulty__max"]
+                if self.question_templates.all().exists()
+                else 0
+            )
+            cache.set(f"max_difficulty_level_{self.cytoscape_id}", max_diff, 60 * 60 * 24)
+        return max_diff
 
     def __str__(self):
         return self.name
