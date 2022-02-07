@@ -19,6 +19,7 @@ pytest-django
 pytest-xdist
 pytest-cov
 PyYAML
+redis
 requests>=2.25.1
 sentry-sdk
 slack_sdk

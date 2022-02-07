@@ -232,6 +232,20 @@ CORS_ALLOW_HEADERS = [
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://learney-prod-redis.suk8h1.ng.0001.usw2.cache.amazonaws.com:6379",
+        "TIMEOUT": 300,
+    }
+    if PYTHON_ENV != "dev"
+    else {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+        "TIMEOUT": 300,
+    }
+}
+
 if "RDS_DB_NAME" in os.environ:
     DATABASES = {
         "default": {
