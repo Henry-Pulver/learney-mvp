@@ -43,16 +43,12 @@ class KnowledgeMapView(APIView):
     def get(self, request: Request, format=None):
         try:
             if "url_extension" in request.GET:
-                entry = KnowledgeMapModel.objects.filter(
-                    url_extension=request.GET["url_extension"]
-                ).latest("last_updated")
+                entry = KnowledgeMapModel.objects.get(url_extension=request.GET["url_extension"])
                 serializer = KnowledgeMapSerializer(entry)
                 data = {**serializer.data, "map_json": retrieve_map(entry)}
                 return Response(data, status=status.HTTP_200_OK)
-            elif "map" in request.GET and "version" in request.GET:
-                entry = KnowledgeMapModel.objects.filter(
-                    unique_id=request.GET["map"], version=int(request.GET["version"])
-                ).latest("last_updated")
+            elif "map" in request.GET:
+                entry = KnowledgeMapModel.objects.get(unique_id=request.GET["map"])
                 return Response(
                     {
                         "map_json": retrieve_map(entry),
@@ -97,9 +93,7 @@ class KnowledgeMapView(APIView):
             #     s3_key: , (optional)
             #     s3_bucket_name: , (optional)
             # }
-            entry = KnowledgeMapModel.objects.filter(unique_id=request_body["map"]).latest(
-                "last_updated"
-            )
+            entry = KnowledgeMapModel.objects.get(unique_id=request_body["map"])
             entry.s3_bucket_name = request_body.get("s3_bucket_name", entry.s3_bucket_name)
             entry.s3_key = request_body.get("s3_key", entry.s3_key)
             s3 = boto3.resource(
