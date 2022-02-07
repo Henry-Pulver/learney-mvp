@@ -1,9 +1,8 @@
-blessed==1.18.0
-botocore==1.20.72
+botocore>=1.20.72
 boto3
 colormap
-Django==3.2.2
-djangorestframework==3.12.4
+Django>=4.0.2
+djangorestframework>=3.12.4
 django-cors-headers
 django-silk
 easydev
