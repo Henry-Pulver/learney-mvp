@@ -35,6 +35,7 @@ class QuestionResponseView(APIView):
         q_response.response = request.data["response"]
         # q_response.time_to_respond = request.data["time_to_respond"]
         q_response.save()
+        cache.delete(question_response_id)
 
         # If there are multiple processes running numpyro, it errors. So we use this mutex to prevent that.
         while cache.get(MCMC_MUTEX) is not None:
