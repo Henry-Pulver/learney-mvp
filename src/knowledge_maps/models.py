@@ -16,7 +16,6 @@ class Concept(UUIDModel):  # Currently only used in the questions trial.
     )
     direct_prerequisites = models.ManyToManyField(
         "self",
-        related_name="direct_successors",
         related_query_name="direct_successor",
         help_text="The direct prerequisites of this concept",
     )
