@@ -1,3 +1,7 @@
+from datetime import datetime
+
+import numpy as np
+import pytz
 from django.db import models
 from django.db.models import UniqueConstraint
 
@@ -35,6 +39,9 @@ class InferredKnowledgeState(UUIDModel):
         auto_now=True, help_text="Time that the knowledge state was last updated"
     )
 
+    class Meta:
+        constraints = [UniqueConstraint(fields=["user", "concept"], name="unique_user_concept")]
+
     @property
     def knowledge_state(self) -> GaussianParams:
         return GaussianParams(mean=self.mean, std_dev=self.std_dev)
@@ -43,5 +50,34 @@ class InferredKnowledgeState(UUIDModel):
     def knowledge_level(self) -> float:
         return self.knowledge_state.level
 
-    class Meta:
-        constraints = [UniqueConstraint(fields=["user", "concept"], name="unique_user_concept")]
+    @property
+    def secs_since_last_updated(self) -> float:
+        return (datetime.now().replace(tzinfo=pytz.utc) - self.last_updated).total_seconds()
+
+    def get_display_knowledge_level(self, new_batch: bool) -> float:
+        show_updated_level = new_batch and self.secs_since_last_updated > 60 * 60 * 5  # 5 hours
+        current_knowledge_level = (
+            self._updated_std_dev_knowledge_level if show_updated_level else self.knowledge_level
+        )
+        return (current_knowledge_level + self.highest_level_achieved) / 2
+
+    def get_updated_std_dev(self) -> float:
+        """Between question batches, we update the knowledge level by increasing our uncertainty
+        over the value of the knowledge state. This allows the learner's inferred knowledge level to
+        change over time as our model doesn't account for this at present.
+
+        Min std_dev = 0.4, max is 1.0, weighted by time since last update which is
+         applied as an exponential decay.
+        """
+        min_std_dev: float = max(self.std_dev, 0.4)
+        n_days = self.secs_since_last_updated / (60 * 60 * 24)
+        # Weight by time passed since last update, with max std_dev of 1
+        return min_std_dev + 0.6 * (1 - np.exp(-n_days / 10))
+
+    def update_std_dev(self) -> None:
+        self.std_dev = self.get_updated_std_dev()
+        self.save()
+
+    @property
+    def _updated_std_dev_knowledge_level(self) -> float:
+        return GaussianParams(mean=self.mean, std_dev=self.get_updated_std_dev()).level
