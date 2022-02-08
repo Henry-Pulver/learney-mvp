@@ -45,6 +45,7 @@ class QuestionBatchView(APIView):
                 concept=ks.concept,
                 initial_knowledge_mean=ks.knowledge_state.mean,
                 initial_knowledge_std_dev=ks.knowledge_state.std_dev,
+                initial_display_knowledge_level=0,
                 session_id=session_id,
             )
         cache.set(question_batch.id, question_batch, 600)
