@@ -1,6 +1,8 @@
 import time
 from datetime import datetime
+from typing import Any, Dict, List, Tuple
 
+import numpy as np
 import pytz
 from django.core.cache import cache
 from rest_framework import status
@@ -21,6 +23,7 @@ class QuestionResponseView(APIView):
     # @silk_profile(name="Question Response - Infer Knowledge and Select new Question")
     def post(self, request: Request, format=None) -> Response:
         # try:
+        print(request.data)
         # Extract data from request
         concept_id = request.data["concept_id"]
         user_id = request.data["user_id"]
@@ -37,6 +40,27 @@ class QuestionResponseView(APIView):
         q_response.save()
         cache.delete(question_response_id)
 
+        q_batch: QuestionBatch = cache.get(question_batch_id)
+        if q_batch is None:
+            q_batch = (
+                QuestionBatch.objects.prefetch_related("user__knowledge_states__concept")
+                .prefetch_related("responses__question_template__concept")
+                .get(id=question_batch_id)
+            )
+            cache.set(question_batch_id, q_batch, 600)
+
+        # Get all the precomputed json data from the cache
+        q_batch_json = cache.get(f"question_json:{question_batch_id}")
+        # And redo the computations now if it's not there!
+        if q_batch_json is None:
+            q_batch_json = q_batch.json()
+        else:
+            q_batch_json["answers_given"].append(q_response.response)
+
+        # Get data to infer knowledge state
+        # difficulties, guess_probs, correct = q_batch.training_data
+        difficulties, guess_probs, correct = get_training_data(q_batch_json)
+
         # If there are multiple processes running numpyro, it errors. So we use this mutex to prevent that.
         while cache.get(MCMC_MUTEX) is not None:
             # The second mutex checks the process holding the first mutex is related to the same user.
@@ -48,21 +72,8 @@ class QuestionResponseView(APIView):
                 )
             else:
                 time.sleep(0.25)
-        cache.set(MCMC_MUTEX, True, timeout=30)
-        cache.set(f"{MCMC_MUTEX}_{user_id}", 1, timeout=30)
-
-        q_batch: QuestionBatch = cache.get(q_response.question_batch.id)
-        if q_batch is None:
-            q_batch = (
-                QuestionBatch.objects.prefetch_related("user__knowledge_states__concept")
-                .prefetch_related("responses__question_template__concept")
-                .get(id=question_batch_id)
-            )
-            cache.set(question_batch_id, q_batch, 600)
-        print(f"q_batch.responses.count(): {q_batch.responses.count()}")
-
+        cache.set_many({MCMC_MUTEX: True, f"{MCMC_MUTEX}_{user_id}": 1}, timeout=30)
         # Infer new knowledge state
-        difficulties, guess_probs, correct = q_batch.training_data
         mcmc = MCMCInference(q_batch.initial_knowledge_state)
         mcmc.run_mcmc_inference(difficulties=difficulties, guess_probs=guess_probs, answers=correct)
         new_theta = mcmc.inferred_theta_params
@@ -72,7 +83,9 @@ class QuestionResponseView(APIView):
             f"InferredKnowledgeState:concept:{concept_id}user:{user_id}"
         )
         if prev_ks is None:
-            prev_ks = q_batch.user.knowledge_states.all().get(concept__cytoscape_id=concept_id)
+            prev_ks = InferredKnowledgeState.objects.get(
+                user__id=user_id, concept__cytoscape_id=concept_id
+            )
         new_ks = GaussianParams(mean=new_theta.mean, std_dev=new_theta.std_dev)
         prev_ks.mean = new_theta.mean
         prev_ks.std_dev = new_theta.std_dev
@@ -80,42 +93,75 @@ class QuestionResponseView(APIView):
         prev_ks.save()
         cache.set(f"InferredKnowledgeState:concept:{concept_id}user:{user_id}", prev_ks)
 
+        # Below cache get re-run because it may have been updated by another process!
+        q_batch_json = cache.get(f"question_json:{question_batch_id}")
+        num_left_to_ask = q_batch_json["max_num_questions"] - len(q_batch_json["answers_given"])
+        # Pick new questions to ask
+        if num_left_to_ask > 0:
+            next_questions = select_questions(
+                concept_id=concept_id,
+                question_batch=q_batch,
+                question_batch_json=q_batch_json,
+                user=q_batch.user,
+                session_id=request.data["session_id"],
+                mcmc=mcmc,
+                number_to_select=None if num_left_to_ask > 1 else 1,
+            )
+            # Update the cache with the new questions
+            q_batch_json["questions"] += next_questions
+        else:
+            next_questions = []
+
+        # Release mutex
+        cache.delete_many([MCMC_MUTEX, f"{MCMC_MUTEX}_{user_id}"])
+
+        cache.set(f"question_json:{question_batch_id}", q_batch_json, timeout=1200)
+
         # Is the question_batch completed?
         concept_completed = new_ks.level > q_batch.concept.max_difficulty_level
-        doing_poorly = len(correct) >= 5 and new_ks.level < -0.5
-        max_num_of_questions_answered = len(correct) >= q_batch.max_number_of_questions
+        num_responses = len(q_batch_json["answers_given"])
+        doing_poorly = num_responses >= 5 and new_ks.level < -0.5
+        print(f"Number of questions answered: {num_responses}")
+        max_num_of_questions_answered = num_responses >= q_batch_json["max_num_questions"]
         # Check it's not a 'revision batch' - if it is, ignore how well they do!
-        completed = (
-            "completed_concept"
-            if concept_completed and not q_batch.is_revision_batch
-            else "doing_poorly"
-            if doing_poorly and not q_batch.is_revision_batch
-            else "max_num_of_questions"
-            if max_num_of_questions_answered
-            else ""
-        )
-        response_payload = {"level": new_ks.level, "completed": completed}
-
+        if q_batch.is_revision_batch:
+            completed = "review_completed" if max_num_of_questions_answered else ""
+        else:
+            completed = (
+                "completed_concept"
+                if concept_completed
+                else "doing_poorly"
+                if doing_poorly
+                else "max_num_of_questions"
+                if max_num_of_questions_answered
+                else ""
+            )
         if completed:
+            print(f"completed: {completed}")
             # Update stored data on the question batch
             q_batch.completed = completed
             q_batch.levels_progressed = new_ks.level - q_batch.initial_knowledge_state.level
             q_batch.concept_completed = concept_completed
             q_batch.save()
             cache.delete(question_batch_id)  # Clear the cache
-        else:
-            # Pick a new question and send it back
-            response_payload["next_questions"] = select_questions(
-                concept_id=concept_id,
-                question_batch=q_batch,
-                user=q_batch.user,
-                session_id=request.data["session_id"],
-                mcmc=mcmc,
-            )
-            # Release mutex
-            cache.delete(MCMC_MUTEX)
-            cache.delete(f"{MCMC_MUTEX}_{user_id}")
 
-        return Response(response_payload, status=status.HTTP_200_OK)
+        return Response(
+            {"level": new_ks.level, "completed": completed, "next_questions": next_questions},
+            status=status.HTTP_200_OK,
+        )
         # except Exception as e:
         #     return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+
+def get_training_data(q_batch_json: Dict[str, Any]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Get the training data for the question batch.
+
+    :param q_batch_json: The question batch json.
+    :return: The training data.
+    """
+    responses = q_batch_json["answers_given"]
+    questions = q_batch_json["questions"][: len(responses)]
+    difficulties = [q["difficulty"] for q in questions]
+    guess_probs = [1 / len(q["answers_order_randomised"]) for q in questions]
+    correct = [q["correct_answer"] == response for q, response in zip(questions, responses)]
+    return np.array(difficulties), np.array(guess_probs), np.array(correct)

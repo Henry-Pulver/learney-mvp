@@ -1,5 +1,6 @@
 from collections import Counter
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
+from uuid import UUID
 
 import numpy as np
 from django.core.cache import cache
@@ -20,12 +21,13 @@ MCMC_MUTEX = "MCMC_MUTEX"
 
 def select_questions(
     concept_id: str,
-    question_batch: QuestionBatch,
+    question_batch_json: Dict[str, Any],
     user: User,
     session_id: str,
     mcmc: Optional[MCMCInference] = None,
     save_question_to_db: bool = True,
     number_to_select: Optional[int] = None,
+    question_batch: Optional[QuestionBatch] = None,
 ) -> List[Dict[str, Any]]:
     """Select questions from possible questions for this concept."""
     assert (
@@ -37,7 +39,6 @@ def select_questions(
             QuestionTemplate.objects.filter(concept__cytoscape_id=concept_id, active=True)
         )
         cache.set(f"template_options_{concept_id}", template_options, timeout=60 * 60 * 24)
-    print(f"template_options: {template_options}")
     assert (
         len(template_options) > 0
     ), f"No template options to choose from for concept with cytoscape id: {concept_id}!"
@@ -57,7 +58,7 @@ def select_questions(
     questions_chosen: List[Dict[str, Any]] = []
     # Check cache for number of extra questions to select if number_to_select not provided. If both None, select 1
     while len(questions_chosen) < (number_to_select or cache.get(f"{MCMC_MUTEX}_{user.id}") or 1):
-        novelty_terms = get_novelty_terms(template_options, user, question_batch)
+        novelty_terms = get_novelty_terms(template_options, user, question_batch_json, concept_id)
         print(f"Novelty terms: {novelty_terms}")
         question_weights = difficulty_terms * novelty_terms
         question_probs = np.nan_to_num(
@@ -72,15 +73,18 @@ def select_questions(
         question_param_options = parse_params(chosen_template.template_text)
         # Avoid sampling parameters for this template already seen in this question batch!
         params_to_avoid = [
-            p["question_params"]
-            for p in question_batch.responses.filter(question_template=chosen_template).values(
-                "question_params"
-            )
+            question["params"]
+            for question in question_batch_json["questions"]
+            if question["template_id"] == chosen_template.id
         ]
         sampled_params = sample_params(question_param_options, params_to_avoid)
 
         response_id = ""
         if save_question_to_db:  # Track the question was sent in the DB
+            if question_batch is None:
+                question_batch = cache.get(question_batch_json["id"])
+                if question_batch is None:
+                    question_batch = QuestionBatch.objects.get(id=question_batch_json["id"])
             q_response = QuestionResponse.objects.create(
                 user=user,
                 question_template=chosen_template,
@@ -91,10 +95,14 @@ def select_questions(
                 time_to_respond=None,
             )
             response_id = q_response.id
+            print(f"response_id: {response_id}")
             # Cache for use when question is answered
             cache.set(q_response.id, q_response, timeout=120)
 
-        questions_chosen.append(chosen_template.to_question_json(response_id, sampled_params))
+        question_chosen = chosen_template.to_question_json(response_id, sampled_params)
+        print(f"question_chosen: {question_chosen}")
+        questions_chosen.append(question_chosen)
+        question_batch_json["questions"].append(question_chosen)
 
     return questions_chosen
 
@@ -122,39 +130,41 @@ def get_difficulty_terms(
 
 
 def get_novelty_terms(
-    template_options: List[QuestionTemplate], user: User, question_batch: QuestionBatch
+    template_options: List[QuestionTemplate],
+    user: User,
+    question_batch_json: Dict[str, Any],
+    concept_id: str,
 ) -> np.ndarray:
     """Calculate the novelty terms for all template options to weight different templates."""
-    questions_to_avoid: QuerySet[QuestionResponse] = (
-        user.responses.all()
-        .filter(
-            Q(time_asked__gte=get_today()) | Q(correct=True),
-            question_template__concept__cytoscape_id=question_batch.concept.cytoscape_id,
-        )  # Questions asked today or answered correct ever on this concept
-        .select_related("question_batch")
-        .select_related("question_template")
+    data_from_questions_to_avoid: List[Dict[str, Union[UUID, str]]] = cache.get(
+        f"data_from_questions_to_avoid_{question_batch_json['id']}"
     )
+    if data_from_questions_to_avoid is None:
+        data_from_questions_to_avoid = list(
+            QuestionResponse.objects.filter(
+                Q(time_asked__gte=get_today()) | Q(correct=True),
+                user=user,
+                question_template__concept__cytoscape_id=concept_id,
+            ).values("id", "question_template__question_type")
+        )  # Questions asked today or answered correct ever on this concept
 
-    batch_q_types = [
-        question.question_template.question_type for question in question_batch.responses.all()
-    ]
-    q_type_counter = Counter(batch_q_types)
-
-    output = cache.get(f"novelty_terms_{question_batch.id}")
-    if output:
-        most_recent_question_template = (
-            question_batch.responses.all().latest("time_asked").question_template
+    novelty_terms = cache.get(f"novelty_terms_{question_batch_json['id']}")
+    if novelty_terms is not None:
+        # This is the most recently chosen template's id
+        prev_template_id = question_batch_json["questions"][-1]["template_id"]
+        prev_template_index = int(
+            np.where([t.id == prev_template_id for t in template_options])[0][0]
         )
-        output[template_options.index(most_recent_question_template)] = calculate_novelty(
-            most_recent_question_template, questions_to_avoid, question_batch, q_type_counter
+        novelty_terms[prev_template_index] = calculate_novelty(
+            template_options[prev_template_index], data_from_questions_to_avoid, question_batch_json
         )
     else:
-        output = [
-            calculate_novelty(option, questions_to_avoid, question_batch, q_type_counter)
+        novelty_terms = [
+            calculate_novelty(option, data_from_questions_to_avoid, question_batch_json)
             for option in template_options
         ]
-    cache.set(f"novelty_terms_{question_batch.id}", output)
-    array_output = np.array(output)
+    cache.set(f"novelty_terms_{question_batch_json['id']}", novelty_terms)
+    array_output = np.array(novelty_terms)
     assert np.any(
         array_output >= 0
     ), f"All novelty terms are 0, thus all questions have been seen before ({array_output})"
@@ -164,34 +174,47 @@ def get_novelty_terms(
 
 def calculate_novelty(
     template: QuestionTemplate,
-    questions_to_avoid: QuerySet[QuestionResponse],
-    question_batch: QuestionBatch,
-    q_type_counter: Counter,
+    q_template_data_to_avoid: List[Dict[str, Union[UUID, str]]],
+    q_batch_json: Dict[str, Any],
 ) -> float:
     n_qs = number_of_questions(template.template_text)
     novelty_term = 1
 
     # [1.0] Avoid questions on the same template
-    template_qs_to_avoid = questions_to_avoid.filter(question_template__id=template.id)
+    num_batch_qs_on_this_template = sum(
+        q["template_id"] == template.id for q in q_batch_json["questions"]
+    )
 
     # [1.1] Worst are questions from the same batch - avoid like the plague
-    batch_qs_to_avoid = template_qs_to_avoid & question_batch.responses.all()
-    num_batch_qs_to_avoid = batch_qs_to_avoid.count()
-    if num_batch_qs_to_avoid > 0:
+    if num_batch_qs_on_this_template > 0:
         # Weight by the sqrt of the number of questions (n_qs) generated from a template
-        novelty_term *= np.exp(-5 * num_batch_qs_to_avoid / np.sqrt(n_qs))
-        template_qs_to_avoid.difference(batch_qs_to_avoid)
+        novelty_term *= np.exp(-5 * num_batch_qs_on_this_template / np.sqrt(n_qs))
 
     # [1.2] Then there are questions asked today or correct from the past
-    distinct_qs_asked = template_qs_to_avoid.count()
-    novelty_term *= 0.9 * np.exp(-2.5 * distinct_qs_asked / n_qs) + 0.1
+    num_template_qs_to_avoid = (
+        sum(t_data["id"] == template.id for t_data in q_template_data_to_avoid)
+        - num_batch_qs_on_this_template
+    )
+    novelty_term *= 0.9 * np.exp(-2.5 * num_template_qs_to_avoid / n_qs) + 0.1
 
     # [2.0] Lastly avoid giving all the same type of question in a batch
-    num_batch_q_types = sum(q_type_counter.values())
-    if num_batch_q_types > 3:
+    num_questions_asked = len(q_batch_json["questions"])
+    if num_questions_asked > 3:
         novelty_term *= (
             0.9
-            - np.exp(-5 * (1 - (q_type_counter[template.question_type] / num_batch_q_types)))
+            - np.exp(
+                -5
+                * (
+                    1
+                    - (
+                        sum(
+                            q["question_type"] == template.question_type
+                            for q in q_batch_json["questions"]
+                        )
+                        / num_questions_asked
+                    )
+                )
+            )
             + 0.1
         )
     return novelty_term
