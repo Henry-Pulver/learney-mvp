@@ -62,11 +62,19 @@ class QuestionBatch(UUIDModel):
 
     @property
     def is_revision_batch(self) -> bool:
-        return self.initial_knowledge_level > self.concept.max_difficulty_level
+        return self.initial_knowledge_level >= self.concept.max_difficulty_level
 
     @property
     def max_number_of_questions(self) -> int:
         return 5 if self.is_revision_batch else 10
+
+    @property
+    def number_of_questions_answered(self) -> int:
+        return self.responses.all().exclude(response=None).count()
+
+    @property
+    def number_of_questions_asked(self) -> int:
+        return self.responses.count()
 
     def json(self) -> Dict[str, Any]:
         responses = self.responses.all().select_related("question_template__concept")
