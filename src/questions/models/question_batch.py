@@ -37,14 +37,19 @@ class QuestionBatch(UUIDModel):
         max_length=28,
         help_text="Whether the user completed the batch and the type of completion",
     )
+    initial_display_knowledge_level = models.FloatField(
+        # This is different from actual knowledge level because of the increase in variance
+        #  in the distribution over knowledge levels over time to allow users to make progress
+        help_text="The initial knowledge level displayed to the user"
+    )
     initial_knowledge_mean = models.FloatField(
         help_text="Mean of the user's knowledge state when they started the question batch"
     )
     initial_knowledge_std_dev = models.FloatField(
         help_text="Standard deviation of the user's knowledge state when they started the question batch"
     )
-    levels_progressed = models.IntegerField(
-        default=0, help_text="How many levels the user progressed in this question batch"
+    levels_progressed = models.FloatField(
+        default=0, help_text="Actual number of levels the user progressed in this question batch"
     )
     concept_completed = models.BooleanField(
         default=False,
@@ -84,7 +89,7 @@ class QuestionBatch(UUIDModel):
             "answers_given": [response.response for response in responses],
             "completed": self.completed,
             "concept_id": self.concept.cytoscape_id,
-            "initial_knowledge_level": self.initial_knowledge_level,
+            "initial_knowledge_level": self.initial_display_knowledge_level,
             "max_num_questions": self.max_number_of_questions,
         }
 
