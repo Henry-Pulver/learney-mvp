@@ -6,6 +6,7 @@ from django.db import models
 from knowledge_maps.models import Concept
 from learney_backend.base_models import UUIDModel
 from questions.template_parser import (
+    ParsingError,
     answer_regex,
     expand_params_in_text,
     is_param_line,
@@ -78,7 +79,7 @@ class QuestionTemplate(UUIDModel):
         sampled_params: Optional[SampledParamsDict] = None,
     ) -> Dict[str, Any]:
         """Gets question dictionary from a template and set of sampled parameters."""
-        while True:  # This loop is to ensure that multiple answers aren't identical
+        for _ in range(1000):  # This loop is to ensure that multiple answers aren't identical
             if sampled_params is None:
                 parsed_params = parse_params(self.template_text)
                 sampled_params = sample_params(parsed_params)
@@ -130,6 +131,10 @@ class QuestionTemplate(UUIDModel):
                     "difficulty": self.difficulty,
                     "params": sampled_params,
                 }
+            sampled_params = None  # Try again with new params
+        raise ParsingError(
+            f"Could not ensure all answers are different for {self.id} after 1000 tries."
+        )
 
     @staticmethod
     def answers_all_different(answer_list: List[str]) -> bool:

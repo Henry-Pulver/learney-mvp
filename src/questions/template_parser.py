@@ -52,7 +52,7 @@ def sample_params(
     Redraw if the sampled parameters are in the list of params_to_avoid, unless all possible values
     are in that list.
     """
-    while True:
+    for _ in range(10000):
         sampled_params = {
             name: str(random.choice(value_options))
             for name, value_options in param_option_dict.items()
@@ -67,6 +67,7 @@ def sample_params(
                 f"\nparam_option_dict: {param_option_dict}\nparams_to_avoid: {params_to_avoid}"
             )
             return sampled_params
+    raise Exception(f"Could not sample parameters from {param_option_dict} after 10000 tries.")
 
 
 def expand_params_in_text(text: str, sampled_params: SampledParamsDict) -> str:
