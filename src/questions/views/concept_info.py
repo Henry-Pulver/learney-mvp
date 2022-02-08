@@ -32,12 +32,11 @@ class ConceptInfoView(APIView):
                     highest_level_achieved=GaussianParams(INIT_MEAN, INIT_STD_DEV).level,
                 )
             else:
-
                 ks = ks[0]
             cache.set(f"InferredKnowledgeState:concept:{concept_id}user:{user_id}", ks)
         return Response(
             {
-                "level": ks.knowledge_level,
+                "level": ks.get_display_knowledge_level(new_batch=True),
                 "max_level": ks.concept.max_difficulty_level,
             },
             status=status.HTTP_200_OK,

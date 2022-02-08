@@ -39,6 +39,7 @@ class QuestionBatchView(APIView):
             question_batch: QuestionBatch = prev_batch[0]
         else:
             print("NEW BATCH")
+            ks.update_std_dev()
             question_batch = QuestionBatch.objects.create(
                 user=ks.user,
                 concept=ks.concept,

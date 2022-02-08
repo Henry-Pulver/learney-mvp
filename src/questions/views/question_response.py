@@ -56,6 +56,7 @@ class QuestionResponseView(APIView):
             q_batch_json = q_batch.json()
         else:
             q_batch_json["answers_given"].append(q_response.response)
+        q_batch_json = cache.set(f"question_json:{question_batch_id}", q_batch_json)
 
         # Get data to infer knowledge state
         # difficulties, guess_probs, correct = q_batch.training_data
@@ -79,19 +80,19 @@ class QuestionResponseView(APIView):
         new_theta = mcmc.inferred_theta_params
 
         # Update InferredKnowledgeState in the DB
-        prev_ks: InferredKnowledgeState = cache.get(
+        ks_model: InferredKnowledgeState = cache.get(
             f"InferredKnowledgeState:concept:{concept_id}user:{user_id}"
         )
-        if prev_ks is None:
-            prev_ks = InferredKnowledgeState.objects.get(
+        if ks_model is None:
+            ks_model = InferredKnowledgeState.objects.get(
                 user__id=user_id, concept__cytoscape_id=concept_id
             )
         new_ks = GaussianParams(mean=new_theta.mean, std_dev=new_theta.std_dev)
-        prev_ks.mean = new_theta.mean
-        prev_ks.std_dev = new_theta.std_dev
-        prev_ks.highest_level_achieved = max(prev_ks.highest_level_achieved, new_ks.level)
-        prev_ks.save()
-        cache.set(f"InferredKnowledgeState:concept:{concept_id}user:{user_id}", prev_ks)
+        ks_model.mean = new_theta.mean
+        ks_model.std_dev = new_theta.std_dev
+        ks_model.highest_level_achieved = max(ks_model.highest_level_achieved, new_ks.level)
+        ks_model.save()
+        cache.set(f"InferredKnowledgeState:concept:{concept_id}user:{user_id}", ks_model)
 
         # Below cache get re-run because it may have been updated by another process!
         q_batch_json = cache.get(f"question_json:{question_batch_id}")
@@ -146,7 +147,11 @@ class QuestionResponseView(APIView):
             cache.delete(question_batch_id)  # Clear the cache
 
         return Response(
-            {"level": new_ks.level, "completed": completed, "next_questions": next_questions},
+            {
+                "level": ks_model.get_display_knowledge_level(new_batch=False),
+                "completed": completed,
+                "next_questions": next_questions,
+            },
             status=status.HTTP_200_OK,
         )
         # except Exception as e:
