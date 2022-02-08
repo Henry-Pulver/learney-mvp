@@ -116,16 +116,18 @@ class QuestionTemplate(UUIDModel):
                         feedback += line + "\n"
             answers_order_randomised = list(answers.values())
             # For many question templates, it's possible that 2 answers are the same.
-            # This is a problem when it comes to
+            # This is a problem because users need to have different answers to pick from!
             if self.answers_all_different(answer_list=answers_order_randomised):
                 random.shuffle(answers_order_randomised)
                 return {
                     "id": response_id,
                     "template_id": self.id,
                     "question_text": remove_start_and_end_newlines(question_text),
+                    "question_type": self.question_type,
                     "answers_order_randomised": answers_order_randomised,
                     "correct_answer": answers[self.correct_answer_letter],
                     "feedback": remove_start_and_end_newlines(feedback),
+                    "difficulty": self.difficulty,
                     "params": sampled_params,
                 }
 
