@@ -10,9 +10,9 @@ from questions.inference import GaussianParams
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 
 LEVEL_TO_KNOWLEDGE_STATE = {
-    "New": lambda max_level: GaussianParams(1, max_level / 2),
-    "Shaky": lambda max_level: GaussianParams(1 + max_level / 2, max_level / 2),
-    "Known": lambda max_level: GaussianParams(1 + max_level, max_level / 2),
+    "New": lambda max_level: GaussianParams(1, max(1, max_level / 2)),
+    "Shaky": lambda max_level: GaussianParams(1 + max_level / 2, max(1, max_level / 2)),
+    "Known": lambda max_level: GaussianParams(1 + max_level, max(1, max_level / 2)),
 }
 
 
