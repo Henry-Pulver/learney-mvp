@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from django.db import models
 
 from learney_backend.models import ContentLinkPreview

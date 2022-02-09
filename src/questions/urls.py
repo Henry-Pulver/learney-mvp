@@ -22,6 +22,7 @@ from questions.views import (
     QuestionResponseView,
     QuestionView,
     ReportBrokenQuestionView,
+    UserOnboardingView,
 )
 
 urlpatterns = [
@@ -35,4 +36,5 @@ urlpatterns = [
         ReportBrokenQuestionView.as_view(),
         name="report_broken_questions",
     ),
+    path("api/v0/user_onboarding", UserOnboardingView.as_view(), name="user_onboarding"),
 ]
