@@ -1,9 +1,7 @@
 import time
-from datetime import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 import numpy as np
-import pytz
 from django.core.cache import cache
 from rest_framework import status
 from rest_framework.request import Request
@@ -56,7 +54,7 @@ class QuestionResponseView(APIView):
             q_batch_json = q_batch.json()
         else:
             q_batch_json["answers_given"].append(q_response.response)
-        q_batch_json = cache.set(f"question_json:{question_batch_id}", q_batch_json)
+        cache.set(f"question_json:{question_batch_id}", q_batch_json)
 
         # Get data to infer knowledge state
         # difficulties, guess_probs, correct = q_batch.training_data
