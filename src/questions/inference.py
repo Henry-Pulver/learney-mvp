@@ -16,8 +16,8 @@ from numpyro.infer import MCMC, NUTS, Predictive
 class GaussianParams:
     mean: float
     std_dev: float
-    # The level is where CDF(user's knowledge state = level) = LEVEL_THRESHOLD
-    LEVEL_THRESHOLD = 0.05
+    # The 'level' is where CDF(user's knowledge state = level) = LEVEL_THRESHOLD
+    LEVEL_THRESHOLD = 0.1  # Ie we think there's a 90% prob that they're at this level or higher
 
     def __post_init__(self):
         assert self.std_dev >= 0
