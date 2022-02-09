@@ -78,11 +78,11 @@ class TotalVoteCountView(APIView):
         data = cache.get(f"total_votes:{request.GET['map']}")
         if data is None:
             data = {
-                url_dict["url"]: sum(
+                url_dict: sum(
                     2 * int(vote) - 1  # True, False or None
-                    for vote in entries.filter(url=url_dict["url"]).values_list("vote", flat=True)
+                    for vote in entries.filter(url=url_dict).values_list("vote", flat=True)
                 )
-                for url_dict in entries.values("url").distinct()
+                for url_dict in entries.values_list("url", flat=True).distinct()
             }
             cache.set(f"total_votes:{request.GET['map']}", data, timeout=60 * 60 * 24)
 
