@@ -24,3 +24,6 @@ class User(models.Model):
     in_questions_trial = models.BooleanField(
         default=False, help_text="Whether or not they're involved in the question trial"
     )
+
+    def __str__(self):
+        return self.name
