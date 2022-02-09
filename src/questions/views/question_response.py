@@ -67,7 +67,8 @@ class QuestionResponseView(APIView):
                 # If it is, we increment this counter of the number of questions to select and
                 cache.incr(f"{MCMC_MUTEX}_{user_id}")
                 return Response(
-                    {"response": "MCMC busy from prev request"}, status=status.HTTP_204_NO_CONTENT
+                    {"response": "MCMC already in progress"},
+                    status=status.HTTP_200_OK,
                 )
             else:
                 time.sleep(0.25)
@@ -120,6 +121,7 @@ class QuestionResponseView(APIView):
         concept_completed = new_ks.level > q_batch.concept.max_difficulty_level
         num_responses = len(q_batch_json["answers_given"])
         doing_poorly = num_responses >= 5 and new_ks.level < -0.5
+        print(f"Number of questions asked: {len(q_batch_json['questions'])}")
         print(f"Number of questions answered: {num_responses}")
         max_num_of_questions_answered = num_responses >= q_batch_json["max_num_questions"]
         # Check it's not a 'revision batch' - if it is, ignore how well they do!

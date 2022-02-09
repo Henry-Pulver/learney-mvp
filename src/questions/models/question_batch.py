@@ -82,11 +82,20 @@ class QuestionBatch(UUIDModel):
         return self.responses.count()
 
     def json(self) -> Dict[str, Any]:
-        responses = self.responses.all().select_related("question_template__concept")
+        responses = (
+            self.responses.all().select_related("question_template__concept").order_by("time_asked")
+        )
+        answers_given = [response.response for response in responses]
+        assert (
+            all(answer is None for answer in answers_given[answers_given.index(None) :])
+            if None in answers_given
+            else True
+        ), f"Not only most recent questions have None as responses!\nAnswers given: {answers_given}"
+        answers_given = [a for a in answers_given if a is not None]
         return {
             "id": self.id,
             "questions": [response.json for response in responses],
-            "answers_given": [response.response for response in responses],
+            "answers_given": answers_given,
             "completed": self.completed,
             "concept_id": self.concept.cytoscape_id,
             "initial_knowledge_level": self.initial_display_knowledge_level,

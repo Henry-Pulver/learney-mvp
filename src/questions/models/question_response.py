@@ -56,7 +56,7 @@ class QuestionResponse(UUIDModel):
 
     @property
     def json(self) -> Dict[str, Any]:
-        return self.question_template.to_question_json(self.question_params)
+        return self.question_template.to_question_json(self.id, self.question_params)
 
     class Meta:
         constraints = [

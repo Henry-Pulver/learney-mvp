@@ -56,8 +56,8 @@ class QuestionBatchView(APIView):
 
         # Select another question if most recent one is answered
         if (
-            len(question_batch_json["answers_given"]) == 0
-            or question_batch_json["answers_given"][-1]
+            len(question_batch_json["answers_given"]) >= len(question_batch_json["questions"]) - 1
+            and len(question_batch_json["questions"]) < 10
         ):
             select_questions(
                 concept_id=concept_id,
@@ -66,9 +66,10 @@ class QuestionBatchView(APIView):
                 session_id=session_id,
                 user=ks.user,
                 save_question_to_db=True,
-                number_to_select=2,
+                number_to_select=min(2, 10 - len(question_batch_json["questions"])),
             )
-            print(f"Num questions chosen: {len(question_batch_json['questions'])}")
             cache.set(f"question_json:{question_batch.id}", question_batch_json, 1200)
+        print(f"Num questions chosen: {len(question_batch_json['questions'])}")
+        print(f"Num answers given: {len(question_batch_json['answers_given'])}")
 
         return Response(question_batch_json, status=status.HTTP_200_OK)
