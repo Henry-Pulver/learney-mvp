@@ -3,13 +3,13 @@ import json
 
 from django.db import migrations
 
-from knowledge_maps.views import retrieve_map
-
 
 def add_concepts_from_questions_map(apps, schema_editor):
     Concept = apps.get_model("knowledge_maps", "Concept")
     KnowledgeMapModel = apps.get_model("knowledge_maps", "KnowledgeMapModel")
-    map_json = json.loads(retrieve_map(KnowledgeMapModel.objects.get(url_extension="questionsmap")))
+    map_json = json.loads(
+        KnowledgeMapModel.objects.get(url_extension="questionsmap").retrieve_map()
+    )
 
     # Add all the concepts
     for node in map_json["nodes"]:
