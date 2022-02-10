@@ -45,7 +45,7 @@ class QuestionBatchView(APIView):
                 concept=ks.concept,
                 initial_knowledge_mean=ks.knowledge_state.mean,
                 initial_knowledge_std_dev=ks.knowledge_state.std_dev,
-                initial_display_knowledge_level=0,
+                initial_display_knowledge_level=ks.get_display_knowledge_level(new_batch=True),
                 session_id=session_id,
             )
         cache.set(question_batch.id, question_batch, 600)
@@ -57,7 +57,7 @@ class QuestionBatchView(APIView):
         # Select another question if most recent one is answered
         if (
             len(question_batch_json["answers_given"]) >= len(question_batch_json["questions"]) - 1
-            and len(question_batch_json["questions"]) < 10
+            and len(question_batch_json["questions"]) < question_batch_json["max_num_questions"]
         ):
             select_questions(
                 concept_id=concept_id,
@@ -69,6 +69,9 @@ class QuestionBatchView(APIView):
                 number_to_select=min(2, 10 - len(question_batch_json["questions"])),
             )
             cache.set(f"question_json:{question_batch.id}", question_batch_json, 1200)
+        print(
+            f"Knowledge state: ({round(ks.knowledge_state.mean, 2)}, {round(ks.knowledge_state.std_dev, 2)})"
+        )
         print(f"Num questions chosen: {len(question_batch_json['questions'])}")
         print(f"Num answers given: {len(question_batch_json['answers_given'])}")
 
