@@ -67,7 +67,7 @@ class QuestionBatch(UUIDModel):
 
     @property
     def is_revision_batch(self) -> bool:
-        return self.initial_knowledge_level >= self.concept.max_difficulty_level
+        return self.initial_display_knowledge_level >= self.concept.max_difficulty_level
 
     @property
     def max_number_of_questions(self) -> int:
