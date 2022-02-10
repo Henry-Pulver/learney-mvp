@@ -44,17 +44,21 @@ class InferredKnowledgeState(UUIDModel):
 
     @property
     def knowledge_state(self) -> GaussianParams:
+        """Gets Gaussian distribution over the inferred knowledge state."""
         return GaussianParams(mean=self.mean, std_dev=self.std_dev)
 
     @property
     def knowledge_level(self) -> float:
+        """The knowledge level of the user for the concept - the level above which we are 90% sure they are"""
         return self.knowledge_state.level
 
     @property
     def secs_since_last_updated(self) -> float:
+        """Returns the number of seconds since the last update."""
         return (datetime.now().replace(tzinfo=pytz.utc) - self.last_updated).total_seconds()
 
     def get_display_knowledge_level(self, new_batch: bool) -> float:
+        """Returns the knowledge level to display to the user."""
         show_updated_level = new_batch and self.secs_since_last_updated > 60 * 60 * 5  # 5 hours
         current_knowledge_level = (
             self._updated_std_dev_knowledge_level if show_updated_level else self.knowledge_level
@@ -75,9 +79,11 @@ class InferredKnowledgeState(UUIDModel):
         return min_std_dev + 0.6 * (1 - np.exp(-n_days / 10))
 
     def update_std_dev(self) -> None:
+        """Updates the std_dev of the inferred knowledge state."""
         self.std_dev = self.get_updated_std_dev()
         self.save()
 
     @property
     def _updated_std_dev_knowledge_level(self) -> float:
+        """Returns the updated distribution over knowledge levels based on the updated std_dev."""
         return GaussianParams(mean=self.mean, std_dev=self.get_updated_std_dev()).level
