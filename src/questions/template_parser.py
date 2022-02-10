@@ -43,6 +43,21 @@ def answer_regex(line: str) -> Optional[re.Match]:
     return re.search(r"^\s*\(?([abcdABCD])[).]\s*(\S+.*)", line)
 
 
+def check_valid_params_exist(
+    param_options: ParamOptionsDict, params_to_avoid: Optional[List[SampledParamsDict]] = None
+) -> bool:
+    """Check that at least one valid parameter combination exists."""
+    is_valid = params_to_avoid is None or len(params_to_avoid) < np.prod(
+        [len(vals) for vals in param_options.values()]
+    )
+    if not is_valid:
+        warnings.warn(
+            f"All possible parameter values have been sampled."
+            f"\nparam_option_dict: {param_options}\nparams_to_avoid: {params_to_avoid}"
+        )
+    return is_valid
+
+
 def sample_params(
     param_options: ParamOptionsDict, params_to_avoid: Optional[List[SampledParamsDict]] = None
 ) -> Optional[SampledParamsDict]:
@@ -52,13 +67,7 @@ def sample_params(
     Redraw if the sampled parameters are in the list of params_to_avoid, unless all possible values
     are in that list.
     """
-    if params_to_avoid is not None and len(params_to_avoid) >= np.prod(
-        [len(vals) for vals in param_options.values()]
-    ):
-        warnings.warn(
-            f"All possible parameter values have been sampled. This is a bug."
-            f"\nparam_option_dict: {param_options}\nparams_to_avoid: {params_to_avoid}"
-        )
+    if not check_valid_params_exist(param_options, params_to_avoid):
         return None
     for _ in range(10000):
         sampled_params = {

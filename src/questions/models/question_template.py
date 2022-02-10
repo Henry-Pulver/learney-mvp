@@ -1,12 +1,12 @@
 import random
-from typing import Any, Dict, List, Optional
+import warnings
+from typing import Any, Dict, List, Optional, Tuple
 
 from django.db import models
 
 from knowledge_maps.models import Concept
 from learney_backend.base_models import UUIDModel
 from questions.template_parser import (
-    ParsingError,
     answer_regex,
     expand_params_in_text,
     is_param_line,
@@ -75,53 +75,26 @@ class QuestionTemplate(UUIDModel):
 
     def to_question_json(
         self,
-        response_id: str,
         sampled_params: Optional[SampledParamsDict] = None,
-    ) -> Dict[str, Any]:
+        params_to_avoid: Optional[List[SampledParamsDict]] = None,
+    ) -> Optional[Dict[str, Any]]:
         """Gets question dictionary from a template and set of sampled parameters."""
         for _ in range(1000):  # This loop is to ensure that multiple answers aren't identical
             if sampled_params is None:
                 parsed_params = parse_params(self.template_text)
-                sampled_params = sample_params(parsed_params)
+                sampled_params = sample_params(parsed_params, params_to_avoid)
+                if sampled_params is None:
+                    return None
             text_expanded = expand_params_in_text(self.template_text, sampled_params)
 
-            answers: Dict[str, str] = {}
-            question_text, feedback, is_feedback, current_answer = "", "", False, ""
-            for line in text_expanded.splitlines():
-                if not is_param_line(line):  # Ignore param lines
-                    is_feedback = is_feedback or says_feedback(line)
-                    regex = answer_regex(line)
-                    # Allow for answers spanning multiple lines - remember if it's on an answer from previous line
-                    current_answer = (
-                        regex.groups()[0].lower()
-                        if (regex is not None)
-                        else current_answer
-                        if not is_feedback
-                        else ""
-                    )
-                    if not current_answer and not is_feedback:
-                        question_text += line + "\n"
-                    elif current_answer:
-                        # Add new line to prev line if answer spans multiple lines
-                        prev_answer_line = (
-                            f"{current_answer}) {answers[current_answer]}"
-                            if answers.get(current_answer)
-                            else ""
-                        )
-                        regex = answer_regex(prev_answer_line + line)
-                        assert (
-                            regex is not None
-                        ), f"This is a bug. This should enInvalid answer line: {prev_answer_line + line}"
-                        answers[current_answer] = regex.groups()[1]
-                    elif is_feedback and not says_feedback(line):  # skip the word 'feedback'
-                        feedback += line + "\n"
+            question_text, feedback, answers = parse_template(text_expanded)
+
             answers_order_randomised = list(answers.values())
             # For many question templates, it's possible that 2 answers are the same.
             # This is a problem because users need to have different answers to pick from!
             if self.answers_all_different(answer_list=answers_order_randomised):
                 random.shuffle(answers_order_randomised)
                 return {
-                    "id": response_id,
                     "template_id": self.id,
                     "question_text": remove_start_and_end_newlines(question_text),
                     "question_type": self.question_type,
@@ -132,12 +105,48 @@ class QuestionTemplate(UUIDModel):
                     "params": sampled_params,
                 }
             sampled_params = None  # Try again with new params
-        raise ParsingError(
-            f"Could not ensure all answers are different for {self.id} after 1000 tries."
-        )
+        warnings.warn(f"Could not ensure all answers are different for {self.id} after 1000 tries.")
+        return None
 
     @staticmethod
     def answers_all_different(answer_list: List[str]) -> bool:
         """Checks if all answers are different."""
         answer_list_without_spaces = [answer.replace(" ", "") for answer in answer_list]
         return len(set(answer_list_without_spaces)) == len(answer_list_without_spaces)
+
+    def __str__(self):
+        return f"{self.id} on {self.concept.cytoscape_id}, {self.question_type}"
+
+
+def parse_template(text: str) -> Tuple[str, str, Dict[str, str]]:
+    answers: Dict[str, str] = {}
+    question_text, feedback, is_feedback, current_answer = "", "", False, ""
+    for line in text.splitlines():
+        if not is_param_line(line):  # Ignore param lines
+            is_feedback = is_feedback or says_feedback(line)
+            regex = answer_regex(line)
+            # Allow for answers spanning multiple lines - remember if it's on an answer from previous line
+            current_answer = (
+                regex.groups()[0].lower()
+                if (regex is not None)
+                else current_answer
+                if not is_feedback
+                else ""
+            )
+            if not current_answer and not is_feedback:
+                question_text += line + "\n"
+            elif current_answer:
+                # Add new line to prev line if answer spans multiple lines
+                prev_answer_line = (
+                    f"{current_answer}) {answers[current_answer]}"
+                    if answers.get(current_answer)
+                    else ""
+                )
+                regex = answer_regex(prev_answer_line + line)
+                assert (
+                    regex is not None
+                ), f"This is a bug. This should enInvalid answer line: {prev_answer_line + line}"
+                answers[current_answer] = regex.groups()[1]
+            elif is_feedback and not says_feedback(line):  # skip the word 'feedback'
+                feedback += line + "\n"
+    return question_text, feedback, answers

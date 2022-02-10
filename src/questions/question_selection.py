@@ -10,8 +10,13 @@ from accounts.models import User
 from questions.inference import MCMCInference
 from questions.models import QuestionResponse, QuestionTemplate
 from questions.models.question_batch import QuestionBatch
-from questions.template_parser import number_of_questions, parse_params, sample_params
-from questions.utils import get_today
+from questions.template_parser import (
+    check_valid_params_exist,
+    number_of_questions,
+    parse_params,
+    sample_params,
+)
+from questions.utils import SampledParamsDict, get_today
 
 # Ideal probability of correct
 IDEAL_DIFF = 0.85
@@ -64,27 +69,32 @@ def select_questions(
         novelty_terms = get_novelty_terms(template_options, user, question_batch_json, concept_id)
         print(f"Novelty terms: {novelty_terms}")
         question_weights = difficulty_terms * novelty_terms
-        question_probs = np.nan_to_num(
-            question_weights / np.sum(question_weights)
-        )  # nan_to_num converts very small nans to 0
+        # nan_to_num converts very small nans to 0
+        question_probs = np.nan_to_num(question_weights / np.sum(question_weights))
 
         # Choose the template that's going to be used!
-        sampled_params = None
-        while sampled_params is None:
-            chosen_template: QuestionTemplate = np.random.choice(template_options, p=question_probs)
-            print(
-                f"Chosen template: {chosen_template}, number of questions: {number_of_questions(chosen_template.template_text)}"
-            )
-            question_param_options = parse_params(chosen_template.template_text)
-            # Avoid sampling parameters for this template already seen & got right in this question batch!
-            params_to_avoid = [
-                question["params"]
-                for count, question in enumerate(question_batch_json["questions"])
-                if question["template_id"] == chosen_template.id
-            ]
-            sampled_params = sample_params(question_param_options, params_to_avoid)
+        question_chosen = None
+        while question_chosen is None:
+            valid_params_exist = False
+            while not valid_params_exist:
+                chosen_template: QuestionTemplate = np.random.choice(
+                    template_options, p=question_probs
+                )
+                print(
+                    f"Chosen template: {chosen_template}, num of qs: {number_of_questions(chosen_template.template_text)}"
+                )
+                # Avoid sampling parameters for this template already seen in this question batch!
+                params_to_avoid: List[SampledParamsDict] = [
+                    question["params"]
+                    for question in question_batch_json["questions"]
+                    if question["template_id"] == chosen_template.id
+                ]
+                valid_params_exist = check_valid_params_exist(
+                    param_options=parse_params(chosen_template.template_text),
+                    params_to_avoid=params_to_avoid,
+                )
+            question_chosen = chosen_template.to_question_json(params_to_avoid=params_to_avoid)
 
-        response_id = ""
         if save_question_to_db:  # Track the question was sent in the DB
             if question_batch is None:
                 question_batch = cache.get(question_batch_json["id"])
@@ -93,19 +103,18 @@ def select_questions(
             q_response = QuestionResponse.objects.create(
                 user=user,
                 question_template=chosen_template,
-                question_params=sampled_params,
+                question_params=question_chosen["params"],
                 question_batch=question_batch,
                 predicted_prob_correct=mcmc.correct_probs[template_options.index(chosen_template)],
                 session_id=session_id,
                 time_to_respond=None,
             )
-            response_id = q_response.id
-            print(f"response_id: {response_id}")
+            print(f"New response_id: {q_response.id}")
+            question_chosen["id"] = q_response.id
             # Cache for use when question is answered
             cache.set(q_response.id, q_response, timeout=120)
 
-        question_chosen = chosen_template.to_question_json(response_id, sampled_params)
-        print(f"question_chosen: {question_chosen}")
+        # print(f"question_chosen: {question_chosen}")
         questions_chosen.append(question_chosen)
         question_batch_json["questions"].append(question_chosen)
 

@@ -55,6 +55,9 @@ class QuestionBatchView(APIView):
         question_batch_json = question_batch.json()
 
         # Select another question if most recent one is answered
+        print(
+            f"Batch. Answers given: {len(question_batch_json['answers_given'])}. Questions asked: {len(question_batch_json['questions'])}"
+        )
         if (
             len(question_batch_json["answers_given"]) >= len(question_batch_json["questions"]) - 1
             and len(question_batch_json["questions"]) < question_batch_json["max_num_questions"]
@@ -66,11 +69,21 @@ class QuestionBatchView(APIView):
                 session_id=session_id,
                 user=ks.user,
                 save_question_to_db=True,
-                number_to_select=min(2, 10 - len(question_batch_json["questions"])),
+                number_to_select=min(
+                    2
+                    - (
+                        len(question_batch_json["questions"])
+                        - len(question_batch_json["answers_given"])
+                    ),
+                    question_batch_json["max_num_questions"]
+                    - len(question_batch_json["questions"]),
+                ),
             )
             cache.set(f"question_json:{question_batch.id}", question_batch_json, 1200)
         print(
-            f"Knowledge state: ({round(ks.knowledge_state.mean, 2)}, {round(ks.knowledge_state.std_dev, 2)})"
+            f"Knowledge state: ({round(ks.knowledge_state.mean, 2)}, {round(ks.knowledge_state.std_dev, 2)}),\t"
+            f"Display knowledge level {question_batch.initial_display_knowledge_level},\t"
+            f"Max reached: {ks.highest_level_achieved}"
         )
         print(f"Num questions chosen: {len(question_batch_json['questions'])}")
         print(f"Num answers given: {len(question_batch_json['answers_given'])}")

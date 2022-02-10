@@ -21,7 +21,6 @@ class QuestionResponseView(APIView):
     # @silk_profile(name="Question Response - Infer Knowledge and Select new Question")
     def post(self, request: Request, format=None) -> Response:
         # try:
-        print(request.data)
         # Extract data from request
         concept_id = request.data["concept_id"]
         user_id = request.data["user_id"]
@@ -87,6 +86,10 @@ class QuestionResponseView(APIView):
                 user__id=user_id, concept__cytoscape_id=concept_id
             )
         new_ks = GaussianParams(mean=new_theta.mean, std_dev=new_theta.std_dev)
+        print(
+            f"Previous knowledge state: ({round(ks_model.mean, 2)}, {round(ks_model.std_dev, 2)})"
+        )
+        print(f"New knowledge state: ({round(new_theta.mean, 2)}, {round(new_theta.std_dev, 2)})")
         ks_model.mean = new_theta.mean
         ks_model.std_dev = new_theta.std_dev
         ks_model.highest_level_achieved = max(ks_model.highest_level_achieved, new_ks.level)
@@ -107,8 +110,6 @@ class QuestionResponseView(APIView):
                 mcmc=mcmc,
                 number_to_select=None if num_left_to_ask > 1 else 1,
             )
-            # Update the cache with the new questions
-            q_batch_json["questions"] += next_questions
         else:
             next_questions = []
 
@@ -145,7 +146,7 @@ class QuestionResponseView(APIView):
             q_batch.concept_completed = concept_completed
             q_batch.save()
             cache.delete(question_batch_id)  # Clear the cache
-
+        # print(q_batch_json)
         return Response(
             {
                 "level": ks_model.get_display_knowledge_level(new_batch=False),
