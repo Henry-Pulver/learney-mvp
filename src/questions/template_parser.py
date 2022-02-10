@@ -44,30 +44,31 @@ def answer_regex(line: str) -> Optional[re.Match]:
 
 
 def sample_params(
-    param_option_dict: ParamOptionsDict, params_to_avoid: Optional[List[SampledParamsDict]] = None
-) -> SampledParamsDict:
+    param_options: ParamOptionsDict, params_to_avoid: Optional[List[SampledParamsDict]] = None
+) -> Optional[SampledParamsDict]:
     """Samples question template parameter values from possible options from a uniform categorical
     distribution.
 
     Redraw if the sampled parameters are in the list of params_to_avoid, unless all possible values
     are in that list.
     """
+    if params_to_avoid is not None and len(params_to_avoid) >= np.prod(
+        [len(vals) for vals in param_options.values()]
+    ):
+        warnings.warn(
+            f"All possible parameter values have been sampled. This is a bug."
+            f"\nparam_option_dict: {param_options}\nparams_to_avoid: {params_to_avoid}"
+        )
+        return None
     for _ in range(10000):
         sampled_params = {
-            name: str(random.choice(value_options))
-            for name, value_options in param_option_dict.items()
+            name: str(random.choice(value_options)) for name, value_options in param_options.items()
         }
         if params_to_avoid is None or sampled_params not in params_to_avoid:
             return sampled_params
-        elif len(params_to_avoid) == np.prod(
-            [len(values) for values in param_option_dict.values()]
-        ):
-            warnings.warn(
-                f"All possible parameter values have been sampled. This is a bug."
-                f"\nparam_option_dict: {param_option_dict}\nparams_to_avoid: {params_to_avoid}"
-            )
-            return sampled_params
-    raise Exception(f"Could not sample parameters from {param_option_dict} after 10000 tries.")
+    raise Exception(
+        f"Could not sample parameters from {param_options} after 10000 tries, while avoiding {params_to_avoid}"
+    )
 
 
 def expand_params_in_text(text: str, sampled_params: SampledParamsDict) -> str:

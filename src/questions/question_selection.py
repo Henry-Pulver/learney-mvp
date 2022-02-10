@@ -57,6 +57,9 @@ def select_questions(
     print(f"difficulty_terms: {difficulty_terms}")
     questions_chosen: List[Dict[str, Any]] = []
     # Check cache for number of extra questions to select if number_to_select not provided. If both None, select 1
+    print(
+        f"number_to_select: {number_to_select}\tcache.get(): {cache.get(f'{MCMC_MUTEX}_{user.id}')}"
+    )
     while len(questions_chosen) < (number_to_select or cache.get(f"{MCMC_MUTEX}_{user.id}") or 1):
         novelty_terms = get_novelty_terms(template_options, user, question_batch_json, concept_id)
         print(f"Novelty terms: {novelty_terms}")
@@ -66,18 +69,20 @@ def select_questions(
         )  # nan_to_num converts very small nans to 0
 
         # Choose the template that's going to be used!
-        chosen_template: QuestionTemplate = np.random.choice(template_options, p=question_probs)
-        print(
-            f"Chosen template: {chosen_template}, number of questions: {number_of_questions(chosen_template.template_text)}"
-        )
-        question_param_options = parse_params(chosen_template.template_text)
-        # Avoid sampling parameters for this template already seen in this question batch!
-        params_to_avoid = [
-            question["params"]
-            for question in question_batch_json["questions"]
-            if question["template_id"] == chosen_template.id
-        ]
-        sampled_params = sample_params(question_param_options, params_to_avoid)
+        sampled_params = None
+        while sampled_params is None:
+            chosen_template: QuestionTemplate = np.random.choice(template_options, p=question_probs)
+            print(
+                f"Chosen template: {chosen_template}, number of questions: {number_of_questions(chosen_template.template_text)}"
+            )
+            question_param_options = parse_params(chosen_template.template_text)
+            # Avoid sampling parameters for this template already seen & got right in this question batch!
+            params_to_avoid = [
+                question["params"]
+                for count, question in enumerate(question_batch_json["questions"])
+                if question["template_id"] == chosen_template.id
+            ]
+            sampled_params = sample_params(question_param_options, params_to_avoid)
 
         response_id = ""
         if save_question_to_db:  # Track the question was sent in the DB
