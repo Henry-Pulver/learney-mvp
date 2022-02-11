@@ -17,7 +17,7 @@ class GaussianParams:
     mean: float
     std_dev: float
     # The 'level' is where CDF(user's knowledge state = level) = LEVEL_THRESHOLD
-    LEVEL_THRESHOLD = 0.1  # Ie we think there's a 90% prob that they're at this level or higher
+    LEVEL_THRESHOLD = 0.25  # Ie we think there's a 75% prob that they're at this level or higher
 
     def __post_init__(self):
         assert self.std_dev >= 0
@@ -38,7 +38,7 @@ MISTAKE_PROB = 0.05
 
 # MCMC parameters.
 # The number of warmup samples to take to reach steady-state
-MCMC_NUM_WARMUP_SAMPLES = 2000
+MCMC_NUM_WARMUP_SAMPLES = 5000
 # The number of usable samples to take to measure the steady-state distribution
 MCMC_NUM_SAMPLES = 1000
 

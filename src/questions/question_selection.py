@@ -202,33 +202,30 @@ def calculate_novelty(
     # [1.1] Worst are questions from the same batch - avoid like the plague
     if num_batch_qs_on_this_template > 0:
         # Weight by the sqrt of the number of questions (n_qs) generated from a template
-        novelty_term *= np.exp(-5 * num_batch_qs_on_this_template / np.sqrt(n_qs))
+        novelty_term *= np.exp(-2.5 * num_batch_qs_on_this_template / np.sqrt(n_qs))
 
     # [1.2] Then there are questions asked today or correct from the past
     num_template_qs_to_avoid = (
         sum(t_data["id"] == template.id for t_data in q_template_data_to_avoid)
         - num_batch_qs_on_this_template
     )
-    novelty_term *= 0.9 * np.exp(-2.5 * num_template_qs_to_avoid / n_qs) + 0.1
+    novelty_term *= 0.6 * np.exp(-2.5 * num_template_qs_to_avoid / n_qs) + 0.4
 
     # [2.0] Lastly avoid giving all the same type of question in a batch
     num_questions_asked = len(q_batch_json["questions"])
     if num_questions_asked > 3:
         novelty_term *= (
-            0.9
-            - np.exp(
-                -5
-                * (
-                    1
-                    - (
-                        sum(
-                            q["question_type"] == template.question_type
-                            for q in q_batch_json["questions"]
-                        )
-                        / num_questions_asked
+            0.6
+            * np.exp(
+                -(
+                    2
+                    * sum(
+                        q["question_type"] == template.question_type
+                        for q in q_batch_json["questions"]
                     )
+                    / num_questions_asked
                 )
             )
-            + 0.1
+            + 0.4
         )
     return novelty_term
