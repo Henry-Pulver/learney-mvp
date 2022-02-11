@@ -58,7 +58,7 @@ class QuestionTemplate(UUIDModel):
     )
     active = models.BooleanField(
         default=False,
-        help_text="If questions from the template should be used onthe live site - "
+        help_text="If questions from the template should be used on the live site - "
         "broken questions should be deactivated until they're fixed!",
     )
     last_updated = models.DateTimeField(auto_now=True)

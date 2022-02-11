@@ -66,8 +66,16 @@ class QuestionBatch(UUIDModel):
         )
 
     @property
+    def initial_highest_level_achieved(self) -> float:
+        """Gets highest level achieved by the user on this concept when starting the question
+        batch."""
+        # Since display_level = (highest_level + knowledge_level) / 2, we rearrange to get
+        #  highest_level = 2 * display_level - knowledge_level
+        return 2 * self.initial_display_knowledge_level - self.initial_knowledge_level
+
+    @property
     def is_revision_batch(self) -> bool:
-        return self.initial_display_knowledge_level >= self.concept.max_difficulty_level
+        return self.initial_highest_level_achieved >= self.concept.max_difficulty_level
 
     @property
     def max_number_of_questions(self) -> int:
