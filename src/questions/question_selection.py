@@ -1,21 +1,16 @@
-from collections import Counter
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import numpy as np
 from django.core.cache import cache
-from django.db.models import Q, QuerySet
+from django.db.models import Q
 
 from accounts.models import User
 from questions.inference import MCMCInference
 from questions.models import QuestionResponse, QuestionTemplate
 from questions.models.question_batch import QuestionBatch
-from questions.template_parser import (
-    check_valid_params_exist,
-    number_of_questions,
-    parse_params,
-    sample_params,
-)
+from questions.question_batch_cache_manager import QuestionBatchCacheManager
+from questions.template_parser import check_valid_params_exist, number_of_questions, parse_params
 from questions.utils import SampledParamsDict, get_today
 
 # Ideal probability of correct
@@ -25,19 +20,18 @@ MCMC_MUTEX = "MCMC_MUTEX"
 
 
 def select_questions(
-    concept_id: str,
-    question_batch_json: Dict[str, Any],
+    q_batch_cache_manager: QuestionBatchCacheManager,
     user: User,
     session_id: str,
     mcmc: Optional[MCMCInference] = None,
     save_question_to_db: bool = True,
     number_to_select: Optional[int] = None,
-    question_batch: Optional[QuestionBatch] = None,
 ) -> List[Dict[str, Any]]:
     """Select questions from possible questions for this concept."""
     assert (
         number_to_select is None or number_to_select > 0
     ), f"{number_to_select} is not a valid number of questions"
+    concept_id = q_batch_cache_manager.concept_id
     template_options: List[QuestionTemplate] = cache.get(f"template_options_{concept_id}")
     if template_options is None:
         template_options = list(
@@ -66,7 +60,12 @@ def select_questions(
         f"number_to_select: {number_to_select}\tcache.get(): {cache.get(f'{MCMC_MUTEX}_{user.id}')}"
     )
     while len(questions_chosen) < (number_to_select or cache.get(f"{MCMC_MUTEX}_{user.id}") or 1):
-        novelty_terms = get_novelty_terms(template_options, user, question_batch_json, concept_id)
+        novelty_terms = get_novelty_terms(
+            template_options=template_options,
+            user=user,
+            question_batch_json=q_batch_cache_manager.q_batch_json,
+            concept_id=concept_id,
+        )
         print(f"Novelty terms: {novelty_terms}")
         question_weights = difficulty_terms * novelty_terms
         # nan_to_num converts very small nans to 0
@@ -86,7 +85,7 @@ def select_questions(
                 # Avoid sampling parameters for this template already seen in this question batch!
                 params_to_avoid: List[SampledParamsDict] = [
                     question["params"]
-                    for question in question_batch_json["questions"]
+                    for question in q_batch_cache_manager.q_batch_json["questions"]
                     if question["template_id"] == chosen_template.id
                 ]
                 valid_params_exist = check_valid_params_exist(
@@ -96,15 +95,11 @@ def select_questions(
             question_chosen = chosen_template.to_question_json(params_to_avoid=params_to_avoid)
 
         if save_question_to_db:  # Track the question was sent in the DB
-            if question_batch is None:
-                question_batch = cache.get(question_batch_json["id"])
-                if question_batch is None:
-                    question_batch = QuestionBatch.objects.get(id=question_batch_json["id"])
             q_response = QuestionResponse.objects.create(
                 user=user,
                 question_template=chosen_template,
                 question_params=question_chosen["params"],
-                question_batch=question_batch,
+                question_batch=q_batch_cache_manager.q_batch,
                 predicted_prob_correct=mcmc.correct_probs[template_options.index(chosen_template)],
                 session_id=session_id,
                 time_to_respond=None,
@@ -116,7 +111,7 @@ def select_questions(
 
         # print(f"question_chosen: {question_chosen}")
         questions_chosen.append(question_chosen)
-        question_batch_json["questions"].append(question_chosen)
+        q_batch_cache_manager.add_question_asked(question_chosen)
 
     return questions_chosen
 

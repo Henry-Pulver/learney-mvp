@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from django.core.cache import cache
@@ -12,6 +12,7 @@ from questions.inference import GaussianParams, MCMCInference
 from questions.models import QuestionResponse
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_batch import QuestionBatch
+from questions.question_batch_cache_manager import QuestionBatchCacheManager
 from questions.question_selection import MCMC_MUTEX, select_questions
 
 # from silk.profiling.profiler import silk_profile
@@ -37,33 +38,19 @@ class QuestionResponseView(APIView):
         q_response.save()
         cache.delete(question_response_id)
 
-        q_batch: QuestionBatch = cache.get(question_batch_id)
-        if q_batch is None:
-            q_batch = (
-                QuestionBatch.objects.prefetch_related("user__knowledge_states__concept")
-                .prefetch_related("responses__question_template__concept")
-                .get(id=question_batch_id)
-            )
-            cache.set(question_batch_id, q_batch, 600)
-
-        # Get all the precomputed json data from the cache
-        q_batch_json = cache.get(f"question_json:{question_batch_id}")
-        # And redo the computations now if it's not there!
-        if q_batch_json is None:
-            q_batch_json = q_batch.json()
-        else:
-            q_batch_json["answers_given"].append(q_response.response)
-        cache.set(f"question_json:{question_batch_id}", q_batch_json)
+        qb_cache_manager = QuestionBatchCacheManager(question_batch_id)
+        qb_cache_manager.add_question_answered(q_response)
 
         # Get data to infer knowledge state
         # difficulties, guess_probs, correct = q_batch.training_data
-        difficulties, guess_probs, correct = get_training_data(q_batch_json)
+        difficulties, guess_probs, correct = get_training_data(qb_cache_manager.q_batch_json)
 
         # If there are multiple processes running numpyro, it errors. So we use this mutex to prevent that.
         while cache.get(MCMC_MUTEX) is not None:
             # The second mutex checks the process holding the first mutex is related to the same user.
             if cache.get(f"{MCMC_MUTEX}_{user_id}") is not None:
                 # If it is, we increment this counter of the number of questions to select and
+                print("Peace out!")
                 cache.incr(f"{MCMC_MUTEX}_{user_id}")
                 return Response(
                     {"response": "MCMC already in progress"},
@@ -73,7 +60,8 @@ class QuestionResponseView(APIView):
                 time.sleep(0.25)
         cache.set_many({MCMC_MUTEX: True, f"{MCMC_MUTEX}_{user_id}": 1}, timeout=30)
         # Infer new knowledge state
-        mcmc = MCMCInference(q_batch.initial_knowledge_state)
+        mcmc = MCMCInference(qb_cache_manager.q_batch.initial_knowledge_state)
+        print(f"difficulties={difficulties}\nguess_probs={guess_probs}\ncorrect={correct}")
         mcmc.run_mcmc_inference(difficulties=difficulties, guess_probs=guess_probs, answers=correct)
         new_theta = mcmc.inferred_theta_params
 
@@ -97,15 +85,14 @@ class QuestionResponseView(APIView):
         cache.set(f"InferredKnowledgeState:concept:{concept_id}user:{user_id}", ks_model)
 
         # Below cache get re-run because it may have been updated by another process!
-        q_batch_json = cache.get(f"question_json:{question_batch_id}")
-        num_left_to_ask = q_batch_json["max_num_questions"] - len(q_batch_json["answers_given"])
+        num_left_to_ask = qb_cache_manager.max_num_questions - len(
+            qb_cache_manager.q_batch_json["answers_given"]
+        )
         # Pick new questions to ask
         if num_left_to_ask > 0:
             next_questions = select_questions(
-                concept_id=concept_id,
-                question_batch=q_batch,
-                question_batch_json=q_batch_json,
-                user=q_batch.user,
+                q_batch_cache_manager=qb_cache_manager,
+                user=qb_cache_manager.user,
                 session_id=request.data["session_id"],
                 mcmc=mcmc,
                 number_to_select=None if num_left_to_ask > 1 else 1,
@@ -116,17 +103,15 @@ class QuestionResponseView(APIView):
         # Release mutex
         cache.delete_many([MCMC_MUTEX, f"{MCMC_MUTEX}_{user_id}"])
 
-        cache.set(f"question_json:{question_batch_id}", q_batch_json, timeout=1200)
-
         # Is the question_batch completed?
-        concept_completed = new_ks.level > q_batch.concept.max_difficulty_level
-        num_responses = len(q_batch_json["answers_given"])
+        concept_completed = new_ks.level > qb_cache_manager.q_batch.concept.max_difficulty_level
+        num_responses = len(qb_cache_manager.q_batch_json["answers_given"])
         doing_poorly = num_responses >= 5 and new_ks.level < -0.5
-        print(f"Number of questions asked: {len(q_batch_json['questions'])}")
+        print(f"Number of questions asked: {len(qb_cache_manager.q_batch_json['questions'])}")
         print(f"Number of questions answered: {num_responses}")
-        max_num_of_questions_answered = num_responses >= q_batch_json["max_num_questions"]
+        max_num_of_questions_answered = num_responses >= qb_cache_manager.max_num_questions
         # Check it's not a 'revision batch' - if it is, ignore how well they do!
-        if q_batch.is_revision_batch:
+        if qb_cache_manager.q_batch.is_revision_batch:
             completed = "review_completed" if max_num_of_questions_answered else ""
         else:
             completed = (
@@ -141,10 +126,12 @@ class QuestionResponseView(APIView):
         if completed:
             print(f"completed: {completed}")
             # Update stored data on the question batch
-            q_batch.completed = completed
-            q_batch.levels_progressed = new_ks.level - q_batch.initial_knowledge_state.level
-            q_batch.concept_completed = concept_completed
-            q_batch.save()
+            qb_cache_manager.q_batch.completed = completed
+            qb_cache_manager.q_batch.levels_progressed = (
+                new_ks.level - qb_cache_manager.q_batch.initial_knowledge_state.level
+            )
+            qb_cache_manager.q_batch.concept_completed = concept_completed
+            qb_cache_manager.q_batch.save()
             cache.delete(question_batch_id)  # Clear the cache
         # print(q_batch_json)
         return Response(
@@ -165,9 +152,9 @@ def get_training_data(q_batch_json: Dict[str, Any]) -> Tuple[np.ndarray, np.ndar
     :param q_batch_json: The question batch json.
     :return: The training data.
     """
-    responses = q_batch_json["answers_given"]
-    questions = q_batch_json["questions"][: len(responses)]
+    responses: Dict[str, str] = q_batch_json["answers_given"]
+    questions: List[Dict] = q_batch_json["questions"][: len(responses)]
     difficulties = [q["difficulty"] for q in questions]
     guess_probs = [1 / len(q["answers_order_randomised"]) for q in questions]
-    correct = [q["correct_answer"] == response for q, response in zip(questions, responses)]
+    correct = [q["correct_answer"] == responses[str(q["id"])] for q in questions]
     return np.array(difficulties), np.array(guess_probs), np.array(correct)

@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_batch import QuestionBatch
+from questions.question_batch_cache_manager import QuestionBatchCacheManager
 from questions.question_selection import select_questions
 from questions.utils import get_today
 
@@ -52,7 +53,8 @@ class QuestionBatchView(APIView):
 
         # TODO: Track with Mixpanel
 
-        question_batch_json = question_batch.json()
+        qb_cache_manager = QuestionBatchCacheManager(question_batch.id)
+        question_batch_json = qb_cache_manager.q_batch_json
 
         # Select another question if most recent one is answered
         print(
@@ -63,11 +65,9 @@ class QuestionBatchView(APIView):
             and len(question_batch_json["questions"]) < question_batch_json["max_num_questions"]
         ):
             select_questions(
-                concept_id=concept_id,
-                question_batch_json=question_batch_json,
-                question_batch=question_batch,
-                session_id=session_id,
+                q_batch_cache_manager=qb_cache_manager,
                 user=ks.user,
+                session_id=session_id,
                 save_question_to_db=True,
                 number_to_select=min(
                     2
@@ -79,7 +79,7 @@ class QuestionBatchView(APIView):
                     - len(question_batch_json["questions"]),
                 ),
             )
-            cache.set(f"question_json:{question_batch.id}", question_batch_json, 1200)
+
         print(
             f"Knowledge state: ({round(ks.knowledge_state.mean, 2)}, {round(ks.knowledge_state.std_dev, 2)}),\t"
             f"Display knowledge level {question_batch.initial_display_knowledge_level},\t"
@@ -87,5 +87,10 @@ class QuestionBatchView(APIView):
         )
         print(f"Num questions chosen: {len(question_batch_json['questions'])}")
         print(f"Num answers given: {len(question_batch_json['answers_given'])}")
-
+        answers_dict = question_batch_json["answers_given"]
+        question_batch_json["answers_given"] = [
+            answers_dict[str(q["id"])]
+            for q in question_batch_json["questions"]
+            if answers_dict.get(str(q["id"]))
+        ]
         return Response(question_batch_json, status=status.HTTP_200_OK)

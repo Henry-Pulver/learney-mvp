@@ -93,13 +93,16 @@ class QuestionBatch(UUIDModel):
         responses = (
             self.responses.all().select_related("question_template__concept").order_by("time_asked")
         )
-        answers_given = [response.response for response in responses]
+        answers_list = [response.response for response in responses]
         assert (
-            all(answer is None for answer in answers_given[answers_given.index(None) :])
-            if None in answers_given
+            all(answer is None for answer in answers_list[answers_list.index(None) :])
+            if None in answers_list
             else True
-        ), f"Not only most recent questions have None as responses!\nAnswers given: {answers_given}"
-        answers_given = [a for a in answers_given if a is not None]
+        ), (
+            f"Not only most recent questions have None as responses!\n"
+            f"Answers given: {answers_list}"
+        )
+        answers_given = {str(r.id): r.response for r in responses if r.response is not None}
         return {
             "id": self.id,
             "questions": [response.json for response in responses],
