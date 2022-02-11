@@ -20,6 +20,7 @@ from questions.validators import integer_is_positive, not_null
 
 
 class QuestionTemplate(UUIDModel):
+    title = models.CharField(max_length=255, help_text="The title of the question template.")
     concept = models.ForeignKey(
         Concept,
         related_name="question_templates",
