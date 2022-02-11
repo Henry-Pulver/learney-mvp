@@ -43,12 +43,12 @@ class ReportBrokenQuestionView(APIView):
             f"novelty_terms_{QuestionResponse.objects.get(id=response_id).question_batch.id}"
         )
 
-        subject = f"Question broken on '{concept_name}'"
+        subject = f"'{question_template}' broken on '{concept_name}'"
 
         admin_edit_link = get_admin_edit_link(str(template_id))
         # The email body for recipients with non-HTML email clients.
         body_text = (
-            f"Question on '{concept_name}' reported as broken!\r\n"
+            f"Question '{question_template.title}' on '{concept_name}' reported as broken!\r\n"
             f"Issue type: {request.data['type']}\r\n"
             f"User message: \n{request.data['message']}\r\n"
             f"Params used: {request.data['question']['params']}\r\n"
@@ -60,7 +60,7 @@ class ReportBrokenQuestionView(APIView):
         body_html = f"""<html>
         <head></head>
         <body>
-          <h1>Question on '{concept_name}' reported as broken!</h1>
+          <h1>Question '{question_template}' on '{concept_name}' reported as broken!</h1>
           <p>
           <b>Issue type: {request.data['type']}</b>
           <br/>
