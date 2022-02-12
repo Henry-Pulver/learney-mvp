@@ -4,12 +4,14 @@ import json
 
 from django.db import migrations
 
+from knowledge_maps.views import retrieve_map
+
 
 def data_migration_content_preview(apps, schema_editor):
     ContentLinkPreview = apps.get_model("learney_backend", "ContentLinkPreview")
     KnowledgeMapModel = apps.get_model("knowledge_maps", "KnowledgeMapModel")
     for map in KnowledgeMapModel.objects.all():
-        map_json = json.loads(map.retrieve_map().decode("utf-8"))
+        map_json = json.loads(retrieve_map(map).decode("utf-8"))
         for entry in ContentLinkPreview.objects.filter(concept_id=None, map_uuid=map.unique_id):
             for node in map_json["nodes"]:
                 if (

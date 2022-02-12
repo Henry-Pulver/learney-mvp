@@ -6,6 +6,7 @@ import json
 
 from django.db import migrations, models
 
+from knowledge_maps.views import retrieve_map
 from learney_backend.utils import get_from_linkpreview_net
 
 
@@ -13,7 +14,7 @@ def add_content_link_previews(apps, schema_editor):
     KnowledgeMapModel = apps.get_model("knowledge_maps", "KnowledgeMapModel")
     ContentLinkPreview = apps.get_model("learney_backend", "ContentLinkPreview")
     for map in KnowledgeMapModel.objects.all():
-        map_json = json.loads(map.retrieve_map().decode("utf-8"))
+        map_json = json.loads(retrieve_map(map).decode("utf-8"))
         print(f"\n{map.url_extension}")
         for node in map_json["nodes"]:
             node_data = node["data"]
