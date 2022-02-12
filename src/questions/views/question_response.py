@@ -1,17 +1,19 @@
 import time
+from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
+import pytz
 from django.core.cache import cache
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from learney_web.settings import IS_PROD, mixpanel
 from questions.inference import GaussianParams, MCMCInference
 from questions.models import QuestionResponse
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
-from questions.models.question_batch import QuestionBatch
 from questions.question_batch_cache_manager import QuestionBatchCacheManager
 from questions.question_selection import MCMC_MUTEX, select_questions
 
@@ -44,6 +46,21 @@ class QuestionResponseView(APIView):
         # Get data to infer knowledge state
         # difficulties, guess_probs, correct = q_batch.training_data
         difficulties, guess_probs, correct = get_training_data(qb_cache_manager.q_batch_json)
+
+        # Track on mixpanel
+        if IS_PROD:
+            mixpanel.track(
+                request.data["user_id"],
+                "Question Answered",
+                {
+                    "concept_id": concept_id,
+                    "Question Batch ID": question_batch_id,
+                    "Question Response ID": question_response_id,
+                    "Correct": request.data["correct"],
+                    "Answer Given": request.data["response"],
+                    "Question Difficulty": difficulties[-1],
+                },
+            )
 
         # If there are multiple processes running numpyro, it errors. So we use this mutex to prevent that.
         while cache.get(MCMC_MUTEX) is not None:
@@ -126,14 +143,35 @@ class QuestionResponseView(APIView):
         if completed:
             print(f"completed: {completed}")
             # Update stored data on the question batch
-            qb_cache_manager.q_batch.completed = completed
-            qb_cache_manager.q_batch.levels_progressed = (
+            levels_progressed = (
                 new_ks.level - qb_cache_manager.q_batch.initial_knowledge_state.level
             )
+            qb_cache_manager.q_batch.completed = completed
+            qb_cache_manager.q_batch.levels_progressed = levels_progressed
             qb_cache_manager.q_batch.concept_completed = concept_completed
+            qb_cache_manager.q_batch.time_taken_to_complete = (
+                datetime.utcnow().replace(tzinfo=pytz.utc) - qb_cache_manager.q_batch.time_started
+            )
             qb_cache_manager.q_batch.save()
             cache.delete(question_batch_id)  # Clear the cache
-        # print(q_batch_json)
+            if IS_PROD:
+                mixpanel.track(
+                    user_id,
+                    "Completed Question Batch",
+                    {
+                        "concept_id": concept_id,
+                        "Question Batch ID": question_batch_id,
+                        "Question Response ID": question_response_id,
+                        "Completion type": completed,
+                        "Number of questions asked": num_responses,
+                        "Levels Progressed": levels_progressed,
+                        "Concept Completed": concept_completed,
+                        "Time taken to complete": qb_cache_manager.q_batch.time_taken_to_complete.strftime(
+                            "%M:%S"
+                        ),
+                    },
+                )
+
         return Response(
             {
                 "level": ks_model.get_display_knowledge_level(new_batch=False),

@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 import boto3
 from botocore.exceptions import ClientError
-from learney_web.settings import AWS_CREDENTIALS, IS_PROD
+from learney_web.settings import AWS_CREDENTIALS, IS_PROD, mixpanel
 from questions.models import QuestionResponse, QuestionTemplate
 
 CHARSET = "UTF-8"
@@ -26,6 +26,7 @@ def get_admin_edit_link(question_template_id: str) -> str:
 
 class ReportBrokenQuestionView(APIView):
     def post(self, request: Request, format=None) -> Response:
+        question = request.data["question"]
         template_id = request.data["question"]["template_id"]
         response_id = request.data["question"]["id"]
 
@@ -66,11 +67,15 @@ class ReportBrokenQuestionView(APIView):
           <br/>
           User message: \n{request.data['message']}
           <br/>
-          Params used: {request.data['question']['params']}\r\n
+          Params used: {question['params']}\r\n
           <br/>
             <a href='{admin_edit_link}'>Here is the link to edit the question</a>.
           <br/>
-          Question_text: \n\n{request.data['question']['question_text']}
+          Question_text: \n\n{question['question_text']}
+          <br/>
+          Answers: \n\n{question["answers_order_randomised"]}
+          <br/>
+          Feedback: \n\n{question["feedback"]}
           </p>
         </body>
         </html>
@@ -82,6 +87,23 @@ class ReportBrokenQuestionView(APIView):
             aws_access_key_id=AWS_CREDENTIALS["ACCESS_ID"],
             aws_secret_access_key=AWS_CREDENTIALS["SECRET_KEY"],
         )
+
+        if IS_PROD:
+            mixpanel.track(
+                request.data["user_id"],
+                "Question Reported Broken",
+                {
+                    "Problem Type": request.data["type"],
+                    "ID": question["id"],
+                    "Template ID": question["template_id"],
+                    "Question Text": question["question_text"],
+                    "Answers Order Randomised": question["answers_order_randomised"],
+                    "Correct Answer": question["correct_answer"],
+                    "Feedback": question["feedback"],
+                    "Params": question["params"],
+                },
+            )
+
         try:
             # Provide the contents of the email.
             response = client.send_email(

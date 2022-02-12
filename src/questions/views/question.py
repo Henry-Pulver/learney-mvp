@@ -27,7 +27,7 @@ class QuestionView(APIView):
                 number_to_select=1,
             )[0]
 
-            # TODO: Track with Mixpanel
+            # TODO: Track with mixpanel
 
             return Response(question, status=status.HTTP_200_OK)
         except KeyError as error:

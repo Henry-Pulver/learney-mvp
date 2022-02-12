@@ -4,6 +4,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from learney_web.settings import IS_PROD, mixpanel
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_batch import QuestionBatch
 from questions.question_batch_cache_manager import QuestionBatchCacheManager
@@ -51,10 +52,22 @@ class QuestionBatchView(APIView):
             )
         cache.set(question_batch.id, question_batch, 600)
 
-        # TODO: Track with Mixpanel
-
         qb_cache_manager = QuestionBatchCacheManager(question_batch.id)
         question_batch_json = qb_cache_manager.q_batch_json
+
+        if IS_PROD:
+            mixpanel.track(
+                user_id,
+                "Question Batch Started",
+                {
+                    "concept_id": concept_id,
+                    "Question Batch ID": str(question_batch.id),
+                    "Initial Knowledge Level Mean": question_batch.initial_knowledge_mean,
+                    "Initial Knowledge Level Variance": question_batch.initial_knowledge_std_dev,
+                    "Initial Display Knowledge Level": question_batch.initial_display_knowledge_level,
+                    "session_id": session_id,
+                },
+            )
 
         # Select another question if most recent one is answered
         print(
