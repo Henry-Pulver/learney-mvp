@@ -27,7 +27,7 @@ class QuestionBatch(UUIDModel):
     time_started = models.DateTimeField(
         auto_now_add=True, help_text="Time that the question batch was started"
     )
-    time_taken_to_complete = models.DateTimeField(
+    time_taken_to_complete = models.DurationField(
         null=True,
         default=None,
         help_text="Time after the question batch was started that it was completed",

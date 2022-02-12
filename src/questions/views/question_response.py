@@ -166,8 +166,8 @@ class QuestionResponseView(APIView):
                         "Number of questions asked": num_responses,
                         "Levels Progressed": levels_progressed,
                         "Concept Completed": concept_completed,
-                        "Time taken to complete": qb_cache_manager.q_batch.time_taken_to_complete.strftime(
-                            "%M:%S"
+                        "Time taken to complete": str(
+                            qb_cache_manager.q_batch.time_taken_to_complete
                         ),
                     },
                 )
