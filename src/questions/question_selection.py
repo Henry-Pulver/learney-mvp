@@ -8,7 +8,6 @@ from django.db.models import Q
 from accounts.models import User
 from questions.inference import MCMCInference
 from questions.models import QuestionResponse, QuestionTemplate
-from questions.models.question_batch import QuestionBatch
 from questions.question_batch_cache_manager import QuestionBatchCacheManager
 from questions.template_parser import check_valid_params_exist, number_of_questions, parse_params
 from questions.utils import SampledParamsDict, get_today

@@ -1,3 +1,4 @@
+from .auth import AuthorisedUsersView
 from .concept_info import ConceptInfoView
 from .current_concept import CurrentConceptView
 from .onboarding import UserOnboardingView

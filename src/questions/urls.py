@@ -16,6 +16,7 @@ Including another URLconf
 from django.urls import path
 
 from questions.views import (
+    AuthorisedUsersView,
     ConceptInfoView,
     CurrentConceptView,
     QuestionBatchView,
@@ -26,6 +27,7 @@ from questions.views import (
 )
 
 urlpatterns = [
+    path("api/v0/auth_question_users", AuthorisedUsersView.as_view(), name="authorised_users"),
     path("api/v0/concept_info", ConceptInfoView.as_view(), name="concept_info"),
     path("api/v0/current_concept", CurrentConceptView.as_view(), name="next_concept"),
     path("api/v0/question_batch", QuestionBatchView.as_view(), name="question_batch"),
