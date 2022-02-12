@@ -27,5 +27,5 @@ urlpatterns = [
     path("", include("page_visits.urls")),
     path("", include("questions.urls")),
     path("admin/", admin.site.urls),
-    path("silk/", include("silk.urls", namespace="silk")),
+    # path("silk/", include("silk.urls", namespace="silk")),
 ]

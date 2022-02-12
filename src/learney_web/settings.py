@@ -162,7 +162,7 @@ INSTALLED_APPS = [
     "learned",
     "link_clicks",
     "page_visits",
-    "silk",
+    # "silk",
     "questions",
     "rest_framework",
 ]
@@ -171,7 +171,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    "silk.middleware.SilkyMiddleware",
+    # "silk.middleware.SilkyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -200,16 +200,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "learney_web.wsgi.application"
 
-SILKY_PYTHON_PROFILER = True
-SILKY_PYTHON_PROFILER_BINARY = True
-SILKY_PYTHON_PROFILER_RESULT_PATH = "../silk_profiler_results"
-SILKY_AUTHENTICATION = True  # User must login
-SILKY_AUTHORISATION = True  # User must have permissions
-# (by default Silk will only authorise users with is_staff==True)
-# Set SILKY_PERMISSIONS to determine who can be authorised
-# You can use a lambda. E.g.
-# SILKY_PERMISSIONS = lambda user: user.is_superuser
-SILKY_META = True  # Tracks the effect Silk has on request/response time
+# SILKY_PYTHON_PROFILER = True
+# SILKY_PYTHON_PROFILER_BINARY = True
+# SILKY_PYTHON_PROFILER_RESULT_PATH = "../silk_profiler_results"
+# SILKY_AUTHENTICATION = True  # User must login
+# SILKY_AUTHORISATION = True  # User must have permissions
+# # (by default Silk will only authorise users with is_staff==True)
+# # Set SILKY_PERMISSIONS to determine who can be authorised
+# # You can use a lambda. E.g.
+# # SILKY_PERMISSIONS = lambda user: user.is_superuser
+# SILKY_META = True  # Tracks the effect Silk has on request/response time
 
 if dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV] != "*":
     CORS_ORIGIN_WHITELIST = (dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV],)
