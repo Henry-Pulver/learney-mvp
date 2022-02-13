@@ -8,8 +8,8 @@ from questions.models.question_batch import QuestionBatch
 @admin.register(QuestionTemplate)
 class QuestionTemplateAdmin(admin.ModelAdmin):
     list_select_related = ("concept",)
-    list_display = ("id", "concept", "question_type", "difficulty", "last_updated", "active")
-    search_fields = ["id", "question_type", "template_text", "difficulty", "concept"]
+    list_display = ("title", "concept", "question_type", "difficulty", "last_updated", "active")
+    search_fields = ["title", "id", "question_type", "template_text", "difficulty", "concept"]
 
 
 @admin.register(QuestionBatch)
