@@ -25,7 +25,11 @@ class GaussianParams:
 
     @property
     def level(self) -> float:
-        return max(self._dist.inv_cdf(self.LEVEL_THRESHOLD), 0)
+        return max(self.raw_level, 0)
+
+    @property
+    def raw_level(self) -> float:
+        return self._dist.inv_cdf(self.LEVEL_THRESHOLD)
 
 
 # This is the 'discrimination' parameter, how steep the logistic curve is. This has been

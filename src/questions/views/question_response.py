@@ -123,7 +123,7 @@ class QuestionResponseView(APIView):
         # Is the question_batch completed?
         concept_completed = new_ks.level > qb_cache_manager.q_batch.concept.max_difficulty_level
         num_responses = len(qb_cache_manager.q_batch_json["answers_given"])
-        doing_poorly = num_responses >= 5 and new_ks.level < -0.5
+        doing_poorly = num_responses >= 5 and new_ks.raw_level < 0
         print(f"Number of questions asked: {len(qb_cache_manager.q_batch_json['questions'])}")
         print(f"Number of questions answered: {num_responses}")
         max_num_of_questions_answered = num_responses >= qb_cache_manager.max_num_questions
