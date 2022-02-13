@@ -96,6 +96,7 @@ class QuestionTemplate(UUIDModel):
             if self.answers_all_different(answer_list=answers_order_randomised):
                 random.shuffle(answers_order_randomised)
                 return {
+                    "question_title": self.title,
                     "template_id": self.id,
                     "question_text": remove_start_and_end_newlines(question_text),
                     "question_type": self.question_type,
