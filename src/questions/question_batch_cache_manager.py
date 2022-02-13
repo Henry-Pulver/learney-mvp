@@ -22,12 +22,12 @@ class QuestionBatchCacheManager:
 
         self.q_batch: QuestionBatch = cache.get(question_batch_id)
         if self.q_batch is None:
-            q_batch = (
+            self.q_batch = (
                 QuestionBatch.objects.prefetch_related("user__knowledge_states__concept")
                 .prefetch_related("responses__question_template__concept")
                 .get(id=question_batch_id)
             )
-            cache.set(question_batch_id, q_batch, timeout=1200)
+            cache.set(question_batch_id, self.q_batch, timeout=1200)
 
         # Get all the precomputed json data from the cache
         self._q_batch_json = cache.get(self._batch_json_key)
