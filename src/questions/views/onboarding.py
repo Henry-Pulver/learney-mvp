@@ -1,3 +1,5 @@
+from statistics import NormalDist
+
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -10,9 +12,20 @@ from questions.inference import GaussianParams
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 
 LEVEL_TO_KNOWLEDGE_STATE = {
-    "New": lambda max_level: GaussianParams(1, max(1, max_level / 2)),
-    "Shaky": lambda max_level: GaussianParams(1 + max_level / 2, max(1, max_level / 2)),
-    "Known": lambda max_level: GaussianParams(1 + max_level, max(1, max_level / 2)),
+    "New": lambda max_level: GaussianParams(
+        -NormalDist(mu=0, sigma=max(1, max_level / 2)).inv_cdf(GaussianParams.LEVEL_THRESHOLD),
+        max(1, max_level / 2),
+    ),
+    "Shaky": lambda max_level: GaussianParams(
+        -NormalDist(mu=0, sigma=max(1, max_level / 2)).inv_cdf(GaussianParams.LEVEL_THRESHOLD)
+        + max_level / 2,
+        max(1, max_level / 2),
+    ),
+    "Known": lambda max_level: GaussianParams(
+        -NormalDist(mu=0, sigma=max(1, max_level / 2)).inv_cdf(GaussianParams.LEVEL_THRESHOLD)
+        + max_level,
+        max(1, max_level / 2),
+    ),
 }
 
 
