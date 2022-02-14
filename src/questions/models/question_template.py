@@ -79,7 +79,10 @@ class QuestionTemplate(UUIDModel):
         sampled_params: Optional[SampledParamsDict] = None,
         params_to_avoid: Optional[List[SampledParamsDict]] = None,
     ) -> Optional[Dict[str, Any]]:
-        """Gets question dictionary from a template and set of sampled parameters."""
+        """Gets question dictionary from a template and set of sampled parameters.
+
+        If a question can't be generated, return None.
+        """
         for _ in range(1000):  # This loop is to ensure that multiple answers aren't identical
             if sampled_params is None:
                 parsed_params = parse_params(self.template_text)
@@ -96,7 +99,7 @@ class QuestionTemplate(UUIDModel):
             if self.answers_all_different(answer_list=answers_order_randomised):
                 random.shuffle(answers_order_randomised)
                 return {
-                    "question_title": self.title,
+                    "title": self.title,
                     "template_id": self.id,
                     "question_text": remove_start_and_end_newlines(question_text),
                     "question_type": self.question_type,
@@ -151,4 +154,10 @@ def parse_template(text: str) -> Tuple[str, str, Dict[str, str]]:
                 answers[current_answer] = regex.groups()[1]
             elif is_feedback and not says_feedback(line):  # skip the word 'feedback'
                 feedback += line + "\n"
+
+    # Remove zero width spaces
+    question_text = question_text.replace("\u200b", "")
+    feedback = feedback.replace("\u200b", "")
+    answers = {key: value.replace("\u200b", "") for key, value in answers.items()}
+
     return question_text, feedback, answers

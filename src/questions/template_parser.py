@@ -93,7 +93,9 @@ def expand_params_in_text(text: str, sampled_params: SampledParamsDict) -> str:
         try:
             return run_python_code_string(python_expression)
         except ParsingError as e:
-            raise ParsingError(f"Error when parsing: {text}\nWith params: {sampled_params}\n{e}")
+            raise ParsingError(
+                f"Error when parsing:\n\n{text}\nWith params: {sampled_params}\n\n{e}"
+            )
 
     return re.sub(r"(<<([^>]+)>>)", replace_with_expression_output, text)
 

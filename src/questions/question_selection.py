@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
@@ -91,7 +92,18 @@ def select_questions(
                     param_options=parse_params(chosen_template.template_text),
                     params_to_avoid=params_to_avoid,
                 )
-            question_chosen = chosen_template.to_question_json(params_to_avoid=params_to_avoid)
+            try:
+                question_chosen = chosen_template.to_question_json(params_to_avoid=params_to_avoid)
+            except Exception as e:
+                # If there's an error converting the question to a dict, return None and deactivate it!
+                warnings.warn(f"Could not parse question {chosen_template.title}.\n Error: {e}")
+                chosen_template.active = False
+                chosen_template.save()
+                # Remove from template_options and resave this in cache!
+                template_index = template_options.index(chosen_template)
+                template_options.remove(chosen_template)
+                np.delete(question_probs, template_index)
+                cache.set(f"template_options_{concept_id}", template_options, timeout=60 * 60 * 24)
 
         if save_question_to_db:  # Track the question was sent in the DB
             q_response = QuestionResponse.objects.create(
