@@ -20,6 +20,7 @@ class User(models.Model):
         ContentLinkPreview,
         related_name="checked_by",
         help_text="The content links that this user has checked",
+        blank=True,
     )
     in_questions_trial = models.BooleanField(
         default=False, help_text="Whether or not they're involved in the question trial"
