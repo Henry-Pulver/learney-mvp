@@ -5,4 +5,5 @@ from .onboarding import UserOnboardingView
 from .question import QuestionView
 from .question_batch import QuestionBatchView
 from .question_response import QuestionResponseView
+from .question_template import QuestionTemplateView
 from .report_questions import ReportBrokenQuestionView

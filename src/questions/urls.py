@@ -21,6 +21,7 @@ from questions.views import (
     CurrentConceptView,
     QuestionBatchView,
     QuestionResponseView,
+    QuestionTemplateView,
     QuestionView,
     ReportBrokenQuestionView,
     UserOnboardingView,
@@ -33,6 +34,7 @@ urlpatterns = [
     path("api/v0/question_batch", QuestionBatchView.as_view(), name="question_batch"),
     path("api/v0/questions", QuestionView.as_view(), name="questions"),
     path("api/v0/question_response", QuestionResponseView.as_view(), name="question_responses"),
+    path("api/v0/question_template", QuestionTemplateView.as_view(), name="question_template"),
     path(
         "api/v0/report_broken_question",
         ReportBrokenQuestionView.as_view(),
