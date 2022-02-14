@@ -10,6 +10,8 @@ class QuestionTemplateAdmin(admin.ModelAdmin):
     list_select_related = ("concept",)
     list_display = ("title", "concept", "question_type", "difficulty", "last_updated", "active")
     search_fields = ["title", "id", "question_type", "template_text", "difficulty", "concept"]
+    list_filter = ("concept__name",)
+    ordering = ["concept__cytoscape_id", "difficulty", "last_updated"]
 
 
 @admin.register(QuestionBatch)
@@ -25,6 +27,7 @@ class QuestionBatchAdmin(admin.ModelAdmin):
         "concept_completed",
     )
     search_fields = ["id", "user", "concept", "time_started", "time_taken_to_complete"]
+    list_filter = ("user__name", "concept__name")
 
 
 @admin.register(QuestionResponse)
@@ -50,6 +53,7 @@ class QuestionResponseAdmin(admin.ModelAdmin):
         "response",
         "concept",
     ]
+    list_filter = ("user__name", "question_batch__concept__name", "question_batch")
 
 
 @admin.register(InferredKnowledgeState)
