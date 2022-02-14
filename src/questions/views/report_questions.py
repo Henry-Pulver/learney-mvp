@@ -18,10 +18,7 @@ RECIPIENTS = ["henry@learney.me", "matthew@learney.me"]
 
 def get_admin_edit_link(question_template_id: str) -> str:
     """Gets a link to the admin page to edit this question."""
-    return (
-        f"https://{IS_PROD if '' else 'staging-'}api.learney.me/admin/questions/questiontemplate/"
-        f"{question_template_id}/change/"
-    )
+    return f"https://{'app' if IS_PROD else 'staging'}.learney.me/template_editor/{question_template_id}"
 
 
 class ReportBrokenQuestionView(APIView):
