@@ -8,7 +8,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import json
 import os
 from pathlib import Path
 
@@ -16,25 +16,9 @@ import requests
 import yaml
 
 import sentry_sdk
+from learney_web.utils import get_concept_names, get_prerequisite_dict, retrieve_map_from_s3
 from mixpanel import Mixpanel
 from sentry_sdk.integrations.django import DjangoIntegration
-
-sentry_sdk.init(
-    dsn="https://bc60f04d032e4ea590973ebc6d8db2f5@o1080536.ingest.sentry.io/6086500",
-    integrations=[DjangoIntegration()],
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    # We recommend adjusting this value in production,
-    traces_sample_rate=1.0,
-    # If you wish to associate users to errors (assuming you are using
-    # django.contrib.auth) you may enable sending PII data.
-    send_default_pii=True,
-    # By default the SDK will try to use the SENTRY_RELEASE
-    # environment variable, or infer a git commit
-    # SHA as release, however you may want to set
-    # something more human-readable.
-    # release="myapp@1.0.0",
-)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -59,6 +43,35 @@ with open("link_preview_api_key.yaml", "r") as secrets_file:
     LINK_PREVIEW_API_KEY = yaml.load(secrets_file, Loader=yaml.Loader)["API_KEY"]
 
 IS_PROD = PYTHON_ENV == "production"
+
+CONTENT_JSON = json.loads(
+    retrieve_map_from_s3(
+        s3_bucket_name="learney-prod" if IS_PROD else "learney-test",
+        s3_key="questions_map.json",
+        aws_credentials=AWS_CREDENTIALS,
+    )
+)
+
+QUESTIONS_PREREQUISITE_DICT = get_prerequisite_dict(CONTENT_JSON)
+CONCEPT_NAMES = get_concept_names(CONTENT_JSON)
+
+if PYTHON_ENV in ["staging", "production"]:
+    sentry_sdk.init(
+        dsn="https://bc60f04d032e4ea590973ebc6d8db2f5@o1080536.ingest.sentry.io/6086500",
+        integrations=[DjangoIntegration()],
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for performance monitoring.
+        # We recommend adjusting this value in production,
+        traces_sample_rate=1.0,
+        # If you wish to associate users to errors (assuming you are using
+        # django.contrib.auth) you may enable sending PII data.
+        send_default_pii=True,
+        # By default the SDK will try to use the SENTRY_RELEASE
+        # environment variable, or infer a git commit
+        # SHA as release, however you may want to set
+        # something more human-readable.
+        # release="myapp@1.0.0",
+    )
 
 ALLOWED_HOSTS = [
     ".amazonaws.com",
@@ -149,6 +162,8 @@ INSTALLED_APPS = [
     "learned",
     "link_clicks",
     "page_visits",
+    # "silk",
+    "questions",
     "rest_framework",
 ]
 
@@ -156,6 +171,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    # "silk.middleware.SilkyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -184,6 +200,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "learney_web.wsgi.application"
 
+# SILKY_PYTHON_PROFILER = True
+# SILKY_PYTHON_PROFILER_BINARY = True
+# SILKY_PYTHON_PROFILER_RESULT_PATH = "../silk_profiler_results"
+# SILKY_AUTHENTICATION = True  # User must login
+# SILKY_AUTHORISATION = True  # User must have permissions
+# # (by default Silk will only authorise users with is_staff==True)
+# # Set SILKY_PERMISSIONS to determine who can be authorised
+# # You can use a lambda. E.g.
+# # SILKY_PERMISSIONS = lambda user: user.is_superuser
+# SILKY_META = True  # Tracks the effect Silk has on request/response time
 
 if dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV] != "*":
     CORS_ORIGIN_WHITELIST = (dev_secrets_dict["FRONTEND_URL"][PYTHON_ENV],)
@@ -205,6 +231,20 @@ CORS_ALLOW_HEADERS = [
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://learney-prod-redis.suk8h1.ng.0001.usw2.cache.amazonaws.com:6379",
+        "TIMEOUT": 300,
+    }
+    if PYTHON_ENV != "dev"
+    else {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+        "TIMEOUT": 300,
+    }
+}
 
 if "RDS_DB_NAME" in os.environ:
     DATABASES = {
@@ -266,7 +306,3 @@ if PYTHON_ENV in ["production", "staging"]:
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# For auth0
-with open("auth0_conf.yaml", "r") as auth0_conf_file:
-    auth0_conf = yaml.load(auth0_conf_file, Loader=yaml.Loader)

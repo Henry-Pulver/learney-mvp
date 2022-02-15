@@ -1,6 +1,7 @@
 import datetime
 from typing import Dict, Optional, Union
 
+from django.core.cache import cache
 from django.utils.datastructures import MultiValueDictKeyError
 from pytz import timezone
 from rest_framework import status
@@ -19,34 +20,31 @@ UTC = timezone("UTC")
 class ContentLinkPreviewView(APIView):
     def get(self, request: Request, format=None) -> Response:
         try:
-            retrieved_entries = ContentLinkPreview.objects.filter(
-                map__unique_id=request.GET["map"],
-                concept=request.GET["concept"],
-                url=request.GET["url"],
-            )
-            if retrieved_entries.count() == 0:
-                return self._serialize_and_respond(get_from_linkpreview_net(request.GET), False)
-            else:
-                retrieved_entry = retrieved_entries.latest("preview_last_updated")
-                checked = (
-                    retrieved_entry.checked_by.all().filter(id=request.GET["user_id"]).count() > 0
+            url = request.GET["url"]
+            retrieved_entry: Optional[ContentLinkPreview] = cache.get(url)
+            if retrieved_entry is None:
+                retrieved_entries = ContentLinkPreview.objects.filter(
+                    map__unique_id=request.GET["map"],
+                    concept=request.GET["concept"],
+                    url=url,
                 )
+                if retrieved_entries.count() == 0:
+                    # if no entry is found, get it from linkpreview.net
+                    return self._serialize_and_respond(get_from_linkpreview_net(request.GET), False)
 
-                # If no details found and old, try linkpreview.net
-                utc_now = UTC.localize(datetime.datetime.utcnow())
-                if retrieved_entry.description == "" and (
-                    utc_now - retrieved_entry.preview_last_updated > datetime.timedelta(weeks=1)
-                ):
-                    return self._serialize_and_respond(
-                        get_from_linkpreview_net(request.GET), checked
-                    )
-                else:
-                    serializer = LinkPreviewSerializer(
-                        retrieved_entry, context={"request": request}
-                    )
-                    return Response(
-                        {**serializer.data, "checked": checked}, status=status.HTTP_200_OK
-                    )
+                retrieved_entry = retrieved_entries.latest("preview_last_updated")
+                cache.set(url, retrieved_entry, timeout=60 * 60 * 24)
+
+            checked = retrieved_entry.checked_by.all().filter(id=request.GET["user_id"]).count() > 0
+
+            # If no details found and old, try linkpreview.net
+            utc_now = UTC.localize(datetime.datetime.utcnow())
+            if retrieved_entry.description == "" and (
+                utc_now - retrieved_entry.preview_last_updated > datetime.timedelta(weeks=1)
+            ):
+                return self._serialize_and_respond(get_from_linkpreview_net(request.GET), checked)
+            serializer = LinkPreviewSerializer(retrieved_entry, context={"request": request})
+            return Response({**serializer.data, "checked": checked}, status=status.HTTP_200_OK)
         except KeyError as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
@@ -77,13 +75,16 @@ class TotalVoteCountView(APIView):
         # Below logic: for each url, find the most recent vote from each user who voted on
         #  that url and add them, with False -> -1 and True -> +1
         # TODO: Doesn't account for not-voted-on urls - left to frontend to deal with
-        data = {
-            url_dict["url"]: sum(
-                2 * int(v_entry["vote"]) - 1  # True, False or None
-                for v_entry in entries.filter(url=url_dict["url"]).values("vote")
-            )
-            for url_dict in entries.values("url").distinct()
-        }
+        data = cache.get(f"total_votes:{request.GET['map']}")
+        if data is None:
+            data = {
+                url_dict: sum(
+                    2 * int(vote) - 1  # True, False or None
+                    for vote in entries.filter(url=url_dict).values_list("vote", flat=True)
+                )
+                for url_dict in entries.values_list("url", flat=True).distinct()
+            }
+            cache.set(f"total_votes:{request.GET['map']}", data, timeout=60 * 60 * 24)
 
         return Response(data, status=status.HTTP_200_OK if data else status.HTTP_204_NO_CONTENT)
 
@@ -100,7 +101,11 @@ class ContentVoteView(APIView):
                 url_dict["url"]: entries.filter(url=url_dict["url"]).latest("timestamp").vote
                 for url_dict in url_dicts
             }
-            return Response(data, status=status.HTTP_200_OK if data else status.HTTP_204_NO_CONTENT)
+            return Response(
+                data,
+                status=status.HTTP_200_OK if data else status.HTTP_204_NO_CONTENT,
+            )
+
         except MultiValueDictKeyError as error:
             return Response(str(error), status=status.HTTP_400_BAD_REQUEST)
 
@@ -125,7 +130,7 @@ class ContentVoteView(APIView):
                 if content_link_exists
                 else None,
                 "url": request.data.get("url"),
-                "vote": request.data.get("vote"),
+                "vote": request.data["vote"],
             }
             serializer = VoteSerializer(data=data)
             if serializer.is_valid():

@@ -17,13 +17,15 @@ from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
-    path("", include("learney_backend.urls")),
-    path("", include("goals.urls")),
-    path("", include("learned.urls")),
-    path("", include("knowledge_maps.urls")),
-    path("", include("link_clicks.urls")),
-    path("", include("page_visits.urls")),
-    path("", include("button_presses.urls")),
     path("", include("accounts.urls")),
+    path("", include("button_presses.urls")),
+    path("", include("goals.urls")),
+    path("", include("learney_backend.urls")),
+    path("", include("learned.urls")),
+    path("", include("link_clicks.urls")),
+    path("", include("knowledge_maps.urls")),
+    path("", include("page_visits.urls")),
+    path("", include("questions.urls")),
     path("admin/", admin.site.urls),
+    # path("silk/", include("silk.urls", namespace="silk")),
 ]

@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3.8
 
 SHELL ["/bin/bash", "-c"]
 
@@ -12,7 +12,6 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-# CMD cd src && python manage.py runserver 0.0.0.0:8000
 CMD cd src && python manage.py migrate && python manage.py runserver 0.0.0.0:8000
 ## TEST ##
 #CMD cd src && DJANGO_SETTINGS_MODULE=learney_web.settings pytest -n auto --no-migrations --reuse-db --cov=`pwd` --no-cov-on-fail

@@ -38,7 +38,7 @@ def get_or_generate_user_id(request: Request) -> str:
         return f"anonymous-user|{uuid4()}"
     user_id = request.data["user_id"]
     # If user doesn't exist, add user!
-    if User.objects.filter(id=user_id).count() == 0:
+    if not User.objects.filter(id=user_id).exists():
         serializer = UserSerializer(data=user_data_to_user_db_object(request.data["user_data"]))
         if serializer.is_valid():
             serializer.save()

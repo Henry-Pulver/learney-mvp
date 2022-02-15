@@ -43,19 +43,16 @@ class KnowledgeMapView(APIView):
     def get(self, request: Request, format=None):
         try:
             if "url_extension" in request.GET:
-                entry = KnowledgeMapModel.objects.filter(
-                    url_extension=request.GET["url_extension"]
-                ).latest("last_updated")
+                entry = KnowledgeMapModel.objects.get(url_extension=request.GET["url_extension"])
                 serializer = KnowledgeMapSerializer(entry)
-                data = {**serializer.data, "map_json": retrieve_map(entry)}
-                return Response(data, status=status.HTTP_200_OK)
-            elif "map" in request.GET and "version" in request.GET:
-                entry = KnowledgeMapModel.objects.filter(
-                    unique_id=request.GET["map"], version=int(request.GET["version"])
-                ).latest("last_updated")
+                return Response(
+                    {**serializer.data, "map_json": entry.retrieve_map()}, status=status.HTTP_200_OK
+                )
+            elif "map" in request.GET:
+                entry = KnowledgeMapModel.objects.get(unique_id=request.GET["map"])
                 return Response(
                     {
-                        "map_json": retrieve_map(entry),
+                        "map_json": entry.retrieve_map(),
                         "map": entry.unique_id,
                         "allow_suggestions": entry.allow_suggestions,
                     },
@@ -63,10 +60,7 @@ class KnowledgeMapView(APIView):
                 )
             else:
                 return Response(
-                    [
-                        entry["url_extension"]
-                        for entry in KnowledgeMapModel.objects.all().values("url_extension")
-                    ],
+                    KnowledgeMapModel.objects.values_list("url_extension", flat=True),
                     status=status.HTTP_200_OK,
                 )
 
@@ -79,11 +73,10 @@ class KnowledgeMapView(APIView):
 
     def post(self, request: Request, format=None):
         serializer = KnowledgeMapSerializer(data=request.data, context={"request": request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
+        if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def put(self, request: Request, format=None):
         # TODO: Write test for this view!
@@ -97,9 +90,7 @@ class KnowledgeMapView(APIView):
             #     s3_key: , (optional)
             #     s3_bucket_name: , (optional)
             # }
-            entry = KnowledgeMapModel.objects.filter(unique_id=request_body["map"]).latest(
-                "last_updated"
-            )
+            entry = KnowledgeMapModel.objects.get(unique_id=request_body["map"])
             entry.s3_bucket_name = request_body.get("s3_bucket_name", entry.s3_bucket_name)
             entry.s3_key = request_body.get("s3_key", entry.s3_key)
             s3 = boto3.resource(

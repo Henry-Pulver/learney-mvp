@@ -48,3 +48,9 @@ class AddCheckedView(APIView):
                 )
         except KeyError as e:
             return Response(f"Invalid request: {str(e)}\n\n{e}", status=status.HTTP_400_BAD_REQUEST)
+
+
+class InQuestionsTrialUsers(APIView):
+    def get(self, request: Request, format=None) -> Response:
+        users = User.objects.filter(in_questions_trial=True).values("id", "name", "picture")
+        return Response(users, status=status.HTTP_200_OK)
