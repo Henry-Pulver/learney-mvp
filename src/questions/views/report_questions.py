@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 import boto3
+from accounts.models import User
 from botocore.exceptions import ClientError
 from learney_web.settings import AWS_CREDENTIALS, IS_PROD, mixpanel
 from questions.models import QuestionResponse, QuestionTemplate
@@ -27,6 +28,7 @@ class ReportBrokenQuestionView(APIView):
         template_id = request.data["question"]["template_id"]
         response_id = request.data["question"]["id"]
 
+        user = User.objects.get(id=request.data["user_id"])
         question_template = QuestionTemplate.objects.prefetch_related("concept").get(id=template_id)
         concept_name = question_template.concept.name
 
@@ -58,7 +60,7 @@ class ReportBrokenQuestionView(APIView):
         body_html = f"""<html>
         <head></head>
         <body>
-          <h1>Question '{question_template}' on '{concept_name}' reported as broken!</h1>
+          <h1>Question '{question_template.title}' on '{concept_name}' reported as broken by {user.name}!</h1>
           <p>
           <b>Issue type: {request.data['type']}</b>
           <br/>
@@ -73,6 +75,8 @@ class ReportBrokenQuestionView(APIView):
           Answers: \n\n{question["answers_order_randomised"]}
           <br/>
           Feedback: \n\n{question["feedback"]}
+          <br/>
+          User name: {user.name}\n User id: {user.id}
           </p>
         </body>
         </html>
