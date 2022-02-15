@@ -19,7 +19,7 @@ ParamOptionsDict = Dict[str, List[Any]]
 
 
 NUMBER_REGEX = r"-?\d+\.?\d*(e-?\d+)?"
-STRING_REGEX = """(["][^"]+"|'[^']+'|[\u201c\u201d][^\u201c\u201d]+[\u201c\u201d]|[\u2018\u2019][^\u2018\u2019]+[\u2018\u2019])"""
+STRING_REGEX = """("[^"]*"|'[^']*'|[\u201c\u201d][^\u201c\u201d]*[\u201c\u201d]|[\u2018\u2019][^\u2018\u2019]*[\u2018\u2019])"""
 LIST_REGEX = f"\[(({NUMBER_REGEX}|{STRING_REGEX})+.*,\s*)*({NUMBER_REGEX}|{STRING_REGEX})]"
 
 
@@ -153,6 +153,9 @@ def parse_param_line(line: str) -> Tuple[str, List[Any]]:
         .replace("{", "[")
         .replace("}", "]")
     )
+    # Prevents a bug due to json.loads() erroring due to latex \ in strings in params
+    values_string = re.sub(STRING_REGEX, lambda x: x.group(0).replace("\\", "\\\\"), values_string)
+
     return regex.groups()[0], json.loads(values_string)
 
 

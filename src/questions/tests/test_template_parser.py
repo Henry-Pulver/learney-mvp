@@ -112,6 +112,7 @@ VALID_PARAM_LINES = [
     ("param B: {[1], [2]}", "B", [[1], [2]]),
     ("param C: {'1', '2'}", "C", ["1", "2"]),
     ("param C: {' ', '1 ,'}", "C", [" ", "1 ,"]),
+    ("param C: {'\\theta', '\\phi'}", "C", ["\\theta", "\\phi"]),
 ]
 
 
@@ -243,7 +244,9 @@ def test_expand_params_in_text__success_tricky_numbers(
     ],
 )
 def test_sample_params(params: ParamOptionsDict):
-    for name, v in sample_params(params).items():
+    sampled_parameters = sample_params(params)
+    assert sampled_parameters is not None
+    for name, v in sampled_parameters.items():
         transformed_v = int(v) if v.isnumeric() else json.loads(v) if v.startswith("[") else v
         assert transformed_v in params[name]
 
@@ -258,7 +261,9 @@ def test_sample_params(params: ParamOptionsDict):
     ],
 )
 def test_sample_params__avoid__success(test_data: Tuple[ParamOptionsDict, List[SampledParamsDict]]):
-    for name, v in sample_params(test_data[0], test_data[1]).items():
+    sampled_parameters = sample_params(test_data[0], test_data[1])
+    assert sampled_parameters is not None
+    for name, v in sampled_parameters.items():
         assert v != test_data[1][0][name]
         transformed_v = int(v) if v.isnumeric() else json.loads(v) if v.startswith("[") else v
         assert transformed_v in test_data[0][name]
