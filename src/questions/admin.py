@@ -8,9 +8,17 @@ from questions.models.question_batch import QuestionBatch
 @admin.register(QuestionTemplate)
 class QuestionTemplateAdmin(admin.ModelAdmin):
     list_select_related = ("concept",)
-    list_display = ("title", "concept", "question_type", "difficulty", "last_updated", "active")
+    list_display = (
+        "title",
+        "concept",
+        "difficulty",
+        "question_type",
+        "last_updated",
+        "id",
+        "active",
+    )
     search_fields = ["title", "id", "question_type", "template_text", "difficulty", "concept"]
-    list_filter = ("concept__name",)
+    list_filter = ("concept__name", "active")
     ordering = ["concept__cytoscape_id", "difficulty", "last_updated"]
 
 

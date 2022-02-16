@@ -14,6 +14,30 @@ from .template_test_data import *
 @pytest.mark.parametrize(
     "test_data",
     [
+        (0.020000000000000004, 0.02),
+        (0.320000000000000060, 0.32),
+        (3e-3, 0.003),
+        (2 / 7, 0.2857),
+        (2 / 9, 0.2222),
+        (0.42000000000000004, 0.42),
+        (3.333333333, 3.3333),
+        (400.00000004, 400),
+        (0.44000000000000006, 0.44),
+        (0.49999999999999994, 0.5),
+        (0.9999999999999999, 1),
+        (0.21000000000000002, 0.21),
+        (0.10500000000000001, 0.105),
+        (1.4000000000000001, 1.4),
+        (0.42250000000000004, 0.4225),
+    ],
+)
+def test_remove_floating_point_errors(test_data: Tuple[float, float]) -> None:
+    assert remove_floating_point_errors(test_data[0]) == test_data[1]
+
+
+@pytest.mark.parametrize(
+    "test_data",
+    [
         ("2", True),
         ("27", True),
         ("3.2", True),
@@ -167,7 +191,7 @@ def test_parse_params__error() -> None:
         ("2 + 2", "4"),
         ("2 * 7", "14"),
         ("3 ** 2", "9"),
-        ("1.2 * 5", "6.0"),
+        ("1.2 * 5", "6"),
         ("1 / 5", "0.2"),
         ("5 % 2", "1"),
         ('"string"', "string"),
@@ -220,8 +244,14 @@ def test_convert_to_python(test_data: Tuple[str, str]) -> None:
 @pytest.mark.parametrize(
     "test_data_pairs",
     [
-        (r"What is $$2 \times <<A / B>>$$?", lambda a, b: rf"What is $$2 \times {a / b}$$?"),
-        (r"What is $$2 \times <<A * B>>$$?", lambda a, b: rf"What is $$2 \times {a * b}$$?"),
+        (
+            r"What is $$2 \times <<A / B>>$$?",
+            lambda a, b: rf"What is $$2 \times {remove_floating_point_errors(a / b)}$$?",
+        ),
+        (
+            r"What is $$2 \times <<A * B>>$$?",
+            lambda a, b: rf"What is $$2 \times {remove_floating_point_errors(a * b)}$$?",
+        ),
     ],
 )
 @pytest.mark.parametrize("params", [("1", "7"), ("66", "23"), ("4.7", "12")])
@@ -278,8 +308,7 @@ def test_sample_params__avoid__success(test_data: Tuple[ParamOptionsDict, List[S
     ],
 )
 def test_sample_params__avoid__error(test_data: Tuple[ParamOptionsDict, List[SampledParamsDict]]):
-    with pytest.raises(ParsingError):
-        sample_params(test_data[0], test_data[1])
+    assert sample_params(test_data[0], test_data[1]) is None
 
 
 @pytest.mark.parametrize(
@@ -369,11 +398,14 @@ class TestQuestionFromTemplate(TestCase):
                 sampled_params=data_class.PARAMS_DICT
             )
             expected_question_dict = {
+                "title": "",
                 "template_id": self.template_ids[count],
                 "question_text": data_class.QUESTION_TEXT,
                 "correct_answer": data_class.CORRECT_ANSWER,
                 "feedback": data_class.FEEDBACK,
                 "params": data_class.PARAMS_DICT,
+                "difficulty": 0,
+                "question_type": "test",
             }
             answers_order_randomised = question_dict.pop("answers_order_randomised")
             assert all(answer in answers_order_randomised for answer in data_class.ANSWERS)
