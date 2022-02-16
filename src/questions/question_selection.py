@@ -73,7 +73,7 @@ def select_questions(
 
         # Choose the template that's going to be used!
         question_chosen = None
-        while question_chosen is None:
+        for _ in range(1000):
             valid_params_exist = False
             while not valid_params_exist:
                 chosen_template: QuestionTemplate = np.random.choice(
@@ -94,6 +94,8 @@ def select_questions(
                 )
             try:
                 question_chosen = chosen_template.to_question_json(params_to_avoid=params_to_avoid)
+                if question_chosen is not None:
+                    break
             except Exception as e:
                 # If there's an error converting the question to a dict, return None and deactivate it!
                 warnings.warn(f"Could not parse question {chosen_template.title}.\n Error: {e}")
@@ -104,6 +106,8 @@ def select_questions(
                 template_options.remove(chosen_template)
                 np.delete(question_probs, template_index)
                 cache.set(f"template_options_{concept_id}", template_options, timeout=60 * 60 * 24)
+
+        assert question_chosen is not None, "No valid questions to choose from!"
 
         if save_question_to_db:  # Track the question was sent in the DB
             q_response = QuestionResponse.objects.create(

@@ -10,6 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.models import User
 from learney_web.settings import IS_PROD, mixpanel
 from questions.inference import GaussianParams, MCMCInference
 from questions.models import QuestionResponse
@@ -142,6 +143,10 @@ class QuestionResponseView(APIView):
             )
         if completed:
             print(f"completed: {completed}")
+            user = User.objects.get(id=user_id)
+            if not user.question_batch_finished_today():
+                user.questions_streak += 1
+                user.save()
             # Update stored data on the question batch
             levels_progressed = (
                 new_ks.level - qb_cache_manager.q_batch.initial_knowledge_state.level
