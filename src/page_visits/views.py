@@ -55,12 +55,11 @@ def get_and_update_user(request: Request) -> Dict[str, Any]:
         # If they didn't, it's a new streak or 0, depending on if they did it today.
         streak = user.questions_streak if user.question_batch_finished_yesterday() else int(today)
         # If statements speed up view by not saving in the DB unless necessary
-        if (
-            user.questions_streak != streak
-            or user.utc_tz_difference != request.data["user_data"]["utc_tz_difference"]
-        ):
+        if user.questions_streak != streak or user.utc_tz_difference != request.data[
+            "user_data"
+        ].get("utc_tz_difference", 0):
             user.questions_streak = streak
-            user.utc_tz_difference = request.data["user_data"]["utc_tz_difference"]
+            user.utc_tz_difference = request.data["user_data"].get("utc_tz_difference", 0)
             user.save()
         return {"questions_streak": streak, "batch_completed_today": today}
     return {}
