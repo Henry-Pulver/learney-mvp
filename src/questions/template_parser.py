@@ -109,7 +109,9 @@ def run_python_code_string(python_code: str) -> str:
     try:
         f = StringIO()
         with redirect_stdout(f):
-            exec(f"print({python_code})")
+            exec(
+                f"A={python_code}\nprint(remove_floating_point_errors(A) if isinstance(A, float) else A)"
+            )
         return f.getvalue()[:-1]  # print() automatically adds a \n at the end - cut this
     except Exception as e:
         raise ParsingError(f"Python inside <<>> is invalid!\n Code: {python_code}\nError: {e}")
@@ -168,7 +170,7 @@ def param_line_regex(line: str) -> Optional[re.Match]:
     """
     param_element_regex = f"({NUMBER_REGEX}|{STRING_REGEX}|{LIST_REGEX})"
     return re.fullmatch(
-        r"\s*param\s*([^-{}:@&%$£?!~#+=,]+):\s*({("
+        r"\s*param\s+([^-{}:@&%$£?!~#+=,]+):\s*({("
         + param_element_regex
         + ",\s*)*"
         + param_element_regex
@@ -192,3 +194,8 @@ def remove_start_and_end_newlines(text: str) -> str:
     while text.endswith("\n"):
         text = text[:-1]
     return text
+
+
+def remove_floating_point_errors(num: float) -> float:
+    """Remove floating point errors from numbers."""
+    return round(num, 4) if round(num, 0) != round(num, 4) else int(round(num, 0))
