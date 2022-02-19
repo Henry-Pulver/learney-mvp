@@ -16,6 +16,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from learney_web.healthcheck import HealthCheckView
+
 urlpatterns = [
     path("", include("accounts.urls")),
     path("", include("button_presses.urls")),
@@ -27,5 +29,6 @@ urlpatterns = [
     path("", include("page_visits.urls")),
     path("", include("questions.urls")),
     path("admin/", admin.site.urls),
+    path("", HealthCheckView.as_view(), name="healthcheck"),
     # path("silk/", include("silk.urls", namespace="silk")),
 ]
