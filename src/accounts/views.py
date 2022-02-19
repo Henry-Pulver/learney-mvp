@@ -11,18 +11,22 @@ from learney_web.settings import IS_PROD, mixpanel
 class AddCheckedView(APIView):
     def post(self, request: Request, format=None) -> Response:
         try:
-            user = User.objects.get(id=request.data["user_id"])
+            user = User.objects.filter(id=request.data["user_id"])
             checked_content = ContentLinkPreview.objects.filter(
                 map=request.data["map"],
                 concept_id=request.data["concept_id"],
                 url=request.data["url"],
             ).latest("preview_last_updated")
-            if checked_content in user.checked_content_links.all():
-                user.checked_content_links.remove(checked_content)
-                action_name = "Uncheck Content Link"
+            if user.exists():
+                user = user.first()
+                if checked_content in user.checked_content_links.all():
+                    user.checked_content_links.remove(checked_content)
+                    action_name = "Uncheck Content Link"
+                else:
+                    user.checked_content_links.add(checked_content)
+                    action_name = "Check Off Content Link"
             else:
-                user.checked_content_links.add(checked_content)
-                action_name = "Check Off Content Link"
+                action_name = "Check Off Content Link (Anonymous user)"
             mixpanel_dict = {
                 "url": request.data["url"],
                 "Map URL extension": checked_content.map.url_extension,
