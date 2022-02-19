@@ -1,0 +1,3 @@
+FROM learney-backend:latest
+
+CMD cd src && DJANGO_SETTINGS_MODULE=learney_web.settings pytest questions/tests -n auto --no-migrations --reuse-db --cov=`pwd` --no-cov-on-fail
