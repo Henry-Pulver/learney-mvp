@@ -10,10 +10,16 @@ build:
 	docker build . -t learney-backend
 
 run:
-	./.build_and_run.sh
+	docker build . -t learney-backend
+	docker run -p 8000:8000 -v `pwd`:/app -e PYTHONUNBUFFERED=1 learney-backend
 
-staging:
+test:
+	docker build . -t learney-backend
+	docker build . -f ./docker/Dockerfile.test -t learney-test
+	docker run -p 8000:8000 -v `pwd`:/app -e PYTHONUNBUFFERED=1 learney-test
+
+staging: test
 	eb deploy Staging-Learneybackend-env
 
-prod:
+prod: test
 	eb deploy Learneyapp-env
