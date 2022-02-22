@@ -43,18 +43,25 @@ class KnowledgeMapView(APIView):
     def get(self, request: Request, format=None):
         try:
             if "url_extension" in request.GET:
-                entry = KnowledgeMapModel.objects.get(url_extension=request.GET["url_extension"])
-                serializer = KnowledgeMapSerializer(entry)
+                url_entry = KnowledgeMapModel.get(request.query_params["url_extension"])
+                if url_entry is None:
+                    return Response(
+                        str("No knowledge map exists"), status=status.HTTP_204_NO_CONTENT
+                    )
+                serializer = KnowledgeMapSerializer(url_entry)
                 return Response(
-                    {**serializer.data, "map_json": entry.retrieve_map()}, status=status.HTTP_200_OK
+                    {**serializer.data, "map_json": url_entry.retrieve_map()},
+                    status=status.HTTP_200_OK,
                 )
             elif "map" in request.GET:
-                entry = KnowledgeMapModel.objects.get(unique_id=request.GET["map"])
+                map_entry: KnowledgeMapModel = KnowledgeMapModel.objects.get(
+                    unique_id=request.GET["map"]
+                )
                 return Response(
                     {
-                        "map_json": entry.retrieve_map(),
-                        "map": entry.unique_id,
-                        "allow_suggestions": entry.allow_suggestions,
+                        "map_json": map_entry.retrieve_map(),
+                        "map": map_entry.unique_id,
+                        "allow_suggestions": map_entry.allow_suggestions,
                     },
                     status=status.HTTP_200_OK,
                 )

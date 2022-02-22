@@ -1,5 +1,6 @@
 import uuid
 from pathlib import Path
+from typing import Optional, Union
 
 from django.core.cache import cache
 from django.db import models
@@ -92,3 +93,20 @@ class KnowledgeMapModel(models.Model):
             with cache_file_location.open("w") as cache_file:
                 cache_file.write(map_byte_str.decode("utf-8"))
             return map_byte_str
+
+    @staticmethod
+    def cache_name(url_extension: str) -> str:
+        return f"map_{url_extension}"
+
+    @staticmethod
+    def get(url_extension: str) -> Optional["KnowledgeMapModel"]:
+        map_entry = cache.get(KnowledgeMapModel.cache_name(url_extension))
+        if map_entry is None:
+            map_queryset = KnowledgeMapModel.objects.filter(url_extension=url_extension)
+            map_entry = map_queryset.first() if map_queryset.exists() else None
+            cache.set(KnowledgeMapModel.cache_name(url_extension), map_entry, 60 * 60 * 24)
+        return map_entry
+
+    def save(self, *args, **kwargs) -> None:
+        super(KnowledgeMapModel, self).save(*args, **kwargs)
+        cache.set(KnowledgeMapModel.cache_name(self.url_extension), self, 60 * 60 * 24)
