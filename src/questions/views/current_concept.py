@@ -1,5 +1,6 @@
 import random
-from typing import Dict, List
+from typing import List
+from uuid import UUID
 
 from django.db.models import QuerySet
 from rest_framework import status
@@ -17,7 +18,9 @@ from questions.models.question_batch import QuestionBatch
 
 class CurrentConceptView(APIView):
     def get(self, request: Request, format=None) -> Response:
-        """Gets the concept that we suggest the user work on.
+        """ONLY VALID FOR QUESTIONS ENDPOINT!
+
+        Gets the concept that we suggest the user work on.
 
         It first gets the concept of the previous question set you did (if that concept
         isn't completed already). Then it looks for valid concepts given your goals
@@ -30,13 +33,17 @@ class CurrentConceptView(APIView):
             user_id = request.GET["user_id"]
             map_uuid = request.GET["map_uuid"]
 
+            questions_map_id: UUID = KnowledgeMapModel.get(url_extension="questionsmap").unique_id  # type: ignore
+            if map_uuid != str(questions_map_id):
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
             # Set seed in case randomness is required (for reproducibility)
             random.seed(1)
 
-            map = KnowledgeMapModel.objects.get(unique_id=map_uuid)
-            valid_current_concepts = get_valid_current_concept_ids(user_id, map)
+            valid_current_concepts = get_valid_current_concept_ids(user_id, map_uuid)
 
             if len(valid_current_concepts) == 0:
+                print("0.0 No valid concepts found")
                 return Response({"concept_id": None}, status=status.HTTP_200_OK)
 
             prev_question_batches: QuerySet[QuestionBatch] = QuestionBatch.objects.filter(
@@ -49,22 +56,18 @@ class CurrentConceptView(APIView):
                 if (
                     prev_question_batch.concept.cytoscape_id in valid_current_concepts
                 ):  # [2.0] Concept prev question batch is a valid current concept
+                    print("2.0 Concept from prev batch is valid")
                     return Response(
                         {"concept_id": prev_question_batch.concept.cytoscape_id},
                         status=status.HTTP_200_OK,
                     )
 
                 # [2.1] If not valid, it may not be valid because it's been learned!
-                learned_concepts_queryset: QuerySet[LearnedModel] = LearnedModel.objects.filter(
-                    user_id=user_id, map=map
-                )
-                learned_concepts: Dict[str, str] = (
-                    learned_concepts_queryset.latest("timestamp").learned_concepts
-                    if learned_concepts_queryset.count() > 0
-                    else {}
-                )
+                learned_model = LearnedModel.get(user_id, map_uuid)
+                learned_concepts = learned_model.learned_concepts if learned_model else {}
                 prev_concept_id: str = prev_question_batch.concept.cytoscape_id
-                if learned_concepts.get(prev_concept_id, False):
+
+                if learned_concepts.get(prev_concept_id, False):  # Check if prev concept is learned
                     # If learned, prefer if a successor to the concept the previous question batch was on
                     valid_successors: List[str] = [
                         c_id
@@ -74,14 +77,16 @@ class CurrentConceptView(APIView):
 
                     if len(valid_successors) > 1:
                         # [2.2] If multiple successors, pick between them
-                        return use_link_clicks_or_random(map, user_id, valid_successors)
+                        print("2.2 Multiple successors found")
+                        return use_link_clicks_or_random(map_uuid, user_id, valid_successors)
 
                 # [2.3] If not valid and not learned (with valid successors), see if we can get the
-                # last question batch answered on a valid concept and use that!
+                # last question batch completed on a valid concept and use that!
                 prev_qs_on_valid_cs = prev_question_batches.filter(
                     concept__cytoscape_id__in=valid_current_concepts
                 )
                 if prev_qs_on_valid_cs.count() > 0:
+                    print("2.3 Concept from completed prev batch is valid")
                     return Response(
                         {
                             "concept_id": prev_qs_on_valid_cs.latest(
@@ -92,23 +97,25 @@ class CurrentConceptView(APIView):
                     )
 
             # [3.0] If all else fails, pick from valid current concepts
-            return use_link_clicks_or_random(map, user_id, valid_current_concepts)
+            print("3.0 Picking from valid concepts")
+            return use_link_clicks_or_random(map_uuid, user_id, valid_current_concepts)
 
             # Display an error if something goes wrong.
         except Exception as e:
+            print("ERROR: ", e)
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 
-def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[str]:
+def get_valid_current_concept_ids(user_id: str, map_uuid: str) -> List[str]:
     """Get concept ids of concepts which are potential current concepts for the user.
 
     This means they are both on the path to one of their goals and all prerequisites are set as
     learned.
     """
-    concept_ids = [concept_id for concept_id in QUESTIONS_PREREQUISITE_DICT]
+    concept_ids = list(QUESTIONS_PREREQUISITE_DICT)
     # [2.1] Towards their goal
-    goals_queryset = GoalModel.objects.filter(user_id=user_id, map=map)
-    goals = goals_queryset.latest("timestamp").goal_concepts if goals_queryset.count() > 0 else {}
+    goals_model = GoalModel.get(user_id, map_uuid)
+    goals = goals_model.goal_concepts if goals_model else {}
     is_towards_goal = [
         any(
             concept_id in QUESTIONS_PREREQUISITE_DICT[goal_id] or concept_id == goal_id
@@ -118,14 +125,8 @@ def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[
     ]
 
     # [2.2] Check all concept's prerequisites are learned and it's not learned
-    learned_concepts_queryset: QuerySet[LearnedModel] = LearnedModel.objects.filter(
-        user_id=user_id, map=map
-    )
-    learned_concepts: Dict[str, str] = (
-        learned_concepts_queryset.latest("timestamp").learned_concepts
-        if learned_concepts_queryset.count() > 0
-        else {}
-    )
+    learned_model = LearnedModel.get(user_id, map_uuid)
+    learned_concepts = learned_model.learned_concepts if learned_model else {}
     are_all_prereqs_learned = [
         # All prereqs must be learned!
         all(
@@ -142,9 +143,7 @@ def get_valid_current_concept_ids(user_id: str, map: KnowledgeMapModel) -> List[
     ]
 
 
-def use_link_clicks_or_random(
-    map: KnowledgeMapModel, user_id: str, possible_concept_ids: List[str]
-):
+def use_link_clicks_or_random(map_uuid: str, user_id: str, possible_concept_ids: List[str]):
     """From `possible_concept_ids`, pick the concept which has had a content link click clicked on
     it most recently if any have ever been clicked.
 
@@ -157,12 +156,12 @@ def use_link_clicks_or_random(
             status=status.HTTP_200_OK,
         )
     relevant_link_clicks = LinkClickModel.objects.filter(
-        map=map, user_id=user_id, concept_id__in=possible_concept_ids
+        map=map_uuid, user_id=user_id, concept_id__in=possible_concept_ids
     )
     return Response(
         {
             "concept_id": relevant_link_clicks.latest("timestamp").concept_id
-            if relevant_link_clicks.count() > 0
+            if relevant_link_clicks.exists()
             else random.choice(possible_concept_ids)
         },
         status=status.HTTP_200_OK,
