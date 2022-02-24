@@ -7,6 +7,8 @@ from accounts.models import User
 from questions.models import QuestionResponse
 from questions.models.question_batch import QuestionBatch
 
+DEBUG = False
+
 
 class QuestionBatchCacheManager:
     """Manages the cache for question batches.
@@ -74,13 +76,15 @@ class QuestionBatchCacheManager:
         return self._q_batch_json["max_num_questions"]
 
     def add_question_asked(self, question_json: Dict[str, Any]):
-        print(f"Adding question asked {question_json['id']}")
+        if DEBUG:
+            print(f"Adding question asked {question_json['id']}")
         self._ensure_memory_fresh()
         self._q_batch_json["questions"].append(question_json)
         self._set_cache()
 
     def add_question_answered(self, q_response: QuestionResponse):
-        print(f"Adding question answered {q_response.id}")
+        if DEBUG:
+            print(f"Adding question answered {q_response.id}")
         self._ensure_memory_fresh()
         self._q_batch_json["answers_given"][str(q_response.id)] = q_response.response
         self._set_cache()
@@ -90,13 +94,15 @@ class QuestionBatchCacheManager:
         id in cache."""
         new_cache_update_id = cache.get(self._memory_stale_key)
         if new_cache_update_id != self._cache_update_id:
-            print("memory stale!")
+            if DEBUG:
+                print("memory stale!")
             self._q_batch_json = cache.get(self._batch_json_key)
             # Update to the new cache id with the new data
             self._cache_update_id = new_cache_update_id
 
     def _set_memory_stale(self):
-        print("Setting memory stale")
+        if DEBUG:
+            print("Setting memory stale")
         self._cache_update_id = uuid4()
         cache.set(self._memory_stale_key, self._cache_update_id, 10)
 
