@@ -1,8 +1,10 @@
 import warnings
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import numpy as np
+import pytz
 from django.core.cache import cache
 from django.db.models import Q
 
@@ -56,9 +58,9 @@ def select_questions(
     print(f"difficulty_terms: {difficulty_terms}")
     questions_chosen: List[Dict[str, Any]] = []
     # Check cache for number of extra questions to select if number_to_select not provided. If both None, select 1
-    print(
-        f"number_to_select: {number_to_select}\tcache.get(): {cache.get(f'{MCMC_MUTEX}_{user.id}')}"
-    )
+    # print(
+    #     f"number_to_select: {number_to_select}\tcache.get(): {cache.get(f'{MCMC_MUTEX}_{user.id}')}"
+    # )
     while len(questions_chosen) < (number_to_select or cache.get(f"{MCMC_MUTEX}_{user.id}") or 1):
         novelty_terms = get_novelty_terms(
             template_options=template_options,
@@ -79,6 +81,7 @@ def select_questions(
                 chosen_template: QuestionTemplate = np.random.choice(
                     template_options, p=question_probs
                 )
+                print(f"Question probs: {question_probs}")
                 print(
                     f"Chosen template: {chosen_template}, num of qs: {number_of_questions(chosen_template.template_text)}"
                 )
@@ -118,8 +121,9 @@ def select_questions(
                 predicted_prob_correct=mcmc.correct_probs[template_options.index(chosen_template)],
                 session_id=session_id,
                 time_to_respond=None,
+                time_asked=datetime.utcnow().replace(tzinfo=pytz.utc),
             )
-            print(f"New response_id: {q_response.id}")
+            print(f"New response index: {template_options.index(chosen_template)}")
             question_chosen["id"] = q_response.id
             # Cache for use when question is answered
             cache.set(q_response.id, q_response, timeout=120)
@@ -137,8 +141,8 @@ def prob_correct_to_weighting(correct_probs: np.ndarray) -> np.ndarray:
     assert np.all(correct_probs >= 0) and np.all(
         correct_probs <= 1
     ), f"{correct_probs} is not a valid probability value (0<= p <=1)"
-    # Below is `std_dev = 0.3 if < IDEAL_DIFF else 0.08` in numpy
-    std_dev = 0.22 * (correct_probs <= IDEAL_DIFF) + 0.08
+    # Below is `std_dev = 0.2 if < IDEAL_DIFF else 0.05` in numpy
+    std_dev = 0.15 * (correct_probs <= IDEAL_DIFF) + 0.05
     return np.exp(-(1 / 2) * (((correct_probs - IDEAL_DIFF) / std_dev) ** 2))
 
 
@@ -149,7 +153,9 @@ def get_difficulty_terms(
     """Calculate 'difficulty' terms for all template options to weight different templates."""
     guess_probs = np.array([1 / template.number_of_answers for template in template_options])
     difficulties = np.array([template.difficulty for template in template_options])
+    print(f"difficulties: {difficulties}")
     correct_probs = mcmc.calculate_correct_probs(difficulties=difficulties, guess_probs=guess_probs)
+    print(f"correct_probs: {correct_probs}")
     return prob_correct_to_weighting(correct_probs)
 
 

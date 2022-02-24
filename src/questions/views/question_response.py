@@ -124,14 +124,14 @@ class QuestionResponseView(APIView):
         # Is the question_batch completed?
         concept_completed = new_ks.level > qb_cache_manager.q_batch.concept.max_difficulty_level
         num_responses = len(qb_cache_manager.q_batch_json["answers_given"])
-        doing_poorly = num_responses >= 5 and new_ks.raw_level < 0
-        print(f"Number of questions asked: {len(qb_cache_manager.q_batch_json['questions'])}")
-        print(f"Number of questions answered: {num_responses}")
+        # print(f"Number of questions asked: {len(qb_cache_manager.q_batch_json['questions'])}")
+        # print(f"Number of questions answered: {num_responses}")
         max_num_of_questions_answered = num_responses >= qb_cache_manager.max_num_questions
         # Check it's not a 'revision batch' - if it is, ignore how well they do!
         if qb_cache_manager.q_batch.is_revision_batch:
             completed = "review_completed" if max_num_of_questions_answered else ""
         else:
+            doing_poorly = num_responses >= 5 and new_ks.raw_level < 0
             completed = (
                 "completed_concept"
                 if concept_completed
@@ -185,8 +185,6 @@ class QuestionResponseView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-        # except Exception as e:
-        #     return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 
 def get_training_data(q_batch_json: Dict[str, Any]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
