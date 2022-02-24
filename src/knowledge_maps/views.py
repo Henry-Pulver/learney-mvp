@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.datastructures import MultiValueDictKeyError
@@ -12,31 +11,11 @@ import boto3
 from knowledge_maps.models import KnowledgeMapModel
 from knowledge_maps.serializers import KnowledgeMapSerializer
 from learney_web.settings import AWS_CREDENTIALS, IS_PROD, mixpanel
-from learney_web.utils import S3_CACHE_DIR, retrieve_map_from_s3
-
-
-def get_cache_file_location(knowledge_map_model: KnowledgeMapModel) -> Path:
-    s3_key_filename = Path(knowledge_map_model.s3_key)
-    filename = f"{s3_key_filename.stem}_{knowledge_map_model.version}{s3_key_filename.suffix}"
-    return S3_CACHE_DIR / knowledge_map_model.s3_bucket_name / filename
 
 
 def retrieve_map(knowledge_map_db_entry: KnowledgeMapModel) -> bytes:
     """Check local file first, then get it from S3 if tricky."""
-    cache_file_location = get_cache_file_location(knowledge_map_db_entry)
-
-    if cache_file_location.exists():
-        with cache_file_location.open("r") as cache_file:
-            read_cache_file = cache_file.read()
-        return bytes(read_cache_file, "utf-8")
-    else:
-        map_byte_str = retrieve_map_from_s3(
-            knowledge_map_db_entry.s3_bucket_name, knowledge_map_db_entry.s3_key, AWS_CREDENTIALS
-        )
-        cache_file_location.parent.mkdir(exist_ok=True, parents=True)
-        with cache_file_location.open("w") as cache_file:
-            cache_file.write(map_byte_str.decode("utf-8"))
-        return map_byte_str
+    return knowledge_map_db_entry.retrieve_map()
 
 
 class KnowledgeMapView(APIView):

@@ -81,7 +81,6 @@ class PageVisitView(APIView):
             serializer.save()
             data_output = {**serializer.data}
             data_output.update(user_data)
-            print(f"data_output: {data_output}")
             return Response(data_output, status=status.HTTP_201_CREATED)
         else:
             print(serializer.errors)
