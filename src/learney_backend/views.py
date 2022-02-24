@@ -71,12 +71,14 @@ class ContentLinkPreviewView(APIView):
 class TotalVoteCountView(APIView):
     def get(self, request: Request, format=None) -> Response:
         """Get the overall +/- vote count for each item of content."""
-        entries = ContentVote.objects.filter(map__unique_id=request.GET["map"]).exclude(vote=None)
-        # Below logic: for each url, find the most recent vote from each user who voted on
-        #  that url and add them, with False -> -1 and True -> +1
         # TODO: Doesn't account for not-voted-on urls - left to frontend to deal with
         data = cache.get(f"total_votes:{request.GET['map']}")
         if data is None:
+            # Below logic: for each url, find the most recent vote from each user who voted on
+            #  that url and add them, with False -> -1 and True -> +1
+            entries = ContentVote.objects.filter(map__unique_id=request.GET["map"]).exclude(
+                vote=None
+            )
             data = {
                 url_dict: sum(
                     2 * int(vote) - 1  # True, False or None
