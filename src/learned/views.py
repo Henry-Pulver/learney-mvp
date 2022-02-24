@@ -48,4 +48,4 @@ class LearnedView(APIView):
         mixpanel.track(
             request.data["user_id"], "Learned" if IS_PROD else "Test Event", mixpanel_dict
         )
-        return Response(learned_model.data, status=status.HTTP_201_CREATED)
+        return Response(learned_model.json(), status=status.HTTP_201_CREATED)
