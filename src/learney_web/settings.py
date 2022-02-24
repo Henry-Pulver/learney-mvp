@@ -238,7 +238,7 @@ CACHES = {
         "LOCATION": "redis://learney-prod-redis.suk8h1.ng.0001.usw2.cache.amazonaws.com:6379",
         "TIMEOUT": 300,
     }
-    if PYTHON_ENV != "dev"
+    if IS_PROD
     else {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "unique-snowflake",
