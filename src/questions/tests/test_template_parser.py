@@ -137,6 +137,9 @@ VALID_PARAM_LINES = [
     ("param C: {'1', '2'}", "C", ["1", "2"]),
     ("param C: {' ', '1 ,'}", "C", [" ", "1 ,"]),
     ("param C: {'\\theta', '\\phi'}", "C", ["\\theta", "\\phi"]),
+    ("""param x: {"This isn't an issue"}""", "x", ["This isn't an issue"]),
+    # ("""param x: {["A", "B", "\\theta"]}""", "x", ["A", "B", "\\theta"]),  # LMVP-348
+    # ("""param x: {[[1, 2], [2, 3]]}""", "x", [[1, 2], [2, 3]]),  # LMVP-361
 ]
 
 

@@ -149,8 +149,9 @@ def parse_param_line(line: str) -> Tuple[str, List[Any]]:
     regex = param_line_regex(line)
     if regex is None:
         raise ParsingError(f"{line}\n is an invalid question template parameter line")
-    # \u201c and \u201d are the unicode characters that " is turned into on Notion
-    values_string = re.sub(r"""(['\u201c\u201d\u2018\u2019])""", lambda x: '"', regex.groups()[1])
+
+    # replace strings starting and ending with ' with double quotes
+    values_string = re.sub(STRING_REGEX, lambda x: '"' + x.group(0)[1:-1] + '"', regex.groups()[1])
 
     # Replace outside { and } with [ and ] to make it valid json
     values_string = "[" + values_string[1:-1] + "]"
