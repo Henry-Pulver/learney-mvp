@@ -4,6 +4,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from knowledge_maps.models import Concept
 from questions.models import QuestionTemplate
 from questions.template_parser import ParsingError
 
@@ -49,3 +50,17 @@ class QuestionTemplateView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+    def put(self, request: Request, format=None) -> Response:
+        prev_template_id = request.data["template_id"]
+        template = QuestionTemplate.objects.create(
+            title="Placeholder",
+            concept=QuestionTemplate.objects.get(id=prev_template_id).concept,
+            difficulty=0,
+            question_type="",
+            template_text="",
+            correct_answer_letter="a",
+            active=False,
+        )
+        cache.set(f"template_{template.id}", template, timeout=60)
+        return Response({"template_id": template.id}, status=status.HTTP_200_OK)
