@@ -58,12 +58,10 @@ class QuestionBatch(UUIDModel):
     session_id = models.TextField(help_text="session_id of the session the response was from")
 
     @property
-    def initial_knowledge_level(self) -> int:
-        return math.floor(
-            GaussianParams(
-                mean=self.initial_knowledge_mean, std_dev=self.initial_knowledge_std_dev
-            ).level
-        )
+    def initial_knowledge_level(self) -> float:
+        return GaussianParams(
+            mean=self.initial_knowledge_mean, std_dev=self.initial_knowledge_std_dev
+        ).level
 
     @property
     def initial_highest_level_achieved(self) -> float:

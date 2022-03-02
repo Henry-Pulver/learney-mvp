@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from learney_web.settings import IS_PROD, mixpanel
+from questions.models import QuestionResponse
 from questions.models.inferred_knowledge_state import InferredKnowledgeState
 from questions.models.question_batch import QuestionBatch
 from questions.question_batch_cache_manager import QuestionBatchCacheManager
@@ -91,6 +92,11 @@ class QuestionBatchView(APIView):
                     question_batch_json["max_num_questions"]
                     - len(question_batch_json["questions"]),
                 ),
+                num_qs_answered_on_concept=QuestionResponse.objects.filter(
+                    user=user_id, question_template__concept=ks.concept
+                )
+                .exclude(response=None)
+                .count(),
             )
 
         print(

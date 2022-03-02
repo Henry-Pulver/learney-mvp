@@ -131,7 +131,8 @@ class QuestionResponseView(APIView):
         if qb_cache_manager.q_batch.is_revision_batch:
             completed = "review_completed" if max_num_of_questions_answered else ""
         else:
-            doing_poorly = num_responses >= 5 and new_ks.raw_level < 0
+            print(f"new_ks.raw_leve: {new_ks.raw_level}")
+            doing_poorly = num_responses >= 5 and new_ks.raw_level < -1
             completed = (
                 "completed_concept"
                 if concept_completed
@@ -190,8 +191,10 @@ class QuestionResponseView(APIView):
 def get_training_data(q_batch_json: Dict[str, Any]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Get the training data for the question batch.
 
-    :param q_batch_json: The question batch json.
-    :return: The training data.
+    args:
+        q_batch_json: The question batch json.
+
+    Return: The training data.
     """
     responses: Dict[str, str] = q_batch_json["answers_given"]
     questions: List[Dict] = q_batch_json["questions"][: len(responses)]
