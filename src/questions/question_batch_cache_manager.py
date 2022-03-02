@@ -13,7 +13,8 @@ DEBUG = False
 class QuestionBatchCacheManager:
     """Manages the cache for question batches.
 
-    This is required because of the asynchronous nature of the frontend.
+    This is required because of the asynchronous nature of the frontend. It ensures the MCMC  isn't
+    run twice at the same time, which causes bugs.
     """
 
     STALE = "stale"
@@ -58,6 +59,11 @@ class QuestionBatchCacheManager:
     def q_batch_json(self) -> Dict[str, Any]:
         self._ensure_memory_fresh()
         return self._q_batch_json
+
+    @property
+    def num_qs_answered(self) -> int:
+        self._ensure_memory_fresh()
+        return len(self._q_batch_json["answers_given"])
 
     @property
     def batch_id(self) -> str:
