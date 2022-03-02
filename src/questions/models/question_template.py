@@ -18,6 +18,8 @@ from questions.template_parser import (
 from questions.utils import SampledParamsDict
 from questions.validators import integer_is_positive, not_null
 
+PREREQ_QUESTION_DIFF = 0.25
+
 
 class QuestionTemplate(UUIDModel):
     title = models.CharField(max_length=255, help_text="The title of the question template.")
@@ -78,6 +80,7 @@ class QuestionTemplate(UUIDModel):
         self,
         sampled_params: Optional[SampledParamsDict] = None,
         params_to_avoid: Optional[List[SampledParamsDict]] = None,
+        prerequisite_concept: bool = False,
     ) -> Optional[Dict[str, Any]]:
         """Gets question dictionary from a template and set of sampled parameters.
 
@@ -106,7 +109,9 @@ class QuestionTemplate(UUIDModel):
                     "answers_order_randomised": answers_order_randomised,
                     "correct_answer": answers[self.correct_answer_letter],
                     "feedback": remove_start_and_end_newlines(feedback),
-                    "difficulty": self.difficulty,
+                    "difficulty": self.difficulty
+                    if not prerequisite_concept
+                    else PREREQ_QUESTION_DIFF,
                     "params": sampled_params,
                 }
             sampled_params = None  # Try again with new params

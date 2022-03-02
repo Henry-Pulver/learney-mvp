@@ -1,3 +1,4 @@
+import itertools
 import warnings
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
@@ -9,8 +10,11 @@ from django.core.cache import cache
 from django.db.models import Q
 
 from accounts.models import User
+from knowledge_maps.models import Concept
 from questions.inference import MCMCInference
 from questions.models import QuestionResponse, QuestionTemplate
+from questions.models.inferred_knowledge_state import InferredKnowledgeState
+from questions.models.question_template import PREREQ_QUESTION_DIFF
 from questions.question_batch_cache_manager import QuestionBatchCacheManager
 from questions.template_parser import check_valid_params_exist, number_of_questions, parse_params
 from questions.utils import SampledParamsDict, get_today
@@ -28,6 +32,7 @@ def select_questions(
     mcmc: Optional[MCMCInference] = None,
     save_question_to_db: bool = True,
     number_to_select: Optional[int] = None,
+    num_qs_answered_on_concept: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Select questions from possible questions for this concept."""
     assert (
@@ -35,32 +40,58 @@ def select_questions(
     ), f"{number_to_select} is not a valid number of questions"
     concept_id = q_batch_cache_manager.concept_id
     template_options: List[QuestionTemplate] = cache.get(f"template_options_{concept_id}")
-    if template_options is None:
+    if template_options is None or q_batch_cache_manager.num_qs_answered >= 5:
         template_options = list(
             QuestionTemplate.objects.filter(concept__cytoscape_id=concept_id, active=True)
         )
         cache.set(f"template_options_{concept_id}", template_options, timeout=60 * 60 * 24)
+
+    # Get knowledge state for this user on this concept
+    ks: InferredKnowledgeState = cache.get(
+        f"InferredKnowledgeState:concept:{concept_id}user:{user.id}"
+    )
+    if ks is None:
+        ks = user.knowledge_states.all().get(concept__cytoscape_id=concept_id)
+        cache.set(f"InferredKnowledgeState:concept:{concept_id}user:{user.id}", ks, timeout=60 * 60)
+
+    # If the user hasn't made much progress (knowledge < 0.75) and has answered a few questions, we should
+    #  consider the hardest questions from the concept's prerequisites (LMVP-316)
+    # Either check to use prereqs or check if this check has been positive today
+    including_prereqs = cache.get(f"include_prereqs_{concept_id}_{user.id}")
+    numerous_qs_answered = q_batch_cache_manager.num_qs_answered >= 5 or (
+        num_qs_answered_on_concept is not None and num_qs_answered_on_concept >= 5
+    )
+    if (numerous_qs_answered and ks.knowledge_level <= 1) or including_prereqs:
+        # Set in cache this has been positive today since the num_qs_answered_on_concept is only set when
+        #  the question batch is started (for performance reasons)
+        cache.set(f"include_prereqs_{concept_id}_{user.id}", True, timeout=60 * 60 * 24)
+        prereq_template_options = cache.get(f"prerequisite_template_options_{concept_id}")
+        if prereq_template_options is None:
+            prereq_template_options = get_template_options_from_prereqs(concept_id)
+            cache.set(
+                f"prerequisite_template_options_{concept_id}",
+                prereq_template_options,
+                timeout=60 * 60 * 24,
+            )
+    else:
+        prereq_template_options = []
     assert (
         len(template_options) > 0
     ), f"No template options to choose from for concept with cytoscape id: {concept_id}!"
 
     # If no mcmc object provided, make one (providing one speeds up inference by using past samples)
-    ks = cache.get(f"InferredKnowledgeState:concept:{concept_id}user:{user.id}")
-    mcmc = mcmc or MCMCInference(
-        ks.knowledge_state
-        if ks
-        else user.knowledge_states.all().get(concept__cytoscape_id=concept_id).knowledge_state
-    )
+    mcmc = mcmc or MCMCInference(ks.knowledge_state)
 
     # Calculate the weights. Once normalised, these form the categorical
     #  distribution over question templates
-    difficulty_terms = get_difficulty_terms(template_options, mcmc)
+    difficulty_terms = get_difficulty_terms(template_options, mcmc, prereq_template_options)
     print(f"difficulty_terms: {difficulty_terms}")
     questions_chosen: List[Dict[str, Any]] = []
+
+    # These are treated differently by the difficulty terms, but now they're all treated the same
+    template_options += prereq_template_options
+
     # Check cache for number of extra questions to select if number_to_select not provided. If both None, select 1
-    # print(
-    #     f"number_to_select: {number_to_select}\tcache.get(): {cache.get(f'{MCMC_MUTEX}_{user.id}')}"
-    # )
     while len(questions_chosen) < (number_to_select or cache.get(f"{MCMC_MUTEX}_{user.id}") or 1):
         novelty_terms = get_novelty_terms(
             template_options=template_options,
@@ -96,7 +127,11 @@ def select_questions(
                     params_to_avoid=params_to_avoid,
                 )
             try:
-                question_chosen = chosen_template.to_question_json(params_to_avoid=params_to_avoid)
+                question_chosen = chosen_template.to_question_json(
+                    params_to_avoid=params_to_avoid,
+                    prerequisite_concept=q_batch_cache_manager.concept_id
+                    != chosen_template.concept.cytoscape_id,
+                )
                 if question_chosen is not None:
                     break
             except Exception as e:
@@ -147,13 +182,25 @@ def prob_correct_to_weighting(correct_probs: np.ndarray) -> np.ndarray:
 
 
 def get_difficulty_terms(
-    template_options: List[QuestionTemplate],
+    concept_template_options: List[QuestionTemplate],
     mcmc: MCMCInference,
+    prereq_template_options: List[QuestionTemplate],
 ) -> np.array:
     """Calculate 'difficulty' terms for all template options to weight different templates."""
-    guess_probs = np.array([1 / template.number_of_answers for template in template_options])
-    difficulties = np.array([template.difficulty for template in template_options])
+    guess_probs = np.array(
+        [
+            1 / template.number_of_answers
+            for template in concept_template_options + prereq_template_options
+        ]
+    )
+
+    concept_difficulties = [template.difficulty for template in concept_template_options]
+    # (LMVP-369) Difficulty isn't well defined for the next concept. A hard question on a  prerequisite
+    #  isn't clearly a hard question on the next concept, but it isn't necessarily easy either.
+    prereq_difficulties = [PREREQ_QUESTION_DIFF] * len(prereq_template_options)
+    difficulties = np.array(concept_difficulties + prereq_difficulties)
     print(f"difficulties: {difficulties}")
+
     correct_probs = mcmc.calculate_correct_probs(difficulties=difficulties, guess_probs=guess_probs)
     print(f"correct_probs: {correct_probs}")
     return prob_correct_to_weighting(correct_probs)
@@ -170,16 +217,23 @@ def get_novelty_terms(
         f"data_from_questions_to_avoid_{question_batch_json['id']}"
     )
     if data_from_questions_to_avoid is None:
+        # Questions asked today or answered correct ever on this concept
+        prereqs = (
+            Concept.objects.prefetch_related("direct_prerequisites")
+            .get(cytoscape_id=concept_id)
+            .direct_prerequisites.all()
+        )
         data_from_questions_to_avoid = list(
             QuestionResponse.objects.filter(
                 Q(time_asked__gte=get_today()) | Q(correct=True),
+                Q(question_template__concept__cytoscape_id=concept_id)
+                | Q(question_template__concept__in=prereqs),
                 user=user,
-                question_template__concept__cytoscape_id=concept_id,
             ).values("id", "question_template__question_type")
-        )  # Questions asked today or answered correct ever on this concept
+        )
 
     novelty_terms = cache.get(f"novelty_terms_{question_batch_json['id']}")
-    if novelty_terms is not None:
+    if novelty_terms is not None and len(template_options) == len(novelty_terms):
         # This is the most recently chosen template's id
         prev_template_id = question_batch_json["questions"][-1]["template_id"]
         prev_template_index = int(
@@ -245,3 +299,20 @@ def calculate_novelty(
             + 0.4
         )
     return novelty_term
+
+
+def get_template_options_from_prereqs(concept_id: str) -> List[QuestionTemplate]:
+    """Gets difficult templates from prerequisite concepts."""
+    concept = Concept.objects.prefetch_related("direct_prerequisites__question_templates").get(
+        cytoscape_id=concept_id
+    )
+    prereqs = concept.direct_prerequisites.all()
+    template_options = [
+        list(
+            prereq.question_templates.filter(
+                difficulty__gte=prereq.max_difficulty_level - 1, active=True
+            )
+        )
+        for prereq in prereqs
+    ]
+    return list(itertools.chain(*template_options))
