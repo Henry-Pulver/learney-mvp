@@ -1,7 +1,9 @@
 from datetime import datetime
+from typing import Optional
 
 import numpy as np
 import pytz
+from django.core.cache import cache
 from django.db import models
 from django.db.models import UniqueConstraint
 
@@ -42,6 +44,30 @@ class InferredKnowledgeState(UUIDModel):
     class Meta:
         constraints = [UniqueConstraint(fields=["user", "concept"], name="unique_user_concept")]
 
+    @staticmethod
+    def cache_name(user_id: str, concept_id: str) -> str:
+        return f"InferredKnowledgeState:concept:{concept_id}user:{user_id}"
+
+    @staticmethod
+    def get(user_id: str, concept_id: str) -> "InferredKnowledgeState":
+        """Gets the inferred knowledge state for the user and concept."""
+        ks: Optional[InferredKnowledgeState] = cache.get(
+            InferredKnowledgeState.cache_name(user_id, concept_id)
+        )
+        if ks is None:
+            ks = InferredKnowledgeState.objects.get(
+                user__id=user_id, concept__cytoscape_id=concept_id
+            )
+        return ks
+
+    def save(self, *args, **kwargs) -> None:
+        super(InferredKnowledgeState, self).save(*args, **kwargs)
+        cache.set(
+            InferredKnowledgeState.cache_name(self.user_id, self.concept.cytoscape_id),
+            self,
+            60 * 60 * 24,
+        )
+
     @property
     def knowledge_state(self) -> GaussianParams:
         """Gets Gaussian distribution over the inferred knowledge state."""
@@ -70,13 +96,14 @@ class InferredKnowledgeState(UUIDModel):
         over the value of the knowledge state. This allows the learner's inferred knowledge level to
         change over time as our model doesn't account for this at present.
 
-        Min std_dev = 0.6, max is max_level / 2, weighted by time since last update which is
+        Min std_dev = 1, max is max_level / 2, weighted by time since last update which is
          applied as an exponential decay.
         """
-        min_std_dev: float = max(self.std_dev, 0.6)
+        min_std_dev: float = max(self.std_dev, 1)
         n_days = self.secs_since_last_updated / (60 * 60 * 24)
-        # Weight by time passed since last update, with max std_dev of
-        return min_std_dev + 0.5 * self.concept.max_difficulty_level * (1 - np.exp(-n_days / 2))
+        max_diff = self.concept.max_difficulty_level
+        # Weight by time passed since last update, with max std_dev of max_diff / 2
+        return min(min_std_dev + 0.5 * max_diff * (1 - np.exp(-n_days / 2)), max_diff / 2)
 
     def update_std_dev(self) -> None:
         """Updates the std_dev of the inferred knowledge state."""

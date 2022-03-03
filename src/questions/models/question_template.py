@@ -18,7 +18,7 @@ from questions.template_parser import (
 from questions.utils import SampledParamsDict
 from questions.validators import integer_is_positive, not_null
 
-PREREQ_QUESTION_DIFF = 0.25
+PREREQ_QUESTION_DIFF = 0
 
 
 class QuestionTemplate(UUIDModel):

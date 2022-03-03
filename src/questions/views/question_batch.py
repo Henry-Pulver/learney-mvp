@@ -30,18 +30,15 @@ class QuestionBatchView(APIView):
             time_started__gte=get_today(),
             concept__cytoscape_id=concept_id,
         )
-        ks = cache.get(f"InferredKnowledgeState:concept:{concept_id}user:{user_id}")
-        if ks is None:
-            ks = (
-                InferredKnowledgeState.objects.select_related("concept")
-                .select_related("user")
-                .get(user=user_id, concept__cytoscape_id=concept_id)
-            )
+        ks = InferredKnowledgeState.get(user_id=user_id, concept_id=concept_id)
         if prev_batch.exists():
             print("PREV BATCH")
             question_batch: QuestionBatch = prev_batch[0]
         else:
             print("NEW BATCH")
+            # Standard deviation increases over time to reflect the uncertainty we have over the
+            #  student's knowledge since they last answered questions. This updates it based on time
+            #  since the last question was answered.
             ks.update_std_dev()
             question_batch = QuestionBatch.objects.create(
                 user=ks.user,
