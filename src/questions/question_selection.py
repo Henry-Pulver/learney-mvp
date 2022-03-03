@@ -20,7 +20,7 @@ from questions.template_parser import check_valid_params_exist, number_of_questi
 from questions.utils import SampledParamsDict, get_today
 
 # Ideal probability of correct
-IDEAL_DIFF = 0.85
+IDEAL_DIFF = 0.75
 
 MCMC_MUTEX = "MCMC_MUTEX"
 
@@ -46,13 +46,7 @@ def select_questions(
         )
         cache.set(f"template_options_{concept_id}", template_options, timeout=60 * 60 * 24)
 
-    # Get knowledge state for this user on this concept
-    ks: InferredKnowledgeState = cache.get(
-        f"InferredKnowledgeState:concept:{concept_id}user:{user.id}"
-    )
-    if ks is None:
-        ks = user.knowledge_states.all().get(concept__cytoscape_id=concept_id)
-        cache.set(f"InferredKnowledgeState:concept:{concept_id}user:{user.id}", ks, timeout=60 * 60)
+    ks = InferredKnowledgeState.get(user_id=user.id, concept_id=concept_id)
 
     # If the user hasn't made much progress (knowledge < 0.75) and has answered a few questions, we should
     #  consider the hardest questions from the concept's prerequisites (LMVP-316)
@@ -177,7 +171,7 @@ def prob_correct_to_weighting(correct_probs: np.ndarray) -> np.ndarray:
         correct_probs <= 1
     ), f"{correct_probs} is not a valid probability value (0<= p <=1)"
     # Below is `std_dev = 0.2 if < IDEAL_DIFF else 0.05` in numpy
-    std_dev = 0.15 * (correct_probs <= IDEAL_DIFF) + 0.05
+    std_dev = 0.12 * (correct_probs <= IDEAL_DIFF) + 0.08
     return np.exp(-(1 / 2) * (((correct_probs - IDEAL_DIFF) / std_dev) ** 2))
 
 

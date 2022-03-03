@@ -82,16 +82,10 @@ class QuestionResponseView(APIView):
         print(f"difficulties={difficulties}\nguess_probs={guess_probs}\ncorrect={correct}")
         mcmc.run_mcmc_inference(difficulties=difficulties, guess_probs=guess_probs, answers=correct)
         new_theta = mcmc.inferred_theta_params
+        new_ks = GaussianParams(mean=new_theta.mean, std_dev=new_theta.std_dev)
 
         # Update InferredKnowledgeState in the DB
-        ks_model: InferredKnowledgeState = cache.get(
-            f"InferredKnowledgeState:concept:{concept_id}user:{user_id}"
-        )
-        if ks_model is None:
-            ks_model = InferredKnowledgeState.objects.get(
-                user__id=user_id, concept__cytoscape_id=concept_id
-            )
-        new_ks = GaussianParams(mean=new_theta.mean, std_dev=new_theta.std_dev)
+        ks_model = InferredKnowledgeState.get(user_id=user_id, concept_id=concept_id)
         print(
             f"Previous knowledge state: ({round(ks_model.mean, 2)}, {round(ks_model.std_dev, 2)})"
         )
@@ -100,7 +94,6 @@ class QuestionResponseView(APIView):
         ks_model.std_dev = new_theta.std_dev
         ks_model.highest_level_achieved = max(ks_model.highest_level_achieved, new_ks.level)
         ks_model.save()
-        cache.set(f"InferredKnowledgeState:concept:{concept_id}user:{user_id}", ks_model)
 
         # Below cache get re-run because it may have been updated by another process!
         num_left_to_ask = qb_cache_manager.max_num_questions - len(

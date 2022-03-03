@@ -14,6 +14,7 @@ class ConceptInfoView(APIView):
     def get(self, request: Request, format=None) -> Response:
         user_id = request.GET["user_id"]
         concept_id = request.GET["concept_id"]
+        # TODO: replace with use of InferredKnowledgeState.get()
         ks = cache.get(f"InferredKnowledgeState:concept:{concept_id}user:{user_id}")
 
         if ks is None:
