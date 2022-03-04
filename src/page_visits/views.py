@@ -36,23 +36,19 @@ def update_session(request: Request) -> None:
 
 
 def get_and_update_user(request: Request) -> Dict[str, Any]:
-    user_id = request.data["user_id"]
-    user = cache.get(f"user-{user_id}")
-    if user is None:
-        user_set = User.objects.filter(id=user_id)
-        # If user doesn't exist, add user!
-        if user_set.exists():
-            user = user_set.first()
-        else:
-            user_data = user_data_to_user_db_object(request.data["user_data"])
-            user = User.objects.create(**user_data)
-            cache.set(f"user-{user_id}", user, timeout=60 * 60 * 2)
+    user_set = User.objects.filter(id=request.data["user_id"])
+    # If user doesn't exist, add user!
+    if user_set.exists():
+        user = user_set.first()
+    else:
+        user_data = user_data_to_user_db_object(request.data["user_data"])
+        user = User.objects.create(**user_data)
 
     if user.in_questions_trial:
         # Update questions streak
         today = user.question_batch_finished_today()
         # If user did a batch yesterday, the streak hasn't been broken.
-        # If they didn't, it's a new streak or 0, depending on if they did it today.
+        # If they didn't, it's a new streak of 1 or 0, depending on if they did it today.
         streak = user.questions_streak if user.question_batch_finished_yesterday() else int(today)
         # If statements speed up view by not saving in the DB unless necessary
         if user.questions_streak != streak or user.utc_tz_difference != request.data[
