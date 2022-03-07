@@ -45,17 +45,17 @@ def get_and_update_user(request: Request) -> Dict[str, Any]:
         user = User.objects.create(**user_data)
 
     if user.in_questions_trial:
+        if user.utc_tz_difference != request.data["user_data"].get("utc_tz_difference", 0):
+            user.utc_tz_difference = request.data["user_data"].get("utc_tz_difference", 0)
+            user.save()
         # Update questions streak
         today = user.question_batch_finished_today()
         # If user did a batch yesterday, the streak hasn't been broken.
         # If they didn't, it's a new streak of 1 or 0, depending on if they did it today.
         streak = user.questions_streak if user.question_batch_finished_yesterday() else int(today)
         # If statements speed up view by not saving in the DB unless necessary
-        if user.questions_streak != streak or user.utc_tz_difference != request.data[
-            "user_data"
-        ].get("utc_tz_difference", 0):
+        if user.questions_streak != streak:
             user.questions_streak = streak
-            user.utc_tz_difference = request.data["user_data"].get("utc_tz_difference", 0)
             user.save()
         return {"questions_streak": streak, "batch_completed_today": today}
     return {}
@@ -65,19 +65,27 @@ class PageVisitView(APIView):
     def post(self, request: Request, format=None):
         update_session(request)
         user_id = request.data.get("user_id", f"anonymous-user|{uuid4()}")
-        user_data = get_and_update_user(request) if not user_id.startswith("anonymous-user") else {}
-        serializer = PageVisitSerializer(
-            data={
-                "user_id": user_id,
-                "session_id": request.session.session_key,
-                "page_extension": request.data.get("page_extension"),
-            }
-        )
-        if serializer.is_valid():
-            serializer.save()
-            data_output = {**serializer.data}
-            data_output.update(user_data)
-            return Response(data_output, status=status.HTTP_201_CREATED)
-        else:
-            print(serializer.errors)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return_data = {
+            "user_id": user_id,
+            "session_id": request.session.session_key,
+            "page_extension": request.data.get("page_extension"),
+        }
+        try:
+            user_data = (
+                get_and_update_user(request) if not user_id.startswith("anonymous-user") else {}
+            )
+            serializer = PageVisitSerializer(data=return_data)
+            if serializer.is_valid():
+                serializer.save()
+                data_output = {**serializer.data}
+                data_output.update(user_data)
+                return Response(data_output, status=status.HTTP_201_CREATED)
+            else:
+                print(serializer.errors)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(e)
+            return_data.update(
+                {"error": str(e), "questions_streak": 0, "batch_completed_today": False}
+            )
+            return Response(return_data, status=status.HTTP_400_BAD_REQUEST)

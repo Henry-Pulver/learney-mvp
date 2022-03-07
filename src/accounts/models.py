@@ -59,7 +59,7 @@ class User(models.Model):
             if self.utc_tz_difference >= 0
             else math.ceil(self.utc_tz_difference)
         )
-        tz_mins = 60 * self.utc_tz_difference - tz_hours
+        tz_mins = int(60 * (self.utc_tz_difference - tz_hours))
         return tz_hours, tz_mins
 
     def adjusted_to_tz(self, datetime_to_adjust: datetime) -> datetime:
@@ -73,10 +73,12 @@ class User(models.Model):
         """Did this user complete a question batch yesterday?"""
         # Get user time difference
         tz_hours, tz_mins = self.tz_hours_mins()
-        time_diff = time(hour=tz_hours, minute=tz_mins)
+        time_diff = timedelta(hours=tz_hours, minutes=tz_mins)
         # Get their timezone's start of yesterday and today in UTC
-        yesterday_start = datetime.combine(self.tz_adjusted_today() - timedelta(days=1), time_diff)
-        today_start = datetime.combine(self.tz_adjusted_today(), time_diff)
+        yesterday_start = (
+            datetime.combine(self.tz_adjusted_today() - timedelta(days=1), time(0, 0)) - time_diff
+        )
+        today_start = datetime.combine(self.tz_adjusted_today(), time(0, 0)) - time_diff
         # Check if a question batch was completed yesterday by one of them!
         return (
             self.question_batches.exclude(completed="")
