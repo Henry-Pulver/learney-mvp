@@ -1,10 +1,11 @@
 import math
-from datetime import date, datetime, timedelta
-from typing import Optional
+from datetime import date, datetime, time, timedelta
+from typing import Optional, Tuple
 
 from django.db import models
 
 from learney_backend.models import ContentLinkPreview
+from learney_backend.views import UTC
 
 
 class User(models.Model):
@@ -52,26 +53,37 @@ class User(models.Model):
 
         return self.adjusted_to_tz(time_finished)
 
-    def adjusted_to_tz(self, datetime_to_adjust: datetime) -> datetime:
+    def tz_hours_mins(self) -> Tuple[int, int]:
         tz_hours = (
             math.floor(self.utc_tz_difference)
             if self.utc_tz_difference >= 0
             else math.ceil(self.utc_tz_difference)
         )
-        tz_mins = 60 * (self.utc_tz_difference - tz_hours)
+        tz_mins = int(60 * (self.utc_tz_difference - tz_hours))
+        return tz_hours, tz_mins
 
+    def adjusted_to_tz(self, datetime_to_adjust: datetime) -> datetime:
+        tz_hours, tz_mins = self.tz_hours_mins()
         return datetime_to_adjust + timedelta(hours=tz_hours, minutes=tz_mins)
 
     def tz_adjusted_today(self) -> date:
-        return self.adjusted_to_tz(datetime.now()).date()
+        return self.adjusted_to_tz(UTC.localize(datetime.utcnow())).date()
 
     def question_batch_finished_yesterday(self) -> bool:
         """Did this user complete a question batch yesterday?"""
-        last_batch_finish_time = self.tz_adjusted_last_batch_finished_time()
+        # Get user time difference
+        tz_hours, tz_mins = self.tz_hours_mins()
+        time_diff = timedelta(hours=tz_hours, minutes=tz_mins)
+        # Get their timezone's start of yesterday and today in UTC
+        yesterday_start = (
+            datetime.combine(self.tz_adjusted_today() - timedelta(days=1), time(0, 0)) - time_diff
+        )
+        today_start = datetime.combine(self.tz_adjusted_today(), time(0, 0)) - time_diff
+        # Check if a question batch was completed yesterday by one of them!
         return (
-            last_batch_finish_time.date() == (self.tz_adjusted_today() - timedelta(days=1))
-            if last_batch_finish_time
-            else False
+            self.question_batches.exclude(completed="")
+            .filter(time_started__gte=yesterday_start, time_started__lte=today_start)
+            .exists()
         )
 
     def question_batch_finished_today(self) -> bool:
