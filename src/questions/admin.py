@@ -17,7 +17,7 @@ class QuestionTemplateAdmin(admin.ModelAdmin):
         "id",
         "active",
     )
-    search_fields = ["title", "id", "question_type", "template_text", "difficulty", "concept"]
+    search_fields = ["title", "id", "question_type", "template_text", "difficulty", "concept__name"]
     list_filter = ("concept__name", "active")
     ordering = ["concept__cytoscape_id", "difficulty", "last_updated"]
 
@@ -34,7 +34,7 @@ class QuestionBatchAdmin(admin.ModelAdmin):
         "levels_progressed",
         "concept_completed",
     )
-    search_fields = ["id", "user", "concept", "time_started", "time_taken_to_complete"]
+    search_fields = ["id", "user", "concept__name", "time_started", "time_taken_to_complete"]
     list_filter = ("user__name", "concept__name")
 
 
@@ -59,7 +59,7 @@ class QuestionResponseAdmin(admin.ModelAdmin):
         "question_params",
         "question_batch",
         "response",
-        "concept",
+        "concept__name",
     ]
     list_filter = ("user__name", "question_batch__concept__name", "question_batch")
 
@@ -71,4 +71,4 @@ class InferredKnowledgeStateAdmin(admin.ModelAdmin):
         "concept",
     )
     list_display = ("id", "user", "concept", "mean", "std_dev", "last_updated")
-    search_fields = ["id", "user", "concept"]
+    search_fields = ["id", "user", "concept__name"]
