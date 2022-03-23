@@ -1,5 +1,4 @@
 import datetime
-from typing import Dict, Optional, Union
 
 from django.core.cache import cache
 from django.utils.datastructures import MultiValueDictKeyError
@@ -10,8 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from learney_backend.models import ContentLinkPreview, ContentVote
-from learney_backend.serializers import LinkPreviewSerializer, VoteSerializer
-from learney_backend.utils import get_from_linkpreview_net
+from learney_backend.serializers import VoteSerializer
 from learney_web.settings import IS_PROD, mixpanel
 
 UTC = timezone("UTC")
@@ -19,53 +17,31 @@ UTC = timezone("UTC")
 
 class ContentLinkPreviewView(APIView):
     def get(self, request: Request, format=None) -> Response:
-        try:
-            url = request.GET["url"]
-            retrieved_entry: Optional[ContentLinkPreview] = cache.get(url)
-            if retrieved_entry is None:
-                retrieved_entries = ContentLinkPreview.objects.filter(
-                    map__unique_id=request.GET["map"],
-                    concept=request.GET["concept"],
-                    url=url,
-                )
-                if retrieved_entries.count() == 0:
-                    # if no entry is found, get it from linkpreview.net
-                    return self._serialize_and_respond(get_from_linkpreview_net(request.GET), False)
-
-                retrieved_entry = retrieved_entries.latest("preview_last_updated")
-                cache.set(url, retrieved_entry, timeout=60 * 60 * 24)
-
-            checked = retrieved_entry.checked_by.all().filter(id=request.GET["user_id"]).count() > 0
-
-            # If no details found and old, try linkpreview.net
-            utc_now = UTC.localize(datetime.datetime.utcnow())
-            if retrieved_entry.description == "" and (
-                utc_now - retrieved_entry.preview_last_updated > datetime.timedelta(weeks=1)
-            ):
-                return self._serialize_and_respond(get_from_linkpreview_net(request.GET), checked)
-            serializer = LinkPreviewSerializer(retrieved_entry, context={"request": request})
-            return Response({**serializer.data, "checked": checked}, status=status.HTTP_200_OK)
-        except KeyError as e:
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
-
-    def post(self, request: Request, format=None) -> Response:
-        return self._serialize_and_respond(request)
-
-    @staticmethod
-    def _serialize_and_respond(
-        request: Union[Request, Dict[str, str]], checked: Optional[bool] = None
-    ) -> Response:
-        data = request if isinstance(request, dict) else request.data
-        serializer = LinkPreviewSerializer(data=data, context={"request": request})
-        if serializer.is_valid():
-            serializer.save()
-            print(f"{serializer.data} saved in DB!")
-            return Response(
-                {**serializer.data, "checked": checked} if checked is not None else serializer.data,
-                status=status.HTTP_201_CREATED,
+        url = request.GET["url"]
+        link_preview: ContentLinkPreview = cache.get(url)
+        if link_preview is None:
+            # TODO: requires links are unique in the db given a map and concept!
+            #  write a migration to ensure this is true!
+            link_preview, created = ContentLinkPreview.objects.get_or_create(
+                map__unique_id=request.GET["map"],
+                concept=request.GET["concept"],
+                concept_id=request.GET["concept_id"],
+                url=url,
             )
-        print(f"ContentLinkPreviewSerializer errors: {serializer.errors}")
-        return Response(str(serializer.errors), status=status.HTTP_400_BAD_REQUEST)
+            cache.set(url, link_preview, timeout=60 * 60 * 24 * 7)
+
+            if created:
+                link_preview.populate()
+
+        checked = link_preview.checked_by.all().filter(id=request.GET["user_id"]).exists()
+
+        utc_now = UTC.localize(datetime.datetime.utcnow())
+        if link_preview.description == "" and (
+            utc_now - link_preview.preview_last_updated > datetime.timedelta(weeks=1)
+        ):
+            link_preview.populate()
+
+        return Response({**link_preview.json(), "checked": checked}, status=status.HTTP_200_OK)
 
 
 class TotalVoteCountView(APIView):
