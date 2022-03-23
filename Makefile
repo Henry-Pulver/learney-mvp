@@ -1,4 +1,4 @@
-pretty: black pre-commit
+pretty: black pc
 
 pc:
 	pre-commit run --all
