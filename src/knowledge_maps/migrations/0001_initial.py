@@ -5,6 +5,21 @@ import uuid
 from django.db import migrations, models
 
 
+def add_original_map(apps, schema_editor):
+    KnowledgeMapModel = apps.get_model("knowledge_maps", "KnowledgeMapModel")
+    KnowledgeMapModel.objects.create(
+        url_extension="original_map",
+        s3_bucket_name="learney-test",
+        s3_key="positions_map_v013.json",
+        author_user_id="henrypulver13@gmail.com",
+    )
+
+
+def delete_all_maps(apps, schema_editor):
+    KnowledgeMapModel = apps.get_model("knowledge_maps", "KnowledgeMapModel")
+    KnowledgeMapModel.objects.all().delete()
+
+
 class Migration(migrations.Migration):
 
     initial = True
@@ -43,4 +58,5 @@ class Migration(migrations.Migration):
                 ("version", models.IntegerField(default=0, help_text="Version number of the map")),
             ],
         ),
+        migrations.RunPython(add_original_map, reverse_code=delete_all_maps),
     ]
