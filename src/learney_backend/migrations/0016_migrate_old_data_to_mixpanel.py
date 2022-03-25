@@ -10,47 +10,48 @@ from learney_web.settings import IS_PROD, MIXPANEL_KEY
 
 
 def send_entries_to_mixpanel(apps, schema_editor):
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "Basic YmFja2VuZF8zLmQyZGVhYS5tcC1zZXJ2aWNlLWFjY291bnQ6Qm9aT055NWp5cXZVOURCRVdPSDVGclQ5QXlMa2dOYnU=",
-    }
-    url = "https://api.mixpanel.com/import?strict=1&project_id=2572468"
-    map_to_extension = {
-        str(map_entry.unique_id): map_entry.url_extension
-        for map_entry in KnowledgeMapModel.objects.all()
-    }
-    if not IS_PROD:
-        return
-
-    batch = []
-    for entry in ContentVote.objects.filter(
-        timestamp__lt=datetime(year=2021, month=11, day=24, hour=14, minute=45)
-    ):
-        batch.append(
-            {
-                "event": "Vote",
-                "properties": {
-                    "map_uuid": str(entry.map_uuid),
-                    "distinct_id": entry.user_id,
-                    "session_id": entry.session_id,
-                    "concept": entry.concept,
-                    "vote_direction": entry.vote,
-                    "url": entry.url,
-                    "time": int(entry.timestamp.timestamp()),
-                    "$insert_id": str(entry.pk),
-                    "map_url_extension": map_to_extension[str(entry.map_uuid)],
-                    "token": MIXPANEL_KEY,
-                },
-            }
-        )
-        if len(batch) == 50:
-            response = requests.post(headers=headers, url=url, json=batch)
-            print(response.text)
-            batch = []
-    if batch:
-        response = requests.post(headers=headers, url=url, json=batch)
-        print(response.text)
+    pass
+    # headers = {
+    #     "Accept": "application/json",
+    #     "Content-Type": "application/json",
+    #     "Authorization": "Basic YmFja2VuZF8zLmQyZGVhYS5tcC1zZXJ2aWNlLWFjY291bnQ6Qm9aT055NWp5cXZVOURCRVdPSDVGclQ5QXlMa2dOYnU=",
+    # }
+    # url = "https://api.mixpanel.com/import?strict=1&project_id=2572468"
+    # map_to_extension = {
+    #     str(map_entry.unique_id): map_entry.url_extension
+    #     for map_entry in KnowledgeMapModel.objects.all()
+    # }
+    # if not IS_PROD:
+    #     return
+    #
+    # batch = []
+    # for entry in ContentVote.objects.filter(
+    #     timestamp__lt=datetime(year=2021, month=11, day=24, hour=14, minute=45)
+    # ):
+    #     batch.append(
+    #         {
+    #             "event": "Vote",
+    #             "properties": {
+    #                 "map_uuid": str(entry.map_uuid),
+    #                 "distinct_id": entry.user_id,
+    #                 "session_id": entry.session_id,
+    #                 "concept": entry.concept,
+    #                 "vote_direction": entry.vote,
+    #                 "url": entry.url,
+    #                 "time": int(entry.timestamp.timestamp()),
+    #                 "$insert_id": str(entry.pk),
+    #                 "map_url_extension": map_to_extension[str(entry.map_uuid)],
+    #                 "token": MIXPANEL_KEY,
+    #             },
+    #         }
+    #     )
+    #     if len(batch) == 50:
+    #         response = requests.post(headers=headers, url=url, json=batch)
+    #         print(response.text)
+    #         batch = []
+    # if batch:
+    #     response = requests.post(headers=headers, url=url, json=batch)
+    #     print(response.text)
 
 
 class Migration(migrations.Migration):

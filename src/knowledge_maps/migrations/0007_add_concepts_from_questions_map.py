@@ -3,13 +3,24 @@ import json
 
 from django.db import migrations
 
-from knowledge_maps.views import retrieve_map
+from learney_web.settings import AWS_CREDENTIALS
+from learney_web.utils import retrieve_map_from_s3
 
 
 def add_concepts_from_questions_map(apps, schema_editor):
     Concept = apps.get_model("knowledge_maps", "Concept")
     KnowledgeMapModel = apps.get_model("knowledge_maps", "KnowledgeMapModel")
-    map_json = json.loads(retrieve_map(KnowledgeMapModel.objects.get(url_extension="questionsmap")))
+    map_q_set = KnowledgeMapModel.objects.filter(url_extension="original_map")
+    if map_q_set.exists():
+        map = map_q_set.first()
+    else:
+        map = KnowledgeMapModel.objects.create(
+            url_extension="questionsmap",
+            s3_bucket_name="learney-test",
+            s3_key="questions_map.json",
+            author_user_id="henrypulver13@gmail.com",
+        )
+    map_json = json.loads(retrieve_map_from_s3(map.s3_bucket_name, map.s3_key, AWS_CREDENTIALS))
 
     # Add all the concepts
     for node in map_json["nodes"]:

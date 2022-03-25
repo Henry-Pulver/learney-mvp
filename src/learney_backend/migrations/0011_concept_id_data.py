@@ -4,14 +4,17 @@ import json
 
 from django.db import migrations
 
-from knowledge_maps.views import retrieve_map
+from learney_web.settings import AWS_CREDENTIALS
+from learney_web.utils import retrieve_map_from_s3
 
 
 def data_migration_content_preview(apps, schema_editor):
     ContentLinkPreview = apps.get_model("learney_backend", "ContentLinkPreview")
     KnowledgeMapModel = apps.get_model("knowledge_maps", "KnowledgeMapModel")
     for map in KnowledgeMapModel.objects.all():
-        map_json = json.loads(retrieve_map(map).decode("utf-8"))
+        map_json = json.loads(
+            retrieve_map_from_s3(map.s3_bucket_name, map.s3_key, AWS_CREDENTIALS).decode("utf-8")
+        )
         for entry in ContentLinkPreview.objects.filter(concept_id=None, map_uuid=map.unique_id):
             for node in map_json["nodes"]:
                 if (
@@ -27,6 +30,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("learney_backend", "0010_add_concept_id"),
+        ("knowledge_maps", "0001_initial"),
     ]
 
     operations = [

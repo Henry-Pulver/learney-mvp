@@ -4,8 +4,8 @@ from django.db import migrations
 
 import boto3
 from colormap import hex2rgb, hls2rgb, rgb2hex, rgb2hls
-from knowledge_maps.views import retrieve_map
 from learney_web.settings import AWS_CREDENTIALS
+from learney_web.utils import retrieve_map_from_s3
 
 COLOUR_MAP = {
     "#d6dfff": "#001975",
@@ -35,7 +35,9 @@ def fix_map_colours(apps, schema_editor):
         aws_secret_access_key=AWS_CREDENTIALS["SECRET_KEY"],
     )
     for map in KnowledgeMapModel.objects.all():
-        map_json = json.loads(retrieve_map(map).decode("utf-8"))
+        map_json = json.loads(
+            retrieve_map_from_s3(map.s3_bucket_name, map.s3_key, AWS_CREDENTIALS).decode("utf-8")
+        )
         print(f"\n{map.url_extension}")
         for count, node in enumerate(map_json["nodes"]):
             node_data = node["data"]
@@ -59,7 +61,9 @@ def revert_map_colours(apps, schema_editor):
         aws_secret_access_key=AWS_CREDENTIALS["SECRET_KEY"],
     )
     for map in KnowledgeMapModel.objects.all():
-        map_json = json.loads(retrieve_map(map).decode("utf-8"))
+        map_json = json.loads(
+            retrieve_map_from_s3(map.s3_bucket_name, map.s3_key, AWS_CREDENTIALS).decode("utf-8")
+        )
         print(f"\n{map.url_extension}")
         for count, node in enumerate(map_json["nodes"]):
             node_data = node["data"]
