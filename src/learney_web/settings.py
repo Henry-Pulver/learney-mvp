@@ -257,8 +257,10 @@ if "RDS_DB_NAME" in os.environ:
             "PORT": os.environ["RDS_PORT"],
         }
     }
+elif "USE_STAGING_DB" in os.environ:
+    DATABASES = {"default": dev_secrets_dict["STAGING_DATABASES"]}
 else:
-    DATABASES = {"default": dev_secrets_dict["DATABASES"]}
+    DATABASES = {"default": dev_secrets_dict["LOCAL_DATABASES"]}
 
 CONN_MAX_AGE = None
 # Password validation
