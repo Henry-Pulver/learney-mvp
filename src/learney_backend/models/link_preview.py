@@ -17,8 +17,10 @@ from learney_backend.utils import (
     IMG_TAGS,
     TITLE_TAGS,
     get_base_domain,
+    get_base_url,
     get_from_linkpreview_net,
     get_video_id_timestart,
+    http_get_handle_errors,
     is_pdf_url,
     is_youtube_url,
     meta_content_from_name_tags,
@@ -92,12 +94,13 @@ class ContentLinkPreview(models.Model):
     tags = models.ManyToManyField(
         ContentTag, help_text="Tags associated with the content on the link"
     )
+    retry_get = models.BooleanField(default=False)
 
     preview_last_updated = models.DateTimeField(auto_now=True)
 
     def json(self) -> Dict:
         json_response = {
-            "map": self.map,
+            "map": self.map.unique_id,
             "concept": self.concept,
             "concept_id": self.concept_id,
             "url": self.url,
@@ -105,13 +108,11 @@ class ContentLinkPreview(models.Model):
             "description": self.description,
             "image_url": self.image_url,
             "content_type": self.content_type,
-            "estimated_time_to_complete": self.estimated_time_to_complete.value_to_string(
-                "estimated_time_to_complete"
-            ),
+            "estimated_time_to_complete": str(self.estimated_time_to_complete),
             "author": self.author.json() if self.author else None,
             "tags": [tag.json() for tag in self.tags.all()],
         }
-        cache.set(self.url, json_response, 60 * 60 * 24)
+        # cache.set(self.url, json_response, 60 * 60 * 24)
         return json_response
 
     def populate(self):
@@ -129,29 +130,37 @@ class ContentLinkPreview(models.Model):
     def populate_from_youtube(self) -> None:
         video_id, time_start = get_video_id_timestart(self.url)
         yt_info = get_youtube_video_info(video_id)
+        if yt_info is not None:
+            self.title = yt_info["snippet"]["title"]
+            self.description = yt_info["snippet"]["description"]
+            self.image_url = yt_info["snippet"]["thumbnails"]["high"]["url"]
+            self.content_type = "video"
+            full_duration = isodate.parse_duration(yt_info["contentDetails"]["duration"])
+            self.estimated_time_to_complete = full_duration - time_start
 
-        self.title = yt_info["snippet"]["title"]
-        self.description = yt_info["snippet"]["description"]
-        self.image_url = yt_info["snippet"]["thumbnails"]["high"]["url"]
-        self.content_type = "video"
-        full_duration = isodate.parse_duration(yt_info["contentDetails"]["duration"])
-        self.estimated_time_to_complete = full_duration - time_start
-
-        self.author, created = ContentAuthor.objects.get_or_create(
-            youtube_channel_id=yt_info["snippet"]["channelId"]
-        )
-        if created:
-            self.author.populate_from_youtube()
+            self.author, created = ContentAuthor.objects.get_or_create(
+                youtube_channel_id=yt_info["snippet"]["channelId"]
+            )
+            if created or self.author.retry_get_from_youtube:
+                self.author.populate_from_youtube()
+        else:
+            self.retry_get = True
 
     def populate_from_pdf(self) -> None:
-        pdf_response = requests.get(self.url)
+        print(f"Populating {self.url} from PDF")
+        pdf_response = http_get_handle_errors(self.url)
+        if pdf_response is None:
+            self.retry_get = True
+            return
 
         self.content_type = "pdf"
         pdf_info = get_pdf_info(BytesIO(pdf_response.content))
+        if pdf_info.get("error") is not None:
+            self.populate_from_website()
         self.estimated_time_to_complete = pdf_info["read_time"]
 
         # Get a link preview image from linkpreview.net
-        # TODO: replace with a screenshot of the first page of the PDF
+        # TODO: replace with a screenshot of the first page of the PDF LMVP-395
         linkpreview_info = get_from_linkpreview_net(self.url)
         self.title = pdf_info["title"] or linkpreview_info["title"]
         self.description = pdf_info["description"] or linkpreview_info["description"]
@@ -159,24 +168,32 @@ class ContentLinkPreview(models.Model):
 
         # Set author
         base_url = get_base_domain(self.url)
-        base_url_response = requests.get(base_url)
+
+        base_url_response = http_get_handle_errors(get_base_url(self.url))
+        if base_url_response is None:
+            self.retry_get = True
+            return
+
         base_soup = BeautifulSoup(base_url_response.content, "html.parser")
         author_name = (
-            pdf_info["author"]
+            pdf_info.get("author")
             or meta_content_from_name_tags(base_soup, ["og:site_name"])
             or base_url
         )
         self.author, created = ContentAuthor.objects.get_or_create(name=author_name)
         if created:
-            self.author.populate_from_website(base_soup)
+            self.author.populate_from_website(self.url, base_soup)
 
     def populate_from_website(self) -> None:
-        response = requests.get(self.url)
-        if response.status_code != 200:
-            raise PopulateException(f"Got {response.status_code} response from {self.url}")
+        response = http_get_handle_errors(self.url)
+        if response is None or response.status_code != 200:
+            self.retry_get = True
+            return
+
         soup = BeautifulSoup(response.content, "html.parser")
 
-        self.title = soup.title.string or meta_content_from_name_tags(soup, TITLE_TAGS)
+        soup_title_string = soup.title.string if soup.title else ""
+        self.title = soup_title_string or meta_content_from_name_tags(soup, TITLE_TAGS)
         self.description = meta_content_from_name_tags(soup, DESCRIPTION_TAGS)
         self.image_url = meta_content_from_name_tags(soup, IMG_TAGS)
         self.content_type = "website"
@@ -191,18 +208,24 @@ class ContentLinkPreview(models.Model):
 
             # "Oorf oorf!" walrus operator below :=
             if author_url := meta_content_from_name_tags(soup, ["article:author"]):
-                author_response: requests.Response = requests.get(author_url)
+                author_response = http_get_handle_errors(author_url)
+                if author_response is None:
+                    self.author.retry_get_from_youtube = True
+                    self.author.save()
+                    return
                 author_soup = BeautifulSoup(author_response.content, "html.parser")
-                self.author.populate_from_website(author_soup)
+                self.author.populate_from_website(self.url, author_soup)
         else:
             # Otherwise, we'll use the base website name as the author name!
-            base_domain_response = requests.get(f"https://{base_domain}")
-            if base_domain_response.status_code != 200:
+            base_domain_response = http_get_handle_errors(get_base_url(self.url))
+            if base_domain_response is None:
+                self.retry_get = True
+            elif base_domain_response.status_code != 200:
                 base_soup = BeautifulSoup(base_domain_response.content, "html.parser")
                 self.author = ContentAuthor.objects.get_or_create(
                     name=base_soup.title.string
                     or meta_content_from_name_tags(base_soup, TITLE_TAGS),
-                    picture_url=meta_content_from_name_tags(base_soup, IMG_TAGS),
+                    image_url=meta_content_from_name_tags(base_soup, IMG_TAGS),
                 )[0]
             else:
                 # Worst case scenario we use the base web domain as the author name!

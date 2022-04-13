@@ -39,10 +39,10 @@ def get_bs_content(element: Optional[BeautifulSoup]) -> Optional[str]:
     return element["content"] if element is not None else None
 
 
-def meta_content_from_name_tags(soup: BeautifulSoup, name_tags: List[str]) -> Optional[str]:
+def meta_content_from_name_tags(soup: BeautifulSoup, name_tags: List[str]) -> str:
     """Gets the content of the first meta tag with the given name."""
     possible_content = [get_bs_content(soup.find("meta", attrs={"name": tag})) for tag in name_tags]
-    return next(filter(None, possible_content), None)
+    return next(filter(None, possible_content), "")
 
 
 def youtube_regex(url: str) -> Optional[re.Match]:
@@ -70,9 +70,29 @@ def is_pdf_url(url: str) -> bool:
     return re.match("^https?://(www\.)?\S+\.pdf$", url) is not None
 
 
+def url_regex(url: str) -> Optional[re.Match]:
+    return re.match("^https?://(www\.)?([\w.]+)", url)
+
+
 def get_base_domain(url: str) -> str:
     """Returns the base domain of the url."""
-    regex = re.match("^https?://(www\.)?([\w.]+)", url)
+    regex = url_regex(url)
     if regex is None:
         return ""
     return regex.group(2)
+
+
+def get_base_url(url: str) -> str:
+    """Returns the base url of the url."""
+    regex = url_regex(url)
+    if regex is None:
+        return ""
+    return regex.group(0)
+
+
+def http_get_handle_errors(url: str, params: Optional[Dict] = None) -> Optional[requests.Response]:
+    try:
+        return requests.get(url, params=params)
+    except requests.exceptions.ConnectionError as error:
+        print(error)
+        return None
