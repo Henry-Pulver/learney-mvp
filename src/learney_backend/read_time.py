@@ -1,14 +1,15 @@
 import re
 from datetime import timedelta
 from io import BytesIO, StringIO
-from typing import Dict, Union
+from typing import Any, Dict, Union
 
 from pdfminer.converter import TextConverter
 from pdfminer.layout import LAParams
 from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
 from pdfminer.pdfpage import PDFPage, PDFTextExtractionNotAllowed
-from pdfminer.pdfparser import PDFParser
+from pdfminer.pdfparser import PDFParser, PDFSyntaxError
+from pdfminer.pdftypes import PDFObjRef
 
 WORDS_PER_MIN = 200
 
@@ -26,14 +27,19 @@ def count_words_in_line(line: str):
     return sum(is_word_list)
 
 
-def get_pdf_info(pdf_byte_stream: BytesIO) -> Dict[str, Union[str, timedelta]]:
+def get_pdf_info(
+    pdf_byte_stream: BytesIO, use_gpt3: bool = False
+) -> Dict[str, Union[str, timedelta]]:
     """Extract info from a pdf. Relies on the info being set on the pdf.
 
     Adapted from Yusuke Shinyamas PDFMiner documentation
     """
     # Create the document model from the file
     parser = PDFParser(pdf_byte_stream)
-    document = PDFDocument(parser)
+    try:
+        document = PDFDocument(parser)
+    except PDFSyntaxError:
+        return {"error": "PDF Syntax Error"}
     # Try to parse the document
     if not document.is_extractable:
         raise PDFTextExtractionNotAllowed
@@ -55,12 +61,27 @@ def get_pdf_info(pdf_byte_stream: BytesIO) -> Dict[str, Union[str, timedelta]]:
         interpreter.process_page(page)
 
     parsed_page = retstr.getvalue()
-    info: Dict[str, bytes] = next(document.info, {})
-    description = info.get("Subject", b"").decode("utf-8") or parsed_page[:512]
+    info: Dict[str, str] = parse_pdf_metadata(next(iter(document.info), {}))
 
     return {
-        "author_name": info.get("Author", b"").decode("utf-8"),
-        "title": info.get("Title", b"").decode("utf-8"),
-        "description": description,
+        "author_name": info.get("Author", ""),
+        "title": info.get("Title", ""),
+        "description": info.get("Subject", "") or parsed_page[:512],
         "read_time": get_read_time(parsed_page),
     }
+
+
+def parse_pdf_metadata(metadata: Dict) -> Dict[str, str]:
+    """Parse the metadata from a pdf document info."""
+
+    def convert_to_string(val: Any) -> str:
+        if isinstance(val, PDFObjRef):
+            return val.resolve()
+        try:
+            if isinstance(val, bytes):
+                return val.decode("utf-8")
+        except UnicodeDecodeError:
+            return val.decode("utf-16")
+        return val
+
+    return {key: convert_to_string(value) for key, value in metadata.items()}
