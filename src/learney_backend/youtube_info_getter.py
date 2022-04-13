@@ -1,11 +1,12 @@
-from typing import Dict
+from typing import Dict, Optional
 
 import requests
 
+from learney_backend.utils import http_get_handle_errors
 from learney_web.settings import YOUTUBE_API_KEY
 
 
-def get_youtube_video_info(video_id: str) -> Dict:
+def get_youtube_video_info(video_id: str) -> Optional[Dict]:
     """Get video info from youtube.
 
     Args:
@@ -51,21 +52,18 @@ def get_youtube_video_info(video_id: str) -> Dict:
        "statistics": {"viewCount": "649670", "likeCount": "1485", "favoriteCount": "0", "commentCount": "62"}
      }
     """
-    return (
-        requests.get(
-            "https://www.googleapis.com/youtube/v3/videos",
-            params={
-                "id": video_id,
-                "key": YOUTUBE_API_KEY,
-                "part": "snippet,contentDetails,statistics",
-            },
-        )
-        .json()
-        .get("items", [{}])[0]
+    response_or_none = http_get_handle_errors(
+        "https://www.googleapis.com/youtube/v3/videos",
+        params={
+            "id": video_id,
+            "key": YOUTUBE_API_KEY,
+            "part": "snippet,contentDetails,statistics",
+        },
     )
+    return response_or_none.json().get("items", [{}])[0] if response_or_none is not None else None
 
 
-def get_youtube_channel_info(channel_id: str) -> Dict:
+def get_youtube_channel_info(channel_id: str) -> Optional[Dict]:
     """Get video info from youtube.
 
     Args:
@@ -102,15 +100,12 @@ def get_youtube_channel_info(channel_id: str) -> Dict:
           }
         }
     """
-    return (
-        requests.get(
-            "https://www.googleapis.com/youtube/v3/channels",
-            params={
-                "id": channel_id,
-                "key": YOUTUBE_API_KEY,
-                "part": "snippet,contentDetails,statistics",
-            },
-        )
-        .json()
-        .get("items", [{}])[0]
+    response_or_none = http_get_handle_errors(
+        "https://www.googleapis.com/youtube/v3/channels",
+        params={
+            "id": channel_id,
+            "key": YOUTUBE_API_KEY,
+            "part": "snippet,contentDetails,statistics",
+        },
     )
+    return response_or_none.json().get("items", [{}])[0] if response_or_none is not None else None
