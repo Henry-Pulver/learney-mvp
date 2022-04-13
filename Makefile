@@ -16,10 +16,13 @@ run:
 	docker build . -t learney-backend
 	docker run -p 8000:8000 -v `pwd`:/app -e PYTHONUNBUFFERED=1 -e USE_STAGING_DB=1 learney-backend
 
+test-local:
+	cd src && PATH=`pwd`/src:${PATH} DJANGO_SETTINGS_MODULE=learney_web.settings pytest learney_backend/tests -n auto -vv --no-migrations --reuse-db --cov=`pwd`/src --no-cov-on-fail
+
 test:
 	docker build . -t learney-backend
 	docker build . -f ./docker/Dockerfile.test -t learney-test
-	docker run -p 8000:8000 -v `pwd`:/app -e PYTHONUNBUFFERED=1 learney-test
+	docker run -p 8000:8000 -v `pwd`:/app -e PYTHONUNBUFFERED=1 -e USE_STAGING_DB=1 learney-test
 
 staging: test
 	eb deploy Staging-Learneybackend-env
