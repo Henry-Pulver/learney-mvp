@@ -27,9 +27,7 @@ def count_words_in_line(line: str):
     return sum(is_word_list)
 
 
-def get_pdf_info(
-    pdf_byte_stream: BytesIO, use_gpt3: bool = False
-) -> Dict[str, Union[str, timedelta]]:
+def get_pdf_info(pdf_byte_stream: BytesIO) -> Dict[str, Union[str, timedelta]]:
     """Extract info from a pdf. Relies on the info being set on the pdf.
 
     Adapted from Yusuke Shinyamas PDFMiner documentation
