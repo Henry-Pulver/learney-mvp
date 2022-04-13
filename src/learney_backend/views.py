@@ -19,25 +19,30 @@ class ContentLinkPreviewView(APIView):
     def get(self, request: Request, format=None) -> Response:
         url = request.GET["url"]
         link_preview: ContentLinkPreview = cache.get(url)
+
         if link_preview is None:
             # TODO: requires links are unique in the db given a map and concept!
             #  write a migration to ensure this is true!
             link_preview, created = ContentLinkPreview.objects.get_or_create(
-                map__unique_id=request.GET["map"],
+                map_id=request.GET["map"],
                 concept=request.GET["concept"],
                 concept_id=request.GET["concept_id"],
                 url=url,
             )
-            cache.set(url, link_preview, timeout=60 * 60 * 24 * 7)
 
             if created:
                 link_preview.populate()
+            try:
+                cache.set(url, link_preview, timeout=60 * 60 * 24 * 7)
+            except RecursionError as e:
+                print(e)
 
         checked = link_preview.checked_by.all().filter(id=request.GET["user_id"]).exists()
 
         utc_now = UTC.localize(datetime.datetime.utcnow())
-        if link_preview.description == "" and (
-            utc_now - link_preview.preview_last_updated > datetime.timedelta(weeks=1)
+        if link_preview.retry_get or (
+            link_preview.description == ""
+            and (utc_now - link_preview.preview_last_updated > datetime.timedelta(weeks=1))
         ):
             link_preview.populate()
 
