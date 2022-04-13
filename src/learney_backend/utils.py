@@ -92,7 +92,10 @@ def get_base_url(url: str) -> str:
 
 def http_get_handle_errors(url: str, params: Optional[Dict] = None) -> Optional[requests.Response]:
     try:
-        return requests.get(url, params=params)
+        response = requests.get(url, params=params)
+        if response.status_code == 406:
+            return requests.get(url, params=params, headers={"User-Agent": "XY"})
+        return response
     except requests.exceptions.ConnectionError as error:
         print(error)
         return None

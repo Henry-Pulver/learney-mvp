@@ -147,7 +147,6 @@ class ContentLinkPreview(models.Model):
             self.retry_get = True
 
     def populate_from_pdf(self) -> None:
-        print(f"Populating {self.url} from PDF")
         pdf_response = http_get_handle_errors(self.url)
         if pdf_response is None:
             self.retry_get = True
@@ -187,7 +186,8 @@ class ContentLinkPreview(models.Model):
     def populate_from_website(self) -> None:
         response = http_get_handle_errors(self.url)
         if response is None or response.status_code != 200:
-            self.retry_get = True
+            # 403 means forbidden - we can't get this one, so there's no point in trying again
+            self.retry_get = response is None or response.status_code != 403
             return
 
         soup = BeautifulSoup(response.content, "html.parser")
@@ -220,10 +220,11 @@ class ContentLinkPreview(models.Model):
             base_domain_response = http_get_handle_errors(get_base_url(self.url))
             if base_domain_response is None:
                 self.retry_get = True
-            elif base_domain_response.status_code != 200:
+            elif base_domain_response.status_code == 200:
                 base_soup = BeautifulSoup(base_domain_response.content, "html.parser")
                 self.author = ContentAuthor.objects.get_or_create(
                     name=base_soup.title.string
+                    or meta_content_from_name_tags(base_soup, TITLE_TAGS)
                     or meta_content_from_name_tags(base_soup, TITLE_TAGS),
                     image_url=meta_content_from_name_tags(base_soup, IMG_TAGS),
                 )[0]
