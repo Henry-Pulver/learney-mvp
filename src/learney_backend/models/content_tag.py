@@ -7,7 +7,7 @@ from learney_backend.base_models import UUIDModel
 
 class ContentTag(UUIDModel):
     name = models.CharField(max_length=64, unique=True)
-    colour = models.URLField(blank=True, null=True, help_text="Thumbnail image of the author")
+    colour = models.CharField(help_text="hex colour code of the tag", max_length=7)
 
     last_updated = models.DateTimeField(auto_now=True)
 
