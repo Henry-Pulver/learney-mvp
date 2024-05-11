@@ -31,7 +31,7 @@ docker run hello-world
 ```
 (if that doesn't work, try `sudo docker run hello-world`)
 
-2. Have access to the locally-stored secret files (ask Henry for these if you don't have them already).
+2. Have access to the locally-stored secret files.
 
 #### Running
 
