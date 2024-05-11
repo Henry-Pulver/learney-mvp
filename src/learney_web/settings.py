@@ -32,6 +32,7 @@ SECRET_KEY = dev_secrets_dict["SECRET_KEY"]
 
 SLACK_TOKEN = dev_secrets_dict["SLACK_TOKEN"]
 NOTION_KEY = dev_secrets_dict["NOTION_KEY"]
+YOUTUBE_API_KEY = dev_secrets_dict["YOUTUBE_API_KEY"]
 MIXPANEL_KEY = dev_secrets_dict["MIXPANEL_KEY"]
 AWS_CREDENTIALS = dev_secrets_dict["AWS_CREDENTIALS"]
 PYTHON_ENV = os.environ.get("PYTHON_ENV", "dev")
